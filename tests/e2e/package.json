@@ -1,0 +1,21 @@
+{
+  "name": "@cliff-notes/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'no build for e2e'",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'no lint for e2e'",
+    "test": "playwright test",
+    "test:coverage": "echo 'no coverage for e2e'",
+    "test:junit": "playwright test --reporter=junit",
+    "clean": "rimraf playwright-report test-results"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}

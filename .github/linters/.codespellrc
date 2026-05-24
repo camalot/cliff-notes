@@ -1,0 +1,13 @@
+# https://github.com/codespell-project/codespell#using-a-config-file
+[codespell]
+
+# Comma-separated list of files to skip.
+skip = vendor/,.git/,.devcontainer/,CHANGELOG.md
+
+ignore-words = .github/linters/.codespellignore
+# Custom dictionary file that contains spelling corrections.
+# Run with option '--dictionary=-' to include also default dictionary.
+dictionary = .github/linters/.codespelldict
+
+# Check file names as well.
+check-filenames = true

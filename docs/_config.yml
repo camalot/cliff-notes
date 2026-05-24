@@ -1,0 +1,9 @@
+---
+title: Cliff Notes
+description: Interactive playground for git-cliff configurations.
+
+
+# Aux links (top nav)
+aux_links:
+  "GitHub":
+    - "https://github.com/camalot/cliff-notes"

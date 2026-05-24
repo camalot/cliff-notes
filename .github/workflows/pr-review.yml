@@ -1,0 +1,37 @@
+---
+name: PR Review
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+permissions: {}
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+      issues: write
+    outputs:
+      ver_major_minor_patch: ${{ steps.get.outputs.major_minor_patch }}
+      ver_major_minor: ${{ steps.get.outputs.major_minor }}
+      ver_major: ${{ steps.get.outputs.major }}
+      tag: ${{ steps.get.outputs.tag_major_minor_patch }}
+      tag_major: ${{ steps.get.outputs.tag_major }}
+      tag_major_minor: ${{ steps.get.outputs.tag_major_minor }}
+      tag_major_minor_patch: ${{ steps.get.outputs.tag_major_minor_patch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine next version
+        id: get
+        uses: camalot/version/get@v1
+        with:
+          default_version: v1.0.0
+          enable_pr_comment: 'true'

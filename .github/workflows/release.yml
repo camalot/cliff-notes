@@ -1,0 +1,126 @@
+---
+name: Publish Release
+on: # yamllint disable-line rule:truthy
+  workflow_dispatch:
+
+permissions: {}
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+
+    outputs:
+      ver_major_minor_patch: ${{ steps.get.outputs.major_minor_patch }}
+      ver_major_minor: ${{ steps.get.outputs.major_minor }}
+      ver_major: ${{ steps.get.outputs.major }}
+      tag: ${{ steps.get.outputs.tag_major_minor_patch }}
+      tag_major: ${{ steps.get.outputs.tag_major }}
+      tag_major_minor: ${{ steps.get.outputs.tag_major_minor }}
+      tag_major_minor_patch: ${{ steps.get.outputs.tag_major_minor_patch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine next version
+        id: get
+        uses: camalot/actions/version/get@v1
+        with:
+          default_version: v1.0.0
+          fail_on_default: true
+          fail_on_same_version: true
+          token: ${{ github.token }}
+      - run: |
+          echo "next version: ${TAG}"
+        env:
+          TAG: ${{ steps.get.outputs.tag_major_minor_patch }}
+          VERSION: ${{ steps.get.outputs.major_minor_patch}}
+          TAG_MAJOR: ${{ steps.get.outputs.tag_major }}
+          TAG_MAJOR_MINOR: ${{ steps.get.outputs.tag_major_minor }}
+          TAG_MAJOR_MINOR_PATCH: ${{ steps.get.outputs.tag_major_minor_patch }}
+          VER_MAJOR: ${{ steps.get.outputs.major }}
+          VER_MAJOR_MINOR: ${{ steps.get.outputs.major_minor }}
+          VER_MAJOR_MINOR_PATCH: ${{ steps.get.outputs.major_minor_patch }}
+
+  lint:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+    permissions:
+      contents: read
+      statuses: write
+      issues: read
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Lint Codebase
+        uses: camalot/actions/smells/lint@v1
+        with:
+          token: ${{ github.token }}
+          default_branch: main
+          delete_previous_comment: true
+          super_linter_env_file: .github/linters/super-linter.env
+
+  release:
+    runs-on: ubuntu-latest
+    if: (success())
+    needs:
+      - version
+      - lint
+    permissions:
+      # write CHANGELOG.md commit, tags, and GitHub Release
+      contents: write
+      packages: write
+      statuses: write
+      checks: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Tag, changelog, and GitHub Release
+        uses: camalot/actions/version/release@v1
+        with:
+          tag_major: ${{ needs.version.outputs.tag_major }}
+          tag_major_minor: ${{ needs.version.outputs.tag_major_minor }}
+          tag_major_minor_patch: ${{ needs.version.outputs.tag_major_minor_patch }}
+          token: ${{ github.token }}
+
+  publish-documentation:
+    # REMOVE when ready to publish documentation
+    if: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      issues: read
+      checks: write
+      pull-requests: write
+      pages: write
+      id-token: write
+    needs:
+      - release
+      - lint
+      - version
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Dr. Jekyll Build
+        uses: camalot/actions/docs/drjekyll@v1
+        with:
+          input_dir: ./docs
+          output_dir: ./_site
+          jekyll_env: production
+          token: ${{ github.token }}

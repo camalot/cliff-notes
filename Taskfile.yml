@@ -1,0 +1,20 @@
+---
+version: '3'
+
+tasks:
+  docker/build:
+    cmds:
+      - docker build -t camalot/cliff-notes .
+
+  docker/run:
+    cmds:
+      - docker run -p 3001:3001 camalot/cliff-notes
+
+  cliff-notes/dev:
+    cmds:
+      - cmd: pnpm install
+      - cmd: pnpm run dev
+  cliff-notes/docker:
+    cmds:
+      - task: docker/build
+      - task: docker/run

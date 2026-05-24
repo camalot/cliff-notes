@@ -1,0 +1,27 @@
+{
+  "name": "cliff-notes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Interactive playground for git-cliff configurations.",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "postinstall": "pnpm --filter @cliff-notes/shared run build",
+    "build:shared": "pnpm --filter @cliff-notes/shared run build",
+    "build": "pnpm -r run build",
+    "dev": "pnpm build:shared && pnpm -r --parallel --filter=!@cliff-notes/e2e run dev",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm build:shared && pnpm -r run typecheck",
+    "test": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test",
+    "test:coverage": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test:coverage",
+    "test:junit": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test:junit",
+    "test:e2e": "pnpm --filter @cliff-notes/e2e run test",
+    "clean": "pnpm -r run clean && rimraf coverage reports"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}
