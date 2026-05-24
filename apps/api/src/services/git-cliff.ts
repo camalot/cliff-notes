@@ -73,6 +73,32 @@ function patchBump(parsed: ParsedSemver): string {
   return `v${parsed.major}.${parsed.minor}.${parsed.patch + 1}`;
 }
 
+/**
+ * Best-effort extraction of `initial_tag` from a `[bump]` table in a cliff.toml
+ * string. Honors the value the user configured so the fallback path matches
+ * what git-cliff itself would have produced. Regex-based because the API has
+ * no TOML parser dependency and the field is a simple quoted string.
+ */
+function extractBumpInitialTag(toml: string): string | null {
+  const lines = toml.split(/\r?\n/);
+  let inBump = false;
+  for (const raw of lines) {
+    const line = raw.replace(/#.*$/, "").trim();
+    if (!line) continue;
+    const section = /^\[([^\]]+)\]\s*$/.exec(line);
+    if (section) {
+      inBump = (section[1] ?? "").trim() === "bump";
+      continue;
+    }
+    if (!inBump) continue;
+    const m =
+      /^initial_tag\s*=\s*"([^"]+)"/.exec(line) ??
+      /^initial_tag\s*=\s*'([^']+)'/.exec(line);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+}
+
 async function computeBumpedVersion(
   cliffBin: string,
   configPath: string,
@@ -80,11 +106,12 @@ async function computeBumpedVersion(
   cwd: string,
   timeoutMs: number,
   releases: Release[],
-  defaultVersion: string,
+  cliffToml: string,
 ): Promise<{ nextTag: string; fallback: boolean }> {
   const current = highestSemverRelease(releases);
   const hasTags = current !== null;
-  const defaultWithV = normalizeVersion(defaultVersion || "v0.1.0");
+  const initialTag = extractBumpInitialTag(cliffToml);
+  const defaultWithV = normalizeVersion(initialTag ?? "v0.1.0");
 
   let bumped = "";
   try {
@@ -139,7 +166,7 @@ export async function renderChangelog(
         dir,
         config.renderTimeoutMs,
         input.releases,
-        opts.defaultVersion ?? "v0.1.0",
+        input.cliffToml,
       );
       nextTag = bumped.nextTag;
       nextTagFallback = bumped.fallback;

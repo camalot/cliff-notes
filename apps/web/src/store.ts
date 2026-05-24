@@ -10,7 +10,6 @@ import type { RenderOptionsState } from "./components/OptionsPane";
 const DEFAULT_OPTIONS: RenderOptionsState = {
   unreleased: false,
   bumpedVersion: false,
-  defaultVersion: "v0.1.0",
 };
 
 function normalizeOptions(raw: unknown): RenderOptionsState {
@@ -20,10 +19,6 @@ function normalizeOptions(raw: unknown): RenderOptionsState {
     unreleased: typeof o.unreleased === "boolean" ? o.unreleased : DEFAULT_OPTIONS.unreleased,
     bumpedVersion:
       typeof o.bumpedVersion === "boolean" ? o.bumpedVersion : DEFAULT_OPTIONS.bumpedVersion,
-    defaultVersion:
-      typeof o.defaultVersion === "string" && o.defaultVersion.length > 0
-        ? o.defaultVersion
-        : DEFAULT_OPTIONS.defaultVersion,
   };
 }
 
@@ -172,7 +167,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         options: {
           unreleased: options.unreleased,
           bumpedVersion: options.bumpedVersion,
-          defaultVersion: options.defaultVersion,
         },
       });
       set({ output: { markdown: out.markdown, warnings: out.warnings ?? [] }, isRendering: false });

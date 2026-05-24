@@ -66,7 +66,6 @@ export type Release = z.infer<typeof releaseSchema>;
 export const renderOptionsSchema = z.object({
   unreleased: z.boolean().optional(),
   bumpedVersion: z.boolean().optional(),
-  defaultVersion: z.string().min(1).max(200).optional(),
 });
 export type RenderOptions = z.infer<typeof renderOptionsSchema>;
 
