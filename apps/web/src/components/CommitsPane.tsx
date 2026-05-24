@@ -11,6 +11,7 @@ import { CollapsibleSection } from "./ui/CollapsibleSection";
 import { Toggle } from "./ui/Toggle";
 import { registerGitCommit, GIT_COMMIT_LANGUAGE_ID } from "../lib/monaco-git-commit";
 import { CLIFF_TOML_THEME_ID } from "../lib/monaco-cliff-toml";
+import { cn } from "@/lib/cn";
 import type { UiCommit, UiTag } from "../types";
 
 interface Props {
@@ -193,6 +194,7 @@ export function CommitsPane({
           const tagsHere = tags.filter((t) => t.afterIndex === i);
           const breaking = isBreakingCommit(c.message);
           const numLines = c.message.split('\n').length;
+          const ignored = !!c.ignored;
           return (
             <li key={i} className="space-y-1">
               <div className="flex gap-1.5 items-start group">
@@ -202,10 +204,20 @@ export function CommitsPane({
                     <span className="text-[10px] font-bold text-red-400 shrink-0" title="Breaking change">!</span>
                   )}
                 </div>
+                <IconButton
+                  icon={ignored ? "eye-slash" : "eye"}
+                  label={ignored ? "Include in changelog" : "Ignore from changelog"}
+                  onClick={() => onUpdate(i, { ignored: !ignored })}
+                  aria-pressed={ignored}
+                  className={cn("mt-1 shrink-0", ignored && "text-muted-fg/70")}
+                />
                 <Textarea
                   value={c.message}
                   onChange={(e) => onUpdate(i, { message: e.target.value })}
-                  className="font-mono text-xs flex-1 min-w-0 resize-none leading-snug"
+                  className={cn(
+                    "font-mono text-xs flex-1 min-w-0 resize-none leading-snug",
+                    ignored && "opacity-50 line-through",
+                  )}
                   rows={Math.max(1, Math.min(numLines, 8))}
                 />
                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 pt-1">

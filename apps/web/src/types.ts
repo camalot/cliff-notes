@@ -15,8 +15,14 @@ export interface UiTag {
   message?: string;
 }
 
-/** A commit in the editor — same as the shared Commit type. */
-export type UiCommit = Commit;
+/**
+ * A commit in the editor. Extends the shared Commit type with `ignored`, a
+ * UI-only flag that excludes the commit from the rendered changelog without
+ * removing it from the editor list.
+ */
+export interface UiCommit extends Commit {
+  ignored?: boolean;
+}
 
 export interface AppOutput {
   markdown: string;

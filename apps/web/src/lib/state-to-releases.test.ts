@@ -56,4 +56,28 @@ describe("stateToReleases", () => {
     expect(r.at(-1)!.version).toBeNull();
     expect(r.at(-1)!.commits).toHaveLength(0);
   });
+
+  it("drops ignored commits from each release group", () => {
+    const mixed = [
+      { message: "feat: a" },
+      { message: "fix: b", ignored: true },
+      { message: "feat: c" },
+      { message: "chore: d", ignored: true },
+    ];
+    const r = stateToReleases(mixed, [{ name: "v1.0.0", afterIndex: 1 }]);
+    expect(r[0]!.commits.map((c) => c.message)).toEqual(["feat: a"]);
+    expect(r[1]!.commits.map((c) => c.message)).toEqual(["feat: c"]);
+  });
+
+  it("ignored commits don't shift tag boundaries", () => {
+    const mixed = [
+      { message: "feat: a", ignored: true },
+      { message: "fix: b" },
+      { message: "feat: c" },
+    ];
+    // Tag still closes commits 0-1 (a + b), even though a is ignored.
+    const r = stateToReleases(mixed, [{ name: "v1.0.0", afterIndex: 1 }]);
+    expect(r[0]!.commits.map((c) => c.message)).toEqual(["fix: b"]);
+    expect(r[1]!.commits.map((c) => c.message)).toEqual(["feat: c"]);
+  });
 });
