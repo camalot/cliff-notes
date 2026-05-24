@@ -10,14 +10,58 @@ set -euo pipefail
 source "$(dirname "$0")/helpers.sh"
 
 function claude_init() {
+  # The claude-code-persist Docker volume is created as root-owned. Without this
+  # chown, the snapshot copies in post-attach (and the Stop hook in ~/.claude/settings.json)
+  # silently fail because the vscode user can't write into it, so nothing ever persists.
+  sudo chown -R vscode:vscode /home/vscode/.claude-persist || true
+
   mkdir -p /home/vscode/.claude
-  ([ -f /home/vscode/.claude-persist/.credentials.json ] && \
-    cp /home/vscode/.claude-persist/.credentials.json /home/vscode/.claude/.credentials.json || true \
-  ) && \
-  ([ -f /home/vscode/.claude-persist/.claude.json ] && \
-    cp /home/vscode/.claude-persist/.claude.json /home/vscode/.claude.json || \
-      echo '{\"hasCompletedOnboarding\":true}' > /home/vscode/.claude.json
+  if [ -f /home/vscode/.claude-persist/.credentials.json ]; then
+    cp -p /home/vscode/.claude-persist/.credentials.json /home/vscode/.claude/.credentials.json
+    chmod 600 /home/vscode/.claude/.credentials.json || true
+  fi
+  if [ -f /home/vscode/.claude-persist/.claude.json ]; then
+    cp -p /home/vscode/.claude-persist/.claude.json /home/vscode/.claude.json
+  else
+    echo '{"hasCompletedOnboarding":true}' > /home/vscode/.claude.json
+  fi
+  if [ -f /home/vscode/.claude-persist/settings.json ]; then
+    cp -p /home/vscode/.claude-persist/settings.json /home/vscode/.claude/settings.json
+  fi
+
+  # Ensure the Stop hook is present in ~/.claude/settings.json. The hook copies
+  # live auth state to the persist volume after each agent response so OAuth
+  # refreshes survive a container rebuild without needing a detach/reattach cycle.
+  # shellcheck disable=SC2016
+  local hook_cmd='if [ -d "$HOME/.claude-persist" ]; then [ -f "$HOME/.claude/.credentials.json" ] && cp -p "$HOME/.claude/.credentials.json" "$HOME/.claude-persist/.credentials.json" 2>/dev/null; [ -f "$HOME/.claude.json" ] && cp -p "$HOME/.claude.json" "$HOME/.claude-persist/.claude.json" 2>/dev/null; [ -f "$HOME/.claude/settings.json" ] && cp -p "$HOME/.claude/settings.json" "$HOME/.claude-persist/settings.json" 2>/dev/null; fi; exit 0'
+  local settings=/home/vscode/.claude/settings.json
+  [ -f "$settings" ] || echo '{}' > "$settings"
+  local tmp
+  tmp=$(mktemp)
+  # shellcheck disable=SC2015
+  jq --arg cmd "$hook_cmd" '
+    .hooks //= {} |
+    .hooks.Stop //= [] |
+    .hooks.Stop |= (
+      (map(select(
+        (.hooks // []) | any(.command == $cmd)
+      )) as $existing |
+       if ($existing | length) > 0 then .
+       else . + [{matcher: "*", hooks: [{type: "command", command: $cmd}]}] end)
     )
+  ' "$settings" > "$tmp" && mv "$tmp" "$settings" || rm -f "$tmp"
+
+  # Drop ~/.claude/ide/*.lock entries whose pid is no longer alive so the
+  # extension doesn't try to hand a fresh CLI session to a dead websocket.
+  if [ -d /home/vscode/.claude/ide ]; then
+    for f in /home/vscode/.claude/ide/*.lock; do
+      [ -f "$f" ] || continue
+      pid=$(jq -r '.pid // empty' "$f" 2>/dev/null || true)
+      if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$f"
+      fi
+    done
+  fi
 }
 
 function fix_ssh_permissions() {
