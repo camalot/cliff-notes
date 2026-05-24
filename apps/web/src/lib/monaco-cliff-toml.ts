@@ -274,6 +274,18 @@ export function registerCliffToml(monaco: Monaco) {
       { token: "operator.tera.cliff", foreground: "94A3B8" },
       { token: "delimiter.tera.cliff", foreground: "94A3B8" },
       { token: "delimiter.pipe.tera.cliff", foreground: "67E8F9" },
+
+      // Git commit message syntax (no .cliff suffix — different language)
+      { token: "type.commit", foreground: "60A5FA" },
+      { token: "type.breaking.commit", foreground: "EF4444", fontStyle: "bold" },
+      { token: "scope.commit", foreground: "C084FC" },
+      { token: "bang.commit", foreground: "EF4444", fontStyle: "bold" },
+      { token: "operator.commit", foreground: "475569" },
+      { token: "trailer.key.commit", foreground: "A5B4FC" },
+      { token: "breaking.footer.commit", foreground: "EF4444", fontStyle: "bold" },
+      { token: "bullet.commit", foreground: "F59E0B" },
+      { token: "comment.commit", foreground: "4B5563", fontStyle: "italic" },
+      { token: "separator.commit", foreground: "374151" },
     ],
     colors: {
       "editor.background": "#0F172A",

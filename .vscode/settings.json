@@ -274,5 +274,6 @@
   ],
   "coverlens.diffBase": "origin/develop",
   "workspaceTasks.groups.taskSeparatorIsRegex": true,
-  "workspaceTasks.groups.taskSeparator": "[/:\\\\]"
+  "workspaceTasks.groups.taskSeparator": "[/:\\\\]",
+  "workspaceTasks.groups.useParentFolder": true
 }

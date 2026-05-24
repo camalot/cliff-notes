@@ -1,6 +1,6 @@
 import Editor, { type Monaco } from "@monaco-editor/react";
 import { Card, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
+import { IconButton } from "./ui/IconButton";
 import {
   CLIFF_TOML_LANGUAGE_ID,
   CLIFF_TOML_THEME_ID,
@@ -22,9 +22,7 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
     <Card className="flex flex-col min-h-0">
       <CardHeader>
         <CardTitle>cliff.toml</CardTitle>
-        <Button size="sm" variant="ghost" onClick={onReset}>
-          Reset to default
-        </Button>
+        <IconButton icon="arrow-clockwise" label="Reset to default" onClick={onReset} />
       </CardHeader>
       <div className="flex-1 min-h-0">
         <Editor

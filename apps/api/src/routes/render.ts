@@ -16,7 +16,14 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
       }
       try {
         const result = await renderChangelog(parsed.data, config);
-        return reply.send({ markdown: result.markdown, warnings: result.warnings });
+        return reply.send({
+          markdown: result.markdown,
+          warnings: result.warnings,
+          ...(result.nextTag !== undefined ? { nextTag: result.nextTag } : {}),
+          ...(result.nextTagFallback !== undefined
+            ? { nextTagFallback: result.nextTagFallback }
+            : {}),
+        });
       } catch (err) {
         if (err instanceof RenderError) {
           return reply.code(422).send({ error: "git-cliff failed", detail: err.stderr });

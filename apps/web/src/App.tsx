@@ -3,6 +3,7 @@ import { useAppStore } from "./store";
 import { Toolbar } from "./components/Toolbar";
 import { CliffTomlEditor } from "./components/CliffTomlEditor";
 import { RightPanel } from "./components/RightPanel";
+import { ToastContainer } from "./components/ToastContainer";
 
 export default function App() {
   const s = useAppStore();
@@ -30,7 +31,8 @@ export default function App() {
           onGenerate={s.render}
           markdown={s.output?.markdown ?? null}
           warnings={s.output?.warnings ?? []}
-          error={s.error}
+          options={s.options}
+          onChangeOptions={s.setOptions}
           isLoadingRepo={s.isLoadingRepo}
           onLoadRepo={s.loadFromRepo}
           tags={s.tags}
@@ -50,6 +52,7 @@ export default function App() {
           }
         />
       </main>
+      <ToastContainer />
     </div>
   );
 }

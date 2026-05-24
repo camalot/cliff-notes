@@ -1,20 +1,35 @@
+import { useRef } from "react";
 import { useState } from "react";
+import Editor, { type Monaco } from "@monaco-editor/react";
 import { CONVENTIONAL_TYPES, type ConventionalType } from "@cliff-notes/shared";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 import { Select } from "./ui/select";
+import { IconButton } from "./ui/IconButton";
+import { CollapsibleSection } from "./ui/CollapsibleSection";
+import { Toggle } from "./ui/Toggle";
+import { registerGitCommit, GIT_COMMIT_LANGUAGE_ID } from "../lib/monaco-git-commit";
+import { CLIFF_TOML_THEME_ID } from "../lib/monaco-cliff-toml";
 import type { UiCommit, UiTag } from "../types";
 
 interface Props {
   commits: UiCommit[];
   tags: UiTag[];
   onAdd: (message: string) => void;
-  onAddRandom: (type: ConventionalType, breaking: boolean, count: number) => void;
+  onAddRandom: (type: ConventionalType, breaking: boolean, count: number, squash?: boolean, coAuthors?: number) => void;
   onUpdate: (idx: number, patch: Partial<UiCommit>) => void;
   onRemove: (idx: number) => void;
   onMove: (from: number, to: number) => void;
   onClear: () => void;
   onTagHere: (idx: number) => void;
+}
+
+function isBreakingCommit(message: string): boolean {
+  const firstLine = message.split('\n')[0] || "";
+  if (/^[a-z]+(?:\([^)]*\))?!:/.test(firstLine)) return true;
+  if (/^BREAKING[- ]CHANGE/m.test(message)) return true;
+  return false;
 }
 
 export function CommitsPane({
@@ -24,88 +39,151 @@ export function CommitsPane({
   const [type, setType] = useState<ConventionalType>("feat");
   const [breaking, setBreaking] = useState(false);
   const [count, setCount] = useState(1);
+  const [squash, setSquash] = useState(false);
+  const [coAuthors, setCoAuthors] = useState(0);
   const [showRandom, setShowRandom] = useState(false);
+  const editorRef = useRef<any>(null);
 
   const submitManual = () => {
     const m = manual.trim();
     if (!m) return;
     onAdd(m);
     setManual("");
+    editorRef.current?.focus();
+  };
+
+  const effectiveCount = count < 2 ? 1 : count;
+  if (count < 2 && squash) {
+    setSquash(false);
+  }
+
+  const handleEditorMount = (editor: any, monaco: Monaco) => {
+    editorRef.current = editor;
+    registerGitCommit(monaco);
+    editor.addCommand(2048 + 256, submitManual); // Ctrl+Enter / Cmd+Enter
   };
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-fg">
-          Commits <span className="text-muted-fg/70 normal-case font-normal">({commits.length})</span>
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowRandom((v) => !v)}
-            className="text-xs text-muted-fg hover:text-fg"
-          >
-            {showRandom ? "Hide random" : "Random"}
-          </button>
-          <button
-            type="button"
-            onClick={onClear}
-            disabled={commits.length === 0}
-            className="text-xs text-muted-fg hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            Clear all
-          </button>
-        </div>
-      </div>
-
-      <div className="flex gap-2">
-        <Input
-          placeholder="feat(api): add cool thing"
-          value={manual}
-          onChange={(e) => setManual(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submitManual();
-          }}
-          className="flex-1 text-xs"
+    <CollapsibleSection
+      title="Commits"
+      count={commits.length}
+      headerActions={
+        <IconButton
+          icon="slash-square"
+          label="Clear all commits"
+          onClick={onClear}
+          disabled={commits.length === 0}
         />
-        <Button onClick={submitManual} size="sm" disabled={!manual.trim()}>
-          Add
-        </Button>
-      </div>
-
+      }
+      expandedHeaderActions={
+        <IconButton
+          icon="shuffle"
+          label={showRandom ? "Hide random generator" : "Show random generator"}
+          onClick={() => setShowRandom((v) => !v)}
+          aria-pressed={showRandom}
+          className={showRandom ? "text-fg bg-muted/60" : ""}
+        />
+      }
+    >
       {showRandom && (
-        <div className="flex flex-wrap gap-2 items-center text-xs">
-          <Select value={type} onChange={(e) => setType(e.target.value as ConventionalType)} className="text-xs">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs p-2 border border-border rounded-md bg-card/50">
+          <Select
+            value={type}
+            onChange={(e) => setType(e.target.value as ConventionalType)}
+            className="text-xs"
+            aria-label="type"
+          >
             {CONVENTIONAL_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </Select>
-          <label className="flex items-center gap-1 text-muted-fg">
-            <input
-              type="checkbox"
-              checked={breaking}
-              onChange={(e) => setBreaking(e.target.checked)}
-            />
-            breaking
-          </label>
-          <Input
-            type="number"
-            min={1}
-            max={20}
-            value={count}
-            onChange={(e) => setCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
-            className="w-14 text-xs"
-            aria-label="count"
+          <Toggle
+            label="breaking"
+            checked={breaking}
+            onChange={(e) => setBreaking(e.target.checked)}
           />
+          <label className="flex items-center gap-2 text-muted-fg">
+            <span>count</span>
+            <Input
+              type="number"
+              min={1}
+              max={20}
+              value={count}
+              onChange={(e) => setCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+              className="w-14 text-xs"
+              aria-label="count"
+            />
+          </label>
+
+          {effectiveCount >= 2 && (
+            <Toggle
+              label="squash"
+              checked={squash}
+              onChange={(e) => setSquash(e.target.checked)}
+            />
+          )}
+          {effectiveCount >= 2 && squash && (
+            <label className="flex items-center gap-2 text-muted-fg">
+              <span>co-authors</span>
+              <Input
+                type="number"
+                min={0}
+                max={5}
+                value={coAuthors}
+                onChange={(e) => setCoAuthors(Math.max(0, Math.min(5, Number(e.target.value) || 0)))}
+                className="w-12 text-xs"
+                aria-label="co-authors count"
+              />
+            </label>
+          )}
+
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => onAddRandom(type, breaking, count)}
+            className="ml-auto"
+            onClick={() => onAddRandom(type, breaking, effectiveCount, squash, squash ? coAuthors : 0)}
           >
-            Insert {breaking ? `${type}!` : type} × {count}
+            <i className="bi bi-arrow-bar-left" aria-hidden="true" />
+            Insert {breaking ? `${type}!` : type} × {effectiveCount}
+            {squash && " (squash)"}
           </Button>
         </div>
       )}
+
+      <div className="flex flex-col gap-2 border border-border rounded-md overflow-hidden bg-card">
+        <Editor
+          height={120}
+          language={GIT_COMMIT_LANGUAGE_ID}
+          theme={CLIFF_TOML_THEME_ID}
+          value={manual}
+          onChange={(v) => setManual(v ?? "")}
+          onMount={handleEditorMount}
+          options={{
+            minimap: { enabled: false },
+            lineNumbers: "off",
+            fontSize: 12,
+            fontFamily: "monospace",
+            scrollBeyondLastLine: false,
+            wordWrap: "on",
+            renderLineHighlight: "none",
+            overviewRulerBorder: false,
+            hideCursorInOverviewRuler: true,
+            glyphMargin: false,
+            folding: false,
+            padding: { top: 6, bottom: 6 },
+            tabSize: 2,
+            insertSpaces: true,
+            scrollbar: { useShadows: false, vertical: "auto", horizontal: "auto" },
+          }}
+        />
+        <div className="px-2 pt-2 pb-2 flex gap-1 justify-end border-t border-border">
+          <span className="text-[10px] text-muted-fg italic flex-1">⌘↵ to submit</span>
+          <Button onClick={submitManual} size="sm" disabled={!manual.trim()}>
+            <i className="bi bi-plus-square-fill" aria-hidden="true" />
+            Add
+          </Button>
+        </div>
+      </div>
 
       <ol className="space-y-1" data-testid="commit-list">
         {commits.length === 0 && (
@@ -113,34 +191,48 @@ export function CommitsPane({
         )}
         {commits.map((c, i) => {
           const tagsHere = tags.filter((t) => t.afterIndex === i);
+          const breaking = isBreakingCommit(c.message);
+          const numLines = c.message.split('\n').length;
           return (
             <li key={i} className="space-y-1">
-              <div className="flex gap-1.5 items-center group">
-                <span className="text-[10px] text-muted-fg font-mono w-5 text-right shrink-0">{i}</span>
-                <Input
+              <div className="flex gap-1.5 items-start group">
+                <div className="flex items-center gap-1 pt-2 shrink-0">
+                  <span className="text-[10px] text-muted-fg font-mono w-5 text-right">{i}</span>
+                  {breaking && (
+                    <span className="text-[10px] font-bold text-red-400 shrink-0" title="Breaking change">!</span>
+                  )}
+                </div>
+                <Textarea
                   value={c.message}
                   onChange={(e) => onUpdate(i, { message: e.target.value })}
-                  className="font-mono text-xs flex-1 min-w-0"
+                  className="font-mono text-xs flex-1 min-w-0 resize-none leading-snug"
+                  rows={Math.max(1, Math.min(numLines, 8))}
                 />
-                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => onMove(i, i - 1)} disabled={i === 0} title="Move up">↑</Button>
-                  <Button size="sm" variant="ghost" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} title="Move down">↓</Button>
-                  <Button size="sm" variant="ghost" onClick={() => onTagHere(i)} title="Tag a release after this commit">🏷</Button>
-                  <Button size="sm" variant="danger" onClick={() => onRemove(i)}>✕</Button>
+                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 pt-1">
+                  <IconButton icon="arrow-up" label="Move up" onClick={() => onMove(i, i - 1)} disabled={i === 0} />
+                  <IconButton icon="arrow-down" label="Move down" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} />
+                  <IconButton icon="tag" label="Tag a release after this commit" onClick={() => onTagHere(i)} />
+                  <IconButton
+                    icon="trash3-fill"
+                    label="Delete commit"
+                    onClick={() => onRemove(i)}
+                    className="text-danger hover:text-danger hover:bg-danger/10"
+                  />
                 </div>
               </div>
               {tagsHere.map((t) => (
                 <div
                   key={t.name + i}
-                  className="ml-7 text-[11px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40 font-mono inline-block"
+                  className="ml-7 text-[11px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40 font-mono inline-flex items-center gap-1"
                 >
-                  🏷 {t.name}
+                  <i className="bi bi-tag" aria-hidden="true" />
+                  {t.name}
                 </div>
               ))}
             </li>
           );
         })}
       </ol>
-    </section>
+    </CollapsibleSection>
   );
 }

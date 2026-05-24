@@ -12,7 +12,7 @@ Interactive playground for [git-cliff](https://git-cliff.org) configurations. Ed
 
 ## Layout
 
-```
+```tree
 apps/
   api/        Fastify backend
   web/        Vite + React frontend

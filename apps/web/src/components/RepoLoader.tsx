@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ALLOWED_REPO_HOSTS } from "@cliff-notes/shared";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { IconButton } from "./ui/IconButton";
+import { CollapsibleSection } from "./ui/CollapsibleSection";
 
 interface Props {
   isLoading: boolean;
@@ -12,7 +13,7 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
   const [url, setUrl] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
 
   const submit = () => {
     const u = url.trim();
@@ -24,20 +25,18 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
   };
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-fg">
-          Load from repository
-        </h3>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-muted-fg hover:text-fg"
-          title={`Allowed hosts: ${ALLOWED_REPO_HOSTS.join(", ")}`}
-        >
-          {expanded ? "Hide range" : "Range"}
-        </button>
-      </div>
+    <CollapsibleSection
+      title="Load from repository"
+      expandedHeaderActions={
+        <IconButton
+          icon="layer-backward"
+          label={`Toggle commit range${rangeOpen ? " (open)" : ""}. Allowed hosts: ${ALLOWED_REPO_HOSTS.join(", ")}`}
+          onClick={() => setRangeOpen((v) => !v)}
+          aria-pressed={rangeOpen}
+          className={rangeOpen ? "text-fg bg-muted/60" : ""}
+        />
+      }
+    >
       <div className="flex gap-2">
         <Input
           placeholder="https://github.com/owner/repo"
@@ -48,11 +47,14 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
           }}
           className="flex-1 min-w-0"
         />
-        <Button onClick={submit} disabled={!url.trim() || isLoading} size="sm">
-          {isLoading ? "Loading…" : "Load"}
-        </Button>
+        <IconButton
+          icon="box-arrow-down"
+          label={isLoading ? "Loading…" : "Load"}
+          onClick={submit}
+          disabled={!url.trim() || isLoading}
+        />
       </div>
-      {expanded && (
+      {rangeOpen && (
         <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="from (v1.0.0)"
@@ -68,6 +70,6 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
           />
         </div>
       )}
-    </section>
+    </CollapsibleSection>
   );
 }

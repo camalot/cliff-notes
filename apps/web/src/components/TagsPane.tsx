@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Select } from "./ui/select";
+import { IconButton } from "./ui/IconButton";
+import { CollapsibleSection } from "./ui/CollapsibleSection";
 import type { UiCommit, UiTag } from "../types";
 
 interface Props {
@@ -26,21 +28,18 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
   };
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-fg">
-          Tags <span className="text-muted-fg/70 normal-case font-normal">({tags.length})</span>
-        </h3>
-        <button
-          type="button"
+    <CollapsibleSection
+      title="Tags"
+      count={tags.length}
+      headerActions={
+        <IconButton
+          icon="slash-square"
+          label="Clear all tags"
           onClick={onClear}
           disabled={tags.length === 0}
-          className="text-xs text-muted-fg hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          Clear all
-        </button>
-      </div>
-
+        />
+      }
+    >
       <div className="flex gap-2 flex-wrap">
         <Input
           placeholder="v1.0.0"
@@ -65,6 +64,7 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
           ))}
         </Select>
         <Button onClick={submit} disabled={!name.trim()} size="sm">
+          <i className="bi bi-plus-square-fill" aria-hidden="true" />
           Add
         </Button>
       </div>
@@ -95,18 +95,16 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
                 ))}
               </Select>
               {dangling && <span className="text-xs text-danger" title="dangling tag">!</span>}
-              <Button
-                size="sm"
-                variant="danger"
+              <IconButton
+                icon="trash3-fill"
+                label="Delete tag"
                 onClick={() => onRemove(i)}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-              >
-                ✕
-              </Button>
+                className="text-danger hover:text-danger hover:bg-danger/10 opacity-0 group-hover:opacity-100 focus:opacity-100"
+              />
             </li>
           );
         })}
       </ul>
-    </section>
+    </CollapsibleSection>
   );
 }

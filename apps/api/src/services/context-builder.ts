@@ -5,6 +5,26 @@ const DEFAULT_AUTHOR = Object.freeze({
   email: "noreply@cliff-notes.local",
 });
 
+const REMOTE_NAMES = ["github", "gitlab", "gitea", "bitbucket", "azure_devops"] as const;
+
+const EMPTY_REMOTE_CONTRIBUTOR = Object.freeze({
+  username: null,
+  pr_title: null,
+  pr_number: null,
+  pr_labels: [] as string[],
+  is_first_time: false,
+});
+
+const EMPTY_REMOTE_RELEASE = Object.freeze({ contributors: [] as unknown[] });
+
+function emptyRemoteContributors(): Record<string, unknown> {
+  return Object.fromEntries(REMOTE_NAMES.map((n) => [n, { ...EMPTY_REMOTE_CONTRIBUTOR }]));
+}
+
+function emptyRemoteReleases(): Record<string, unknown> {
+  return Object.fromEntries(REMOTE_NAMES.map((n) => [n, { ...EMPTY_REMOTE_RELEASE }]));
+}
+
 /**
  * Deterministic 40-hex synthesized commit id from a string. Used when the
  * caller doesn't supply an id (e.g. manual-entry mode).
@@ -38,6 +58,7 @@ function normalizeCommit(c: Commit, releaseIndex: number, commitIndex: number, n
     conventional: null,
     merge_commit: false,
     links: [],
+    ...emptyRemoteContributors(),
   };
 }
 
@@ -60,6 +81,8 @@ export function buildContext(releases: Release[]): unknown[] {
       commit_id: headCommitId,
       timestamp,
       previous: null,
+      submodule_commits: {},
+      ...emptyRemoteReleases(),
     };
   });
 }

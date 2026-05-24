@@ -5,11 +5,14 @@ import remarkGfm from "remark-gfm";
 import type { ConventionalType } from "@cliff-notes/shared";
 import { Card, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
+import { IconButton } from "./ui/IconButton";
 import { RepoLoader } from "./RepoLoader";
+import { OptionsPane, type RenderOptionsState } from "./OptionsPane";
 import { TagsPane } from "./TagsPane";
 import { CommitsPane } from "./CommitsPane";
 import { cn } from "@/lib/cn";
 import { CLIFF_TOML_THEME_ID } from "@/lib/monaco-cliff-toml";
+import { toast } from "@/lib/toast";
 import type { UiCommit, UiTag } from "../types";
 
 type Tab = "config" | "changelog" | "raw";
@@ -22,7 +25,10 @@ interface Props {
   // Output
   markdown: string | null;
   warnings: string[];
-  error: string | null;
+
+  // Config — options
+  options: RenderOptionsState;
+  onChangeOptions: (patch: Partial<RenderOptionsState>) => void;
 
   // Config — repo loader
   isLoadingRepo: boolean;
@@ -38,7 +44,7 @@ interface Props {
   // Config — commits
   commits: UiCommit[];
   onAddCommit: (message: string) => void;
-  onAddRandomCommits: (type: ConventionalType, breaking: boolean, count: number) => void;
+  onAddRandomCommits: (type: ConventionalType, breaking: boolean, count: number, squash?: boolean, coAuthors?: number) => void;
   onUpdateCommit: (idx: number, patch: Partial<UiCommit>) => void;
   onRemoveCommit: (idx: number) => void;
   onMoveCommit: (from: number, to: number) => void;
@@ -58,9 +64,14 @@ export function RightPanel(props: Props) {
 
   const copy = async () => {
     if (!props.markdown) return;
-    await navigator.clipboard.writeText(props.markdown);
-    setJustCopied(true);
-    setTimeout(() => setJustCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(props.markdown);
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 1500);
+      toast.success("Changelog copied to clipboard");
+    } catch (err) {
+      toast.error("Failed to copy", { message: String(err) });
+    }
   };
 
   return (
@@ -69,11 +80,15 @@ export function RightPanel(props: Props) {
         <Tabs tab={tab} setTab={setTab} hasOutput={hasOutput} />
         <div className="flex items-center gap-2">
           {tab !== "config" && (
-            <Button size="sm" variant="secondary" onClick={copy} disabled={!props.markdown}>
-              {justCopied ? "Copied!" : "Copy"}
-            </Button>
+            <IconButton
+              icon={justCopied ? "check" : "copy"}
+              label={justCopied ? "Copied!" : "Copy"}
+              onClick={copy}
+              disabled={!props.markdown}
+            />
           )}
           <Button size="sm" onClick={props.onGenerate} disabled={props.isRendering}>
+            <i className="bi bi-cpu" aria-hidden="true" />
             {props.isRendering ? "Generating…" : "Generate"}
           </Button>
         </div>
@@ -82,7 +97,7 @@ export function RightPanel(props: Props) {
       <div className="flex-1 min-h-0">
         {tab === "config" && <ConfigTab {...props} />}
         {tab === "changelog" && (
-          <ChangelogTab markdown={props.markdown} warnings={props.warnings} error={props.error} />
+          <ChangelogTab markdown={props.markdown} warnings={props.warnings} />
         )}
         {tab === "raw" && <RawTab markdown={props.markdown} />}
       </div>
@@ -97,14 +112,16 @@ function Tabs({
   setTab: (t: Tab) => void;
   hasOutput: boolean;
 }) {
-  const item = (id: Tab, label: string, disabled = false) => (
+  const item = (id: Tab, label: string, icon: string, disabled = false) => (
     <button
       key={id}
       type="button"
       onClick={() => !disabled && setTab(id)}
       disabled={disabled}
+      title={label}
+      aria-label={label}
       className={cn(
-        "px-3 py-1 text-xs transition-colors",
+        "inline-flex items-center gap-1.5 px-3 py-1 text-xs transition-colors uppercase",
         tab === id
           ? "bg-accent text-accent-fg"
           : disabled
@@ -112,15 +129,16 @@ function Tabs({
             : "bg-card text-muted-fg hover:text-fg",
       )}
     >
-      {label}
+      <i className={`bi bi-${icon}`} aria-hidden="true" />
+      <span>{label}</span>
     </button>
   );
 
   return (
     <div className="flex rounded-md border border-border overflow-hidden">
-      {item("config", "Config")}
-      {item("changelog", "Changelog", !hasOutput)}
-      {item("raw", "Raw", !hasOutput)}
+      {item("config", "Config", "gear-fill")}
+      {item("changelog", "Changelog", "eye-fill", !hasOutput)}
+      {item("raw", "Raw", "markdown", !hasOutput)}
     </div>
   );
 }
@@ -129,6 +147,7 @@ function ConfigTab(props: Props) {
   return (
     <div className="h-full overflow-auto">
       <div className="p-3 space-y-4 divide-y divide-border [&>section:not(:first-child)]:pt-4">
+        <OptionsPane options={props.options} onChange={props.onChangeOptions} />
         <RepoLoader isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
         <TagsPane
           tags={props.tags}
@@ -155,13 +174,12 @@ function ConfigTab(props: Props) {
 }
 
 function ChangelogTab({
-  markdown, warnings, error,
+  markdown, warnings,
 }: {
   markdown: string | null;
   warnings: string[];
-  error: string | null;
 }) {
-  if (!markdown && !error) {
+  if (!markdown) {
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="text-center space-y-1">
@@ -175,11 +193,6 @@ function ChangelogTab({
   }
   return (
     <div className="h-full overflow-auto">
-      {error && (
-        <div className="m-3 rounded-md border border-danger/50 bg-danger/10 text-danger p-3 text-sm whitespace-pre-wrap font-mono">
-          {error}
-        </div>
-      )}
       {warnings.length > 0 && (
         <div className="m-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 p-2 text-xs space-y-1">
           {warnings.map((w, i) => (

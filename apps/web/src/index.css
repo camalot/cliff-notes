@@ -90,3 +90,22 @@ body,
 .markdown-preview blockquote {
   @apply border-l-4 border-border pl-3 italic text-muted-fg;
 }
+
+/* Toast animations */
+@keyframes toast-countdown {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-in {
+  animation: toast-in 180ms ease-out;
+}
+.toast-bar {
+  transform-origin: left;
+  animation-name: toast-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

@@ -91,7 +91,8 @@ RUN curl -fsSL "https://deb.nodesource.com/setup_25.x" | bash - \
   done \
   && test -f "${NVM_DIR}/nvm.sh" \
   && chown -R ${USERNAME}:${USERNAME} "${NVM_DIR}" \
-  && npm install -g pnpm git-cliff @anthropic-ai/claude-code
+  && npm install -g pnpm git-cliff @anthropic-ai/claude-code \
+  && npm cache clean --force
 
 WORKDIR /workspace
 USER ${USERNAME}
@@ -110,6 +111,10 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
   && chmod +x "/home/${USERNAME}/bin/act" \
   && ln -s "/home/${USERNAME}/bin/act" "/home/${USERNAME}/.act/act" \
   && curl -sSL https://install.python-poetry.org | python3 -
+
+# make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
+RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH" \
+  && pnpm self-update
 
 
 # Reset SHELL to prevent pipefail from breaking devcontainer features installation

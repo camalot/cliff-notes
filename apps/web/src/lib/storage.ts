@@ -4,6 +4,7 @@ export interface PersistedState {
   cliffToml: string;
   commits: unknown[];
   tags: unknown[];
+  options?: unknown;
 }
 
 const LS_KEY = "cliff-notes:state:v1";

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { IconButton } from "./ui/IconButton";
 import { buildShareUrl } from "@/lib/storage";
 
 interface Props {
@@ -40,13 +40,9 @@ export function Toolbar({ onReset, cliffToml, commits, tags }: Props) {
       <div className="flex items-center gap-2 flex-1 max-w-md">
         {shared && <Input readOnly value={shared} onFocus={(e) => e.currentTarget.select()} className="text-xs" />}
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          Reset
-        </Button>
-        <Button variant="secondary" size="sm" onClick={share}>
-          Share URL
-        </Button>
+      <div className="flex items-center gap-1">
+        <IconButton icon="arrow-clockwise" label="Reset to defaults" onClick={onReset} />
+        <IconButton icon="share-fill" label="Share URL" onClick={share} />
       </div>
     </header>
   );

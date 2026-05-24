@@ -5,6 +5,19 @@ interface Templates {
   subjects: string[];
 }
 
+const CO_AUTHOR_POOL = [
+  { name: "Alex Chen", email: "alex.chen@example.com" },
+  { name: "Sam Rivera", email: "s.rivera@devteam.io" },
+  { name: "Jordan Lee", email: "jordan@example.org" },
+  { name: "Taylor Kimura", email: "t.kimura@contrib.dev" },
+  { name: "Morgan Bailey", email: "mbailey@example.net" },
+  { name: "Casey Park", email: "casey.park@devco.com" },
+  { name: "Blake Whitmore", email: "blake.w@example.io" },
+  { name: "Avery Hassan", email: "ahassan@example.com" },
+  { name: "Drew Okonkwo", email: "drew.ok@devs.net" },
+  { name: "Robin Vance", email: "rvance@opendev.org" },
+];
+
 const TEMPLATES: Record<ConventionalType, Templates> = {
   feat: {
     scopes: ["api", "ui", "auth", "parser", "config", "cli", "render", "search"],
@@ -73,13 +86,23 @@ const TEMPLATES: Record<ConventionalType, Templates> = {
       "memoize derived commit groupings",
     ],
   },
-  test: {
+  tests: {
     scopes: ["api", "ui", "shared"],
     subjects: [
       "cover the empty-tag-list edge case",
       "add a smoke test for the render endpoint",
       "snapshot the default rendered output",
       "exercise SSRF guard with synthetic urls",
+    ],
+  },
+  security: {
+    scopes: ["api", "auth", "deps", "parser"],
+    subjects: [
+      "patch SSRF bypass in repo inspector",
+      "tighten allowlist for outbound git fetches",
+      "rotate signing key after disclosure",
+      "sanitize tera template input",
+      "bump dependency with known CVE",
     ],
   },
   build: {
@@ -155,6 +178,97 @@ export interface RandomCommitOptions {
   count?: number;
   /** Optional seed for deterministic generation, used by tests. */
   seed?: number;
+  /** Squash multiple commits into a single multi-line commit. Only valid when count >= 2. */
+  squash?: boolean;
+  /** Number of random co-authors to include in footer (0-5). Only meaningful when squash=true. */
+  coAuthors?: number;
+}
+
+function buildSquashedCommit(
+  commits: Commit[],
+  opts: RandomCommitOptions,
+  rng: () => number,
+  baseTimestamp: number
+): Commit {
+  const squashHeader = commits[0]!.message.split('\n')[0]!;
+  const parts: string[] = [squashHeader, ""];
+
+  // Add each sub-commit as a bullet point
+  for (const commit of commits) {
+    const commitFirstLine = commit.message.split('\n')[0]!;
+    parts.push(`* ${commitFirstLine}`);
+
+    // ~50% chance to add detail lines for this sub-commit
+    if (rng() < 0.5 && commits.length > 1) {
+      const detailLines = Math.floor(rng() * 3) + 1; // 1-3 detail lines
+      for (let i = 0; i < detailLines; i++) {
+        const detailType = rng() < 0.6 ? "  -" : "  ";
+        const detailOptions = [
+          "implements new feature",
+          "fixes critical bug",
+          "improves performance",
+          "refactors legacy code",
+          "adds test coverage",
+          "updates documentation",
+          "enhances user experience",
+          "resolves issue",
+        ];
+        const detail = pick(detailOptions, rng);
+        parts.push(`${detailType} ${detail}`);
+      }
+    }
+  }
+
+  parts.push("");
+
+  // ~40% chance to add a footer paragraph
+  if (rng() < 0.4) {
+    const footerOptions = [
+      "Resolves long-standing user feedback.",
+      "Improves overall system stability.",
+      "Addresses technical debt.",
+      "Implements requested feature.",
+      "Ensures backwards compatibility.",
+    ];
+    parts.push(pick(footerOptions, rng));
+    parts.push("");
+  }
+
+  // Add co-authors if requested
+  const numCoAuthors = (opts.coAuthors ?? 0) > 0 ? Math.min(opts.coAuthors!, 5) : 0;
+  if (numCoAuthors > 0) {
+    parts.push("--------");
+    parts.push("");
+
+    // Pick random co-authors without replacement
+    const coAuthorsToAdd: typeof CO_AUTHOR_POOL = [];
+    const poolCopy = [...CO_AUTHOR_POOL];
+    for (let i = 0; i < Math.min(numCoAuthors, poolCopy.length); i++) {
+      const idx = Math.floor(rng() * poolCopy.length);
+      coAuthorsToAdd.push(...poolCopy.splice(idx, 1));
+    }
+
+    for (const author of coAuthorsToAdd) {
+      parts.push(`co-authored-by: ${author.name} <${author.email}>`);
+    }
+  }
+
+  const message = parts.join("\n");
+
+  return {
+    id: synthesizeId(message, 0),
+    message,
+    author: {
+      name: "cliff-notes",
+      email: "noreply@cliff-notes.local",
+      timestamp: baseTimestamp,
+    },
+    committer: {
+      name: "cliff-notes",
+      email: "noreply@cliff-notes.local",
+      timestamp: baseTimestamp,
+    },
+  };
 }
 
 export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
@@ -165,6 +279,47 @@ export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
   const template = TEMPLATES[opts.type];
   const baseTimestamp = Math.floor(Date.now() / 1000);
 
+  // Handle squash mode: generate individual commits first, then squash them
+  if (opts.squash && count >= 2) {
+    const individualCommits: Commit[] = [];
+    for (let i = 0; i < count; i++) {
+      const subject = pick(template.subjects, rng);
+      const scope =
+        opts.scope ??
+        (template.scopes.length > 0 && rng() < 0.6 ? pick(template.scopes, rng) : undefined);
+
+      const header =
+        scope !== undefined
+          ? `${opts.type}(${scope})${breaking ? "!" : ""}: ${subject}`
+          : `${opts.type}${breaking ? "!" : ""}: ${subject}`;
+
+      const body = breaking
+        ? "BREAKING CHANGE: behavior intentionally changed; see release notes."
+        : undefined;
+
+      const message = body ? `${header}\n\n${body}` : header;
+
+      individualCommits.push({
+        id: synthesizeId(message, i),
+        message,
+        body,
+        author: {
+          name: "cliff-notes",
+          email: "noreply@cliff-notes.local",
+          timestamp: baseTimestamp - (count - i) * 60,
+        },
+        committer: {
+          name: "cliff-notes",
+          email: "noreply@cliff-notes.local",
+          timestamp: baseTimestamp - (count - i) * 60,
+        },
+      });
+    }
+
+    return [buildSquashedCommit(individualCommits, opts, rng, baseTimestamp)];
+  }
+
+  // Normal mode: generate individual commits
   const commits: Commit[] = [];
   for (let i = 0; i < count; i++) {
     const subject = pick(template.subjects, rng);

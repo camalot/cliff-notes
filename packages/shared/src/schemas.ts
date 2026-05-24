@@ -13,14 +13,15 @@ export const CONVENTIONAL_TYPES = [
   "feat",
   "fix",
   "docs",
-  "style",
-  "refactor",
-  "perf",
-  "test",
   "build",
   "ci",
   "chore",
+  "style",
   "revert",
+  "refactor",
+  "security",
+  "perf",
+  "tests",
 ] as const;
 
 export type ConventionalType = (typeof CONVENTIONAL_TYPES)[number];
@@ -62,15 +63,25 @@ export const releaseSchema = z.object({
 });
 export type Release = z.infer<typeof releaseSchema>;
 
+export const renderOptionsSchema = z.object({
+  unreleased: z.boolean().optional(),
+  bumpedVersion: z.boolean().optional(),
+  defaultVersion: z.string().min(1).max(200).optional(),
+});
+export type RenderOptions = z.infer<typeof renderOptionsSchema>;
+
 export const renderRequestSchema = z.object({
   cliffToml: z.string().min(1).max(200_000),
   releases: z.array(releaseSchema).min(1).max(500),
+  options: renderOptionsSchema.optional(),
 });
 export type RenderRequest = z.infer<typeof renderRequestSchema>;
 
 export const renderResponseSchema = z.object({
   markdown: z.string(),
   warnings: z.array(z.string()).optional(),
+  nextTag: z.string().optional(),
+  nextTagFallback: z.boolean().optional(),
 });
 export type RenderResponse = z.infer<typeof renderResponseSchema>;
 

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:git-cliff.org)"
+      "WebFetch(domain:git-cliff.org)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm test *)"
     ]
   }
 }
