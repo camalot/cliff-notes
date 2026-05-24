@@ -1,15 +1,32 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 
+vi.mock("node:fs/promises", async () => {
+  const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  return { ...actual, writeFile: vi.fn(async () => undefined) };
+});
+
 vi.mock("../lib/exec.js", async () => {
   const actual = await vi.importActual<typeof import("../lib/exec.js")>("../lib/exec.js");
   return {
     ...actual,
-    execProcess: vi.fn(async () => ({
-      stdout: "# Changelog\n\n## [unreleased]\n\n- feat: from mock\n",
-      stderr: "",
-      exitCode: 0,
-    })),
+    execProcess: vi.fn(async (cmd: string, opts?: { args?: readonly string[] }) => {
+      const args = opts?.args ?? [];
+      // git-cliff is the only subprocess whose stdout the API cares about; the
+      // repo-builder calls (git init, git fast-import) just need to succeed.
+      const isGitCliff = cmd.includes("git-cliff");
+      if (isGitCliff && args.includes("--bumped-version")) {
+        return { stdout: "v1.0.1\n", stderr: "", exitCode: 0 };
+      }
+      if (isGitCliff) {
+        return {
+          stdout: "# Changelog\n\n## [unreleased]\n\n- feat: from mock\n",
+          stderr: "",
+          exitCode: 0,
+        };
+      }
+      return { stdout: "", stderr: "", exitCode: 0 };
+    }),
   };
 });
 
@@ -53,9 +70,14 @@ describe("POST /api/render", () => {
   });
 
   it("returns 422 when git-cliff fails", async () => {
-    vi.mocked(execProcess).mockRejectedValueOnce(
-      new ExecError("git-cliff failed", "git-cliff", 2, "bad config", ""),
-    );
+    // First two calls (git init, git fast-import) succeed; the third (git-cliff
+    // render) fails, which should surface as a RenderError → 422.
+    vi.mocked(execProcess)
+      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
+      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
+      .mockRejectedValueOnce(
+        new ExecError("git-cliff failed", "git-cliff", 2, "bad config", ""),
+      );
     const res = await app.inject({
       method: "POST",
       url: "/api/render",

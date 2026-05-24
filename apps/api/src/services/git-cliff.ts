@@ -1,8 +1,6 @@
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { execProcess, ExecError } from "../lib/exec.js";
 import { withTempDir } from "../lib/temp.js";
-import { buildContext } from "./context-builder.js";
+import { buildTempRepo } from "./repo-builder.js";
 import type { AppConfig } from "../config.js";
 import type { Release, RenderOptions } from "@cliff-notes/shared";
 
@@ -101,9 +99,7 @@ function extractBumpInitialTag(toml: string): string | null {
 
 async function computeBumpedVersion(
   cliffBin: string,
-  configPath: string,
-  contextJson: string,
-  cwd: string,
+  repoDir: string,
   timeoutMs: number,
   releases: Release[],
   cliffToml: string,
@@ -116,16 +112,8 @@ async function computeBumpedVersion(
   let bumped = "";
   try {
     const result = await execProcess(cliffBin, {
-      args: [
-        "--config",
-        configPath,
-        "--from-context",
-        "-",
-        "--bumped-version",
-        "--offline",
-      ],
-      stdin: contextJson,
-      cwd,
+      args: ["--bumped-version", "--offline"],
+      cwd: repoDir,
       timeoutMs,
     });
     bumped = result.stdout.trim();
@@ -148,21 +136,16 @@ export async function renderChangelog(
   input: RenderInput,
   config: AppConfig,
 ): Promise<RenderOutput> {
-  const context = buildContext(input.releases);
-  const json = JSON.stringify(context);
   const opts = input.options ?? {};
 
   return withTempDir("cliffnotes-render", async (dir) => {
-    const configPath = join(dir, "cliff.toml");
-    await writeFile(configPath, input.cliffToml, "utf8");
+    await buildTempRepo(dir, input.releases, input.cliffToml, config);
 
     let nextTag: string | undefined;
     let nextTagFallback: boolean | undefined;
     if (opts.bumpedVersion) {
       const bumped = await computeBumpedVersion(
         config.gitCliffBin,
-        configPath,
-        json,
         dir,
         config.renderTimeoutMs,
         input.releases,
@@ -172,14 +155,13 @@ export async function renderChangelog(
       nextTagFallback = bumped.fallback;
     }
 
-    const args = ["--config", configPath, "--from-context", "-"];
+    const args: string[] = [];
     if (nextTag) args.push("--tag", nextTag);
     if (opts.unreleased) args.push("--unreleased");
 
     try {
       const result = await execProcess(config.gitCliffBin, {
         args,
-        stdin: json,
         cwd: dir,
         timeoutMs: config.renderTimeoutMs,
       });

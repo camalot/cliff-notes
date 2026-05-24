@@ -6,6 +6,7 @@ import type { ConventionalType } from "@cliff-notes/shared";
 import { Card, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { IconButton } from "./ui/IconButton";
+import { ProgressBar } from "./ui/ProgressBar";
 import { RepoLoader } from "./RepoLoader";
 import { OptionsPane, type RenderOptionsState } from "./OptionsPane";
 import { TagsPane } from "./TagsPane";
@@ -93,6 +94,8 @@ export function RightPanel(props: Props) {
           </Button>
         </div>
       </CardHeader>
+
+      <ProgressBar active={props.isRendering} label="Generating changelog…" />
 
       <div className="flex-1 min-h-0">
         {tab === "config" && <ConfigTab {...props} />}
