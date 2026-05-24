@@ -89,6 +89,7 @@ commit_parsers = [
         ],
       },
       config,
+      "test",
     );
     expect(result.markdown).toContain("🚀 Features");
     expect(result.markdown).toContain("🐛 Bug Fixes");

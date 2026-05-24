@@ -135,10 +135,11 @@ async function computeBumpedVersion(
 export async function renderChangelog(
   input: RenderInput,
   config: AppConfig,
+  projectId: string,
 ): Promise<RenderOutput> {
   const opts = input.options ?? {};
 
-  return withTempDir("cliffnotes-render", async (dir) => {
+  return withTempDir("render", projectId, async (dir) => {
     await buildTempRepo(dir, input.releases, input.cliffToml, config);
 
     let nextTag: string | undefined;

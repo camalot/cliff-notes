@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { renderRequestSchema } from "@cliff-notes/shared";
 import { renderChangelog, RenderError } from "../services/git-cliff.js";
 import { ExecError } from "../lib/exec.js";
+import { runForProject, sanitizeProjectId } from "../lib/project-queue.js";
 import type { AppConfig } from "../config.js";
 
 export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
@@ -14,8 +15,11 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
           detail: parsed.error.message,
         });
       }
+      const projectId = sanitizeProjectId(request.headers["x-project-id"]);
       try {
-        const result = await renderChangelog(parsed.data, config);
+        const result = await runForProject(projectId, () =>
+          renderChangelog(parsed.data, config, projectId),
+        );
         return reply.send({
           markdown: result.markdown,
           warnings: result.warnings,

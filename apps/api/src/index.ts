@@ -1,12 +1,30 @@
 import { loadConfig } from "./config.js";
 import { buildServer } from "./server.js";
+import { sweepOrphanedTempDirs } from "./lib/temp.js";
 
 const config = loadConfig();
 const app = await buildServer(config);
 
+// Boot-time sweep: prior crashes can leave cliffnotes-* temp dirs around.
+// We block startup briefly to clear them before serving traffic.
+try {
+  const removed = await sweepOrphanedTempDirs();
+  if (removed > 0) app.log.info({ removed }, "swept orphaned temp dirs");
+} catch (err) {
+  app.log.warn({ err }, "temp dir sweep failed");
+}
+
 const close = async (signal: string) => {
   app.log.info({ signal }, "shutting down");
-  await app.close();
+  try {
+    await app.close();
+  } finally {
+    // Best-effort cleanup of any temp dirs created during this process's
+    // lifetime that the per-request `finally` blocks couldn't reach (e.g.
+    // hard kill mid-request). The sweep is mtime-gated so it won't touch
+    // anything still in active use by another process.
+    await sweepOrphanedTempDirs(0).catch(() => undefined);
+  }
   process.exit(0);
 };
 process.on("SIGINT", () => void close("SIGINT"));

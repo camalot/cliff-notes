@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { repoInspectRequestSchema } from "@cliff-notes/shared";
 import { inspectRepo, RepoLoadError } from "../services/repo-loader.js";
+import { runForProject, sanitizeProjectId } from "../lib/project-queue.js";
 import type { AppConfig } from "../config.js";
 
 export const repoRoutes = (config: AppConfig): FastifyPluginAsync => {
@@ -14,8 +15,11 @@ export const repoRoutes = (config: AppConfig): FastifyPluginAsync => {
         });
       }
       const { url, range, maxCommits = 200 } = parsed.data;
+      const projectId = sanitizeProjectId(request.headers["x-project-id"]);
       try {
-        const result = await inspectRepo(url, range, maxCommits, config);
+        const result = await runForProject(projectId, () =>
+          inspectRepo(url, range, maxCommits, config, projectId),
+        );
         return reply.send(result);
       } catch (err) {
         if (err instanceof RepoLoadError) {

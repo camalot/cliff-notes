@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -57,11 +57,23 @@ export function RightPanel(props: Props) {
   const [tab, setTab] = useState<Tab>("config");
   const [justCopied, setJustCopied] = useState(false);
   const hasOutput = !!props.markdown;
+  const wasRendering = useRef(props.isRendering);
 
   // If output disappears (e.g. after Reset), snap back to the Config tab.
   useEffect(() => {
     if (!hasOutput && tab !== "config") setTab("config");
   }, [hasOutput, tab]);
+
+  // When a generation finishes successfully, jump to the Changelog tab so the
+  // user sees the result immediately. We watch the isRendering true→false
+  // transition rather than markdown identity so re-generating the same output
+  // still switches.
+  useEffect(() => {
+    if (wasRendering.current && !props.isRendering && props.markdown) {
+      setTab("changelog");
+    }
+    wasRendering.current = props.isRendering;
+  }, [props.isRendering, props.markdown]);
 
   const copy = async () => {
     if (!props.markdown) return;

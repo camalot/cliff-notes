@@ -19,12 +19,13 @@ export async function inspectRepo(
   range: RepoRange | undefined,
   maxCommits: number,
   config: AppConfig,
+  projectId: string,
 ): Promise<RepoInspectResponse> {
   const check = checkRepoUrl(url);
   if (!check.ok) throw new RepoLoadError(check.reason ?? "Invalid URL");
   const cloneUrl = check.normalized!;
 
-  return withTempDir("cliffnotes-clone", async (dir) => {
+  return withTempDir("clone", projectId, async (dir) => {
     const depth = Math.min(Math.max(maxCommits, 50), config.maxClonedCommits);
     try {
       await execProcess(config.gitBin, {
