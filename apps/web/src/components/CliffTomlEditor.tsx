@@ -1,8 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
-import { Card, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardHeader } from "./ui/card";
 import { IconButton } from "./ui/IconButton";
 import { toast } from "@/lib/toast";
+import { api, type TomlEntry } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import {
   CLIFF_TOML_LANGUAGE_ID,
   CLIFF_TOML_THEME_ID,
@@ -18,6 +20,52 @@ interface Props {
 export function CliffTomlEditor({ value, onChange, onReset }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [justCopied, setJustCopied] = useState(false);
+
+  // Template picker
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [tomls, setTomls] = useState<TomlEntry[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handle = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [dropdownOpen]);
+
+  const handleToggleDropdown = async () => {
+    if (!dropdownOpen && tomls.length === 0) {
+      try {
+        const list = await api.getTomls();
+        setTomls(list);
+      } catch {
+        toast.error("Failed to load templates");
+      }
+    }
+    setDropdownOpen((v) => !v);
+  };
+
+  const handleSelectConfig = async (id: string) => {
+    setDropdownOpen(false);
+    setIsLoadingTemplate(true);
+    try {
+      const toml = await api.getToml(id);
+      onChange(toml);
+      setSelectedId(id);
+      toast.success("Template loaded", { message: id });
+    } catch (err) {
+      toast.error("Failed to load template", { message: String(err) });
+    } finally {
+      setIsLoadingTemplate(false);
+    }
+  };
 
   const handleBeforeMount = (monaco: Monaco) => {
     registerCliffToml(monaco);
@@ -68,9 +116,66 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
 
   return (
     <Card className="flex flex-col min-h-0">
-      <CardHeader>
-        <CardTitle>cliff.toml</CardTitle>
-        <div className="flex items-center gap-1">
+      <CardHeader className="p-0 gap-0">
+        {/* Template picker — flush to top-left, rounded-tl-lg matching config tabs */}
+        <div className="relative self-stretch flex" ref={dropdownRef}>
+          <div className="overflow-hidden rounded-tl-lg self-stretch flex">
+            <button
+              type="button"
+              onClick={handleToggleDropdown}
+              disabled={isLoadingTemplate}
+              title="Load a template cliff.toml"
+              aria-label="Load a template cliff.toml"
+              aria-expanded={dropdownOpen}
+              aria-haspopup="listbox"
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 h-full text-xs font-bold transition-colors uppercase",
+                "bg-card text-muted-fg hover:text-fg hover:bg-muted/60",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border",
+                "disabled:opacity-50 disabled:pointer-events-none",
+              )}
+            >
+              <img src="/icons/toml.svg" alt="" aria-hidden="true" className="w-4 h-4" />
+              <span>cliff.toml</span>
+              <i className={`bi bi-chevron-${dropdownOpen ? "up" : "down"} text-[10px]`} aria-hidden="true" />
+            </button>
+          </div>
+
+          {dropdownOpen && (
+            <div
+              role="listbox"
+              className="absolute left-0 top-full z-50 mt-px bg-card border border-border rounded-md shadow-md min-w-max py-1"
+            >
+              {tomls.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-fg">Loading…</div>
+              ) : (
+                tomls.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    role="option"
+                    aria-selected={entry.id === selectedId}
+                    onClick={() => handleSelectConfig(entry.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-xs text-fg hover:bg-muted transition-colors flex flex-col gap-0.5",
+                      entry.id === selectedId && "bg-muted",
+                    )}
+                  >
+                    <span className="font-bold uppercase">{entry.label}</span>
+                    {entry.description && (
+                      <span className="text-muted-fg font-normal normal-case">{entry.description}</span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-1 py-2 pr-3">
           <input
             ref={fileInputRef}
             type="file"

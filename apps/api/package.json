@@ -5,9 +5,81 @@
   "type": "module",
   "main": "./dist/index.js",
   "cliff-notes": {
-    "configurations": {
+    "tomls": {
       "default.toml": {
+        "sort": -1,
+        "label": "[Default]",
         "description": "The default configuration for a cliff-notes playground."
+      },
+      "cliff-notes.toml": {
+        "sort": 0,
+        "label": "Cliff Notes",
+        "description": "The configuration used directly by cliff-notes to generate changelogs."
+      },
+      "git-cliff-default.toml": {
+        "sort": 1,
+        "label": "git-cliff Default",
+        "description": "The default configuration defined by git-cliff itself, which can be used as a base for custom configurations."
+      },
+      "git-cliff.toml": {
+        "sort": 2,
+        "label": "git-cliff Official",
+        "description": "The configuration used directly by git-cliff to generate their official changelogs."
+      },
+      "github.toml": {
+        "sort": 6,
+        "label": "GitHub",
+        "description": "A configuration tailored for GitHub repositories, with sensible defaults for typical GitHub projects."
+      },
+      "azure-devops-keepachangelog.toml": {
+        "sort": 3,
+        "label": "Azure DevOps (Keep a Changelog)",
+        "description": "A configuration designed for Azure DevOps repositories, following the 'Keep a Changelog' format."
+      },
+      "cocogitto.toml": {
+        "sort": 4,
+        "label": "Cocogitto",
+        "description": "A configuration based on the recommended settings for Cocogitto, a popular changelog generator."
+      },
+      "detailed.toml": {
+        "sort": 5,
+        "label": "Detailed",
+        "description": "A configuration that includes detailed commit information, such as commit hashes, authors, and dates."
+      },
+      "github-keepachangelog.toml": {
+        "sort": 7,
+        "label": "GitHub (Keep a Changelog)",
+        "description": "A configuration that combines GitHub-specific formatting with the 'Keep a Changelog' style."
+      },
+      "keepachangelog.toml": {
+        "sort": 8,
+        "label": "Keep a Changelog",
+        "description": "A configuration that strictly follows the 'Keep a Changelog' format, suitable for projects that want to adhere to this popular changelog standard."
+      },
+      "minimal.toml": {
+        "sort": 9,
+        "label": "Minimal",
+        "description": "A configuration that generates a minimalistic changelog, focusing on just the commit messages without additional metadata."
+      },
+      "scoped.toml": {
+        "sort": 10,
+        "label": "Scoped",
+        "description": "A configuration that organizes commits into scopes based on their types or other criteria, providing a structured changelog."
+      },
+      "scopesorted.toml": {
+        "sort": 11,
+        "label": "Scope Sorted",
+        "description": "A configuration that sorts commits within their scopes, making it easier to read and understand the changes in each section."
+      },
+      "statistics.toml": {
+        "sort": 12,
+        "label": "Statistics",
+        "description": "A configuration that includes statistical information about the commits, such as the number of commits per type or scope."
+      },
+      "unconventional.toml": {
+        "sort": 13,
+        "label": "Unconventional",
+        "description": "A configuration that generates a changelog without strictly following the Conventional Commits specification, allowing for more flexibility in commit message formats."
       }
     }
   },

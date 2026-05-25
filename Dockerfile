@@ -35,6 +35,7 @@ ENV NODE_ENV=production \
     PORT=3001 \
     HOST=0.0.0.0 \
     STATIC_DIR=/app/static \
+    CONFIGS_DIR=/app/.cliff-configs \
     GIT_CLIFF_BIN=/usr/local/bin/git-cliff \
     GIT_BIN=/usr/bin/git
 WORKDIR /app
@@ -71,6 +72,7 @@ COPY --from=build /app/packages/shared/package.json ./packages/shared/package.js
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/web/dist ./static
+COPY .cliff-configs ./.cliff-configs
 
 # Run as a non-root user
 RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 cliffnotes && \

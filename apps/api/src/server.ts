@@ -5,6 +5,7 @@ import { healthRoutes } from "./routes/health.js";
 import { renderRoutes } from "./routes/render.js";
 import { repoRoutes } from "./routes/repo.js";
 import { randomRoutes } from "./routes/random.js";
+import { tomlsRoutes } from "./routes/tomls.js";
 import type { AppConfig } from "./config.js";
 
 export interface BuildOptions {
@@ -31,6 +32,7 @@ export async function buildServer(
       await api.register(renderRoutes(config));
       await api.register(repoRoutes(config));
       await api.register(randomRoutes);
+      await api.register(tomlsRoutes(config));
     },
     { prefix: "/api" },
   );
@@ -47,10 +49,6 @@ export async function buildServer(
       }
       return reply.sendFile("index.html");
     });
-  }
-
-  if (config.configsDir) {
-    
   }
 
   return app;

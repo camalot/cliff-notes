@@ -18,6 +18,14 @@ export default function App() {
     }
   }, []);
 
+  // Load the default cliff.toml from the API when no persisted config is present.
+  useEffect(() => {
+    if (!s.cliffToml) {
+      void s.loadDefaultConfig();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLoad = (state: PersistedState) => {
     s.replaceAll({
       commits: state.commits as UiCommit[],

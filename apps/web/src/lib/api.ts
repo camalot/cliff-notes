@@ -12,6 +12,13 @@ import { getProjectId } from "./project-id";
 const API_BASE = "/api";
 export const PROJECT_ID_HEADER = "X-Project-Id";
 
+export interface TomlEntry {
+  id: string;
+  label: string;
+  sort?: number;
+  description?: string;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -47,10 +54,42 @@ async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
   return (await res.json()) as TRes;
 }
 
+async function get<TRes>(path: string): Promise<TRes> {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) {
+    let message = `Request failed: ${res.status}`;
+    try {
+      const data = (await res.json()) as ErrorResponse;
+      message = data.error ?? message;
+    } catch {
+      // body wasn't JSON
+    }
+    throw new ApiError(message, res.status);
+  }
+  return (await res.json()) as TRes;
+}
+
+async function getText(path: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) {
+    let message = `Request failed: ${res.status}`;
+    try {
+      const data = (await res.json()) as ErrorResponse;
+      message = data.error ?? message;
+    } catch {
+      // body wasn't JSON
+    }
+    throw new ApiError(message, res.status);
+  }
+  return res.text();
+}
+
 export const api = {
   render: (body: RenderRequest) => post<RenderRequest, RenderResponse>("/render", body),
   inspectRepo: (body: RepoInspectRequest) =>
     post<RepoInspectRequest, RepoInspectResponse>("/repo/inspect", body),
   randomCommits: (body: RandomCommitRequest) =>
     post<RandomCommitRequest, RandomCommitResponse>("/commits/random", body),
+  getTomls: () => get<TomlEntry[]>("/tomls"),
+  getToml: (id: string) => getText(`/tomls/${encodeURIComponent(id)}`),
 };

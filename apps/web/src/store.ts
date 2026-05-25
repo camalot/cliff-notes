@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DEFAULT_CLIFF_TOML, generateRandomCommits, type ConventionalType } from "@cliff-notes/shared";
+import { generateRandomCommits, type ConventionalType } from "@cliff-notes/shared";
 import type { AppOutput, UiCommit, UiTag } from "./types";
 import { decodeFromUrlHash, loadFromLocalStorage, saveToLocalStorage } from "./lib/storage";
 import { stateToReleases } from "./lib/state-to-releases";
@@ -63,7 +63,8 @@ interface AppState {
   clearTags: () => void;
 
   replaceAll: (input: { commits: UiCommit[]; tags: UiTag[]; cliffToml?: string }) => void;
-  resetToDefaults: () => void;
+  resetToDefaults: () => Promise<void>;
+  loadDefaultConfig: () => Promise<void>;
 
   render: () => Promise<void>;
   loadFromRepo: (
@@ -84,14 +85,14 @@ function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "opti
   const p = persisted();
   if (p) {
     return {
-      cliffToml: typeof p.cliffToml === "string" ? p.cliffToml : DEFAULT_CLIFF_TOML,
+      cliffToml: typeof p.cliffToml === "string" ? p.cliffToml : "",
       commits: Array.isArray(p.commits) ? (p.commits as UiCommit[]) : SAMPLE_COMMITS,
       tags: Array.isArray(p.tags) ? (p.tags as UiTag[]) : SAMPLE_TAGS,
       options: normalizeOptions(p.options),
     };
   }
   return {
-    cliffToml: DEFAULT_CLIFF_TOML,
+    cliffToml: "",
     commits: SAMPLE_COMMITS,
     tags: SAMPLE_TAGS,
     options: { ...DEFAULT_OPTIONS },
@@ -152,14 +153,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       tags: input.tags,
       cliffToml: input.cliffToml ?? s.cliffToml,
     })),
-  resetToDefaults: () =>
+  loadDefaultConfig: async () => {
+    try {
+      const toml = await api.getToml("default.toml");
+      set({ cliffToml: toml });
+    } catch (err) {
+      toast.error("Failed to load default config", { message: String(err) });
+    }
+  },
+  resetToDefaults: async () => {
     set({
-      cliffToml: DEFAULT_CLIFF_TOML,
       commits: SAMPLE_COMMITS,
       tags: SAMPLE_TAGS,
       options: { ...DEFAULT_OPTIONS },
       output: null,
-    }),
+    });
+    try {
+      const toml = await api.getToml("default.toml");
+      set({ cliffToml: toml });
+    } catch (err) {
+      toast.error("Failed to load default config", { message: String(err) });
+    }
+  },
 
   render: async () => {
     const { cliffToml, commits, tags, options } = get();
