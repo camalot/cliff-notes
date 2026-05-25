@@ -14,10 +14,7 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}"],
     // Node 25 exposes an experimental `localStorage` global that shadows the
     // one jsdom provides. Disable it so window.localStorage works in tests.
-    poolOptions: {
-      threads: { execArgv: ["--no-webstorage"] },
-      forks: { execArgv: ["--no-webstorage"] },
-    },
+    execArgv: ["--no-webstorage"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
