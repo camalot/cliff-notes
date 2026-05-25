@@ -66,5 +66,7 @@ docker run --rm -p 3001:3001 cliff-notes
 | POST   | `/api/repo/inspect`   | `{ url, range? }` → tags, commits, and (if present) `cliff.toml`.       |
 | POST   | `/api/commits/random` | `{ type, breaking?, count? }` → synthesized conventional commits.       |
 | GET    | `/api/health`         | Liveness probe.                                                         |
+| GET    | `/api/healthz`        | Liveness probe.                                                         |
+| GET    | `/api/ready`          | Readiness probe.                                                        |
 
 Allowed clone hosts: `github.com`, `gitlab.com`, `bitbucket.org`, `codeberg.org`.

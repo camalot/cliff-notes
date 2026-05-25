@@ -89,6 +89,7 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 autoload -Uz compinit && compinit
 antigen apply
 # zsh-syntax-highlighting styles
+typeset -A ZSH_HIGHLIGHT_STYLES
 ZSH_HIGHLIGHT_STYLES+=(
   [command]='fg=green,bold'
   [builtin]='fg=green,bold'
