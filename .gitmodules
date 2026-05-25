@@ -1,0 +1,3 @@
+[submodule "submodules/git-cliff"]
+	path = submodules/git-cliff
+	url = https://github.com/orhun/git-cliff

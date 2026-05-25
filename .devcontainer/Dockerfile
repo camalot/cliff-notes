@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/python:3
 
 ARG USERNAME=vscode
-ARG HELM_MAJOR_VERSION=3
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -43,32 +42,6 @@ RUN apt-get update \
   ln -s /usr/bin/batcat /usr/local/bin/bat \
   && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
   && chmod 0440 /etc/sudoers.d/${USERNAME}
-
-# install teleport client tools
-RUN TELEPORT_VERSION=$(curl -s "https://api.github.com/repos/gravitational/teleport/releases/latest" | jq -r ".tag_name") \
-  && cd /tmp \
-  && curl -fsSL -O "https://cdn.teleport.dev/teleport-${TELEPORT_VERSION}-linux-amd64-bin.tar.gz" \
-  && tar -xzf "teleport-${TELEPORT_VERSION}-linux-amd64-bin.tar.gz" \
-  && cd teleport \
-  && ./install \
-  && rm -rf /tmp/teleport*
-
-# install kubectl with kubernetes repository
-RUN mkdir -p /etc/apt/keyrings \
-  && curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes.asc \
-  && echo "deb [signed-by=/etc/apt/keyrings/kubernetes.asc] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends kubectl \
-  && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/*
-
-# install tekton cli
-RUN TEKTON_VERSION=$(curl -s "https://api.github.com/repos/tektoncd/cli/releases/latest" | jq -r ".tag_name" | sed 's/v//') \
-  && cd /tmp \
-  && curl -fsSL -O "https://github.com/tektoncd/cli/releases/download/v${TEKTON_VERSION}/tkn_${TEKTON_VERSION}_Linux_x86_64.tar.gz" \
-  && tar -xzf "tkn_${TEKTON_VERSION}_Linux_x86_64.tar.gz" -C /usr/local/bin \
-  && rm -f "tkn_${TEKTON_VERSION}_Linux_x86_64.tar.gz" \
-  && curl -fsSL "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-${HELM_MAJOR_VERSION}" | bash
 
 # install task (https://taskfile.dev/), a modern alternative to Make written in Go
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | /bin/bash - \
@@ -115,7 +88,6 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
 RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH" \
   && pnpm self-update
-
 
 # Reset SHELL to prevent pipefail from breaking devcontainer features installation
 SHELL ["/bin/sh", "-c"]

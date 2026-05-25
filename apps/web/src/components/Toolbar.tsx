@@ -37,16 +37,26 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
 
   return (
     <>
-      <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card">
+      <header className="flex items-center justify-between gap-3 px-4 border-b border-border bg-card" style={{ height: 52 }}>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold">
+          <img src="/images/cliff-notes.svg" alt="cliff-notes logo" width={48} height={48} />
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold leading-tight">
               <span className="text-accent">cliff</span>-notes
             </span>
-            <span className="text-xs text-muted-fg hidden sm:inline">
-              a playground for git-cliff
+            <span className="text-xs text-muted-fg hidden sm:inline leading-tight">
+              a playground for{" "}
+              <a
+                href="https://git-cliff.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent"
+              >
+                git-cliff
+              </a>
             </span>
           </div>
+          <span className="w-px self-stretch bg-border" aria-hidden="true" />
           <div className="flex items-center gap-0.5">
             <a
               href={siteConfig.repositoryUrl}
@@ -102,7 +112,7 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
           />
           <IconButton icon="download" label="Save Playground" onClick={handleSave} />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
-          <IconButton icon="share-fill" label="Share URL" onClick={() => setShowShareModal(true)} />
+          <IconButton icon="share-fill" label="Share Cliff Notes" onClick={() => setShowShareModal(true)} />
         </div>
       </header>
 

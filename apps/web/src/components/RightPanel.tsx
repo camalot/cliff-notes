@@ -22,6 +22,7 @@ interface Props {
   // Generate
   isRendering: boolean;
   onGenerate: () => void;
+  onResetConfig?: () => void;
 
   // Output
   markdown: string | null;
@@ -98,9 +99,18 @@ export function RightPanel(props: Props) {
 
   return (
     <Card className="flex flex-col min-h-0">
-      <CardHeader>
+      <CardHeader className="p-0 gap-0">
         <Tabs tab={tab} setTab={setTab} hasOutput={hasOutput} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 py-2 pr-3">
+          <Button
+            size="sm"
+            onClick={props.onGenerate}
+            disabled={props.isRendering}
+          >
+            <i className="bi bi-cpu" aria-hidden="true" />
+            {props.isRendering ? "Generating…" : "Generate"}
+          </Button>
+          <span className="w-px h-5 bg-border" aria-hidden="true" />
           {tab !== "config" && (
             <IconButton
               icon={justCopied ? "check" : "copy"}
@@ -109,10 +119,11 @@ export function RightPanel(props: Props) {
               disabled={!props.markdown}
             />
           )}
-          <Button size="sm" onClick={props.onGenerate} disabled={props.isRendering}>
-            <i className="bi bi-cpu" aria-hidden="true" />
-            {props.isRendering ? "Generating…" : "Generate"}
-          </Button>
+          <IconButton
+            icon="arrow-clockwise"
+            label="Reset Config"
+            onClick={props.onResetConfig ?? (() => {})}
+          />
         </div>
       </CardHeader>
 
@@ -136,7 +147,7 @@ function Tabs({
   setTab: (t: Tab) => void;
   hasOutput: boolean;
 }) {
-  const item = (id: Tab, label: string, icon: string, disabled = false) => (
+  const item = (id: Tab, label: string, icon: string, disabled = false, extraClass = "") => (
     <button
       key={id}
       type="button"
@@ -145,12 +156,13 @@ function Tabs({
       title={label}
       aria-label={label}
       className={cn(
-        "inline-flex items-center gap-1.5 px-3 py-1 text-xs transition-colors uppercase",
+        "flex-1 inline-flex items-center justify-center gap-1.5 px-3 h-full text-xs font-bold transition-colors uppercase",
         tab === id
           ? "bg-accent text-accent-fg"
           : disabled
             ? "bg-card text-muted-fg/50 cursor-not-allowed"
             : "bg-card text-muted-fg hover:text-fg",
+        extraClass,
       )}
     >
       <i className={`bi bi-${icon}`} aria-hidden="true" />
@@ -159,10 +171,10 @@ function Tabs({
   );
 
   return (
-    <div className="flex rounded-md border border-border overflow-hidden">
+    <div className="flex self-stretch overflow-hidden rounded-tl-lg">
       {item("config", "Config", "gear-fill")}
       {item("changelog", "Changelog", "eye-fill", !hasOutput)}
-      {item("raw", "Raw", "markdown", !hasOutput)}
+      {item("raw", "Markdown", "markdown", !hasOutput, "border-r border-border")}
     </div>
   );
 }

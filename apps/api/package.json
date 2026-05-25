@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
+  "cliff-notes": {
+    "configurations": {
+      "default.toml": {
+        "description": "The default configuration for a cliff-notes playground."
+      }
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts",

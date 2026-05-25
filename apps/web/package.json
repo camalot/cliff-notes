@@ -18,6 +18,7 @@
       "url": "https://www.buymeacoffee.com/darthminos"
     }
   },
+
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "dev": "vite --host",

@@ -116,7 +116,7 @@
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.aws,target=/home/vscode/.aws,type=bind,consistency=cached",
     // Named volume so shell history (zsh + bash) persists across container rebuilds.
-    "source=aqueduct-zsh-history,target=/home/vscode/.zsh_history,type=volume",
+    "source=cliffnotes-zsh-history,target=/home/vscode/.zsh_history,type=volume",
     "source=claude-code-persist,target=/home/vscode/.claude-persist,type=volume"
     // "source=aqueduct-claude,target=/home/vscode/.claude,type=volume",
     // "source=aqueduct-copilot,target=/home/vscode/.copilot,type=volume"

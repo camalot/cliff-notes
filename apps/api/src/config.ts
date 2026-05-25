@@ -2,7 +2,8 @@ export interface AppConfig {
   port: number;
   host: string;
   /** Absolute path to the built SPA. When set, the API serves it at /. */
-  staticDir: string | undefined;
+  staticDir?: string;
+  configsDir?: string;
   gitCliffBin: string;
   gitBin: string;
   cloneTimeoutMs: number;

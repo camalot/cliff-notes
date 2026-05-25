@@ -49,5 +49,9 @@ export async function buildServer(
     });
   }
 
+  if (config.configsDir) {
+    
+  }
+
   return app;
 }

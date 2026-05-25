@@ -31,7 +31,7 @@ body {
   --fg: 226 232 240;       /* slate-200 */
   --muted: 30 41 59;       /* slate-800 */
   --muted-fg: 148 163 184; /* slate-400 */
-  --accent: 56 189 248;    /* sky-400 */
+  --accent: 42 142 186;    /* sky-400 @75% */
   --accent-fg: 8 47 73;    /* sky-950 */
   --border: 51 65 85;      /* slate-700 */
   --card: 15 23 42;        /* slate-950 */
