@@ -33,7 +33,10 @@ interface Props {
 
   // Config — repo loader
   isLoadingRepo: boolean;
-  onLoadRepo: (url: string, range?: { from?: string; to?: string }) => void;
+  onLoadRepo: (
+    url: string,
+    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string },
+  ) => void;
 
   // Config — tags
   tags: UiTag[];
@@ -45,7 +48,13 @@ interface Props {
   // Config — commits
   commits: UiCommit[];
   onAddCommit: (message: string) => void;
-  onAddRandomCommits: (type: ConventionalType, breaking: boolean, count: number, squash?: boolean, coAuthors?: number) => void;
+  onAddRandomCommits: (
+    type: ConventionalType | undefined,
+    breaking: boolean,
+    count: number,
+    squash?: boolean,
+    coAuthors?: number,
+  ) => void;
   onUpdateCommit: (idx: number, patch: Partial<UiCommit>) => void;
   onRemoveCommit: (idx: number) => void;
   onMoveCommit: (from: number, to: number) => void;
@@ -161,7 +170,7 @@ function Tabs({
 function ConfigTab(props: Props) {
   return (
     <div className="h-full overflow-auto">
-      <div className="p-3 space-y-4 divide-y divide-border [&>section:not(:first-child)]:pt-4">
+      <div className="p-3 space-y-4 divide-y divide-border [&>section:not(:first-child)]:pt-4 [&>section:not(:last-child)]:pb-4">
         <OptionsPane options={props.options} onChange={props.onChangeOptions} />
         <RepoLoader isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
         <TagsPane

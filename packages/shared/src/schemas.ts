@@ -90,10 +90,22 @@ export const repoRangeSchema = z.object({
 });
 export type RepoRange = z.infer<typeof repoRangeSchema>;
 
+/**
+ * Caps applied to anything fetched from a remote repo so the load stays fast
+ * even on huge repositories with deep history or many tags. Surfaced in the
+ * UI as help text so users know what to expect.
+ */
+export const MAX_REPO_COMMITS = 100;
+export const MAX_REPO_TAGS = 25;
+
 export const repoInspectRequestSchema = z.object({
   url: z.string().url().max(2048),
   range: repoRangeSchema.optional(),
-  maxCommits: z.number().int().positive().max(2000).optional(),
+  maxCommits: z.number().int().positive().max(MAX_REPO_COMMITS).optional(),
+  /** Branch, tag, or ref to read from. Empty/omitted means the remote's default branch. */
+  branch: z.string().min(1).max(200).optional(),
+  /** Repo-relative path to the cliff.toml. Defaults to "cliff.toml". */
+  cliffTomlPath: z.string().min(1).max(200).optional(),
 });
 export type RepoInspectRequest = z.infer<typeof repoInspectRequestSchema>;
 

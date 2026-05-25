@@ -45,7 +45,13 @@ interface AppState {
   setCliffToml: (v: string) => void;
   setOptions: (patch: Partial<RenderOptionsState>) => void;
   addCommit: (c: UiCommit) => void;
-  insertRandomCommits: (type: ConventionalType, breaking: boolean, count: number, squash?: boolean, coAuthors?: number) => void;
+  insertRandomCommits: (
+    type: ConventionalType | undefined,
+    breaking: boolean,
+    count: number,
+    squash?: boolean,
+    coAuthors?: number,
+  ) => void;
   updateCommit: (idx: number, patch: Partial<UiCommit>) => void;
   removeCommit: (idx: number) => void;
   moveCommit: (from: number, to: number) => void;
@@ -60,7 +66,10 @@ interface AppState {
   resetToDefaults: () => void;
 
   render: () => Promise<void>;
-  loadFromRepo: (url: string, range?: { from?: string; to?: string }) => Promise<void>;
+  loadFromRepo: (
+    url: string,
+    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string },
+  ) => Promise<void>;
 }
 
 function persisted() {
@@ -183,10 +192,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  loadFromRepo: async (url, range) => {
+  loadFromRepo: async (url, opts) => {
     set({ isLoadingRepo: true });
     try {
-      const result = await api.inspectRepo({ url, range });
+      const result = await api.inspectRepo({
+        url,
+        range: opts?.range,
+        branch: opts?.branch,
+        cliffTomlPath: opts?.cliffTomlPath,
+      });
       // commits come newest-first from git log; flip to oldest-first for our model.
       const commits: UiCommit[] = [...result.commits].reverse();
       const idToIndex = new Map<string, number>();

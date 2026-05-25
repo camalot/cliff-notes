@@ -1,5 +1,5 @@
 import { Faker, en } from "@faker-js/faker";
-import type { Commit, ConventionalType } from "./schemas.js";
+import { CONVENTIONAL_TYPES, type Commit, type ConventionalType } from "./schemas.js";
 
 const SCOPES: Record<ConventionalType, string[]> = {
   feat: ["api", "ui", "auth", "parser", "config", "cli", "render", "search"],
@@ -19,7 +19,8 @@ const SCOPES: Record<ConventionalType, string[]> = {
 let rngSeed = 0;
 
 export interface RandomCommitOptions {
-  type: ConventionalType;
+  /** Conventional type; omit (or pass undefined) to randomize per-commit. */
+  type?: ConventionalType;
   breaking?: boolean;
   scope?: string;
   count?: number;
@@ -31,9 +32,13 @@ export interface RandomCommitOptions {
   coAuthors?: number;
 }
 
-function makeScope(opts: RandomCommitOptions, faker: Faker): string | undefined {
+function pickType(opts: RandomCommitOptions, faker: Faker): ConventionalType {
+  return opts.type ?? faker.helpers.arrayElement(CONVENTIONAL_TYPES);
+}
+
+function makeScope(type: ConventionalType, opts: RandomCommitOptions, faker: Faker): string | undefined {
   if (opts.scope !== undefined) return opts.scope;
-  const scopes = SCOPES[opts.type];
+  const scopes = SCOPES[type];
   if (scopes.length > 0 && faker.number.float() < 0.6) {
     return faker.helpers.arrayElement(scopes);
   }
@@ -115,8 +120,9 @@ export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
   if (opts.squash && count >= 2) {
     const individualCommits: Commit[] = [];
     for (let i = 0; i < count; i++) {
-      const scope = makeScope(opts, faker);
-      const header = buildHeader(opts.type, scope, breaking, faker);
+      const type = pickType(opts, faker);
+      const scope = makeScope(type, opts, faker);
+      const header = buildHeader(type, scope, breaking, faker);
       const body = breaking ? "BREAKING CHANGE: behavior intentionally changed; see release notes." : undefined;
       const message = body ? `${header}\n\n${body}` : header;
       individualCommits.push({
@@ -140,8 +146,9 @@ export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
 
   const commits: Commit[] = [];
   for (let i = 0; i < count; i++) {
-    const scope = makeScope(opts, faker);
-    const header = buildHeader(opts.type, scope, breaking, faker);
+    const type = pickType(opts, faker);
+    const scope = makeScope(type, opts, faker);
+    const header = buildHeader(type, scope, breaking, faker);
     const body = breaking ? "BREAKING CHANGE: behavior intentionally changed; see release notes." : undefined;
     const message = body ? `${header}\n\n${body}` : header;
     commits.push({

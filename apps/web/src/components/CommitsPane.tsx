@@ -18,7 +18,13 @@ interface Props {
   commits: UiCommit[];
   tags: UiTag[];
   onAdd: (message: string) => void;
-  onAddRandom: (type: ConventionalType, breaking: boolean, count: number, squash?: boolean, coAuthors?: number) => void;
+  onAddRandom: (
+    type: ConventionalType | undefined,
+    breaking: boolean,
+    count: number,
+    squash?: boolean,
+    coAuthors?: number,
+  ) => void;
   onUpdate: (idx: number, patch: Partial<UiCommit>) => void;
   onRemove: (idx: number) => void;
   onMove: (from: number, to: number) => void;
@@ -144,9 +150,8 @@ export function CommitsPane({
             variant="secondary"
             className="ml-auto"
             onClick={() => {
-              const resolved: ConventionalType = type === "random"
-                ? CONVENTIONAL_TYPES[Math.floor(Math.random() * CONVENTIONAL_TYPES.length)]!
-                : type;
+              const resolved: ConventionalType | undefined =
+                type === "random" ? undefined : type;
               onAddRandom(resolved, breaking, effectiveCount, squash, squash ? coAuthors : 0);
             }}
           >
@@ -196,7 +201,11 @@ export function CommitsPane({
         {commits.length === 0 && (
           <li className="text-xs text-muted-fg italic">No commits yet — add one above.</li>
         )}
-        {commits.map((c, i) => {
+        {commits.map((_c, offset) => {
+          // Render newest (highest storage index) first while keeping `i` as the storage index
+          // so handler arguments and tag.afterIndex semantics remain unchanged.
+          const i = commits.length - 1 - offset;
+          const c = commits[i]!;
           const tagsHere = tags.filter((t) => t.afterIndex === i);
           const breaking = isBreakingCommit(c.message);
           const numLines = c.message.split('\n').length;
@@ -227,8 +236,8 @@ export function CommitsPane({
                   rows={Math.max(1, Math.min(numLines, 8))}
                 />
                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 pt-1">
-                  <IconButton icon="arrow-up" label="Move up" onClick={() => onMove(i, i - 1)} disabled={i === 0} />
-                  <IconButton icon="arrow-down" label="Move down" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} />
+                  <IconButton icon="arrow-up" label="Move up" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} />
+                  <IconButton icon="arrow-down" label="Move down" onClick={() => onMove(i, i - 1)} disabled={i === 0} />
                   <IconButton icon="tag" label="Tag a release after this commit" onClick={() => onTagHere(i)} />
                   <IconButton
                     icon="trash3-fill"

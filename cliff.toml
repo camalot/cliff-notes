@@ -108,23 +108,26 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-    { message = "^feat", group = "<!-- 0 -->🚀 Features" },
-    { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+    { message = "^(\\w+(\\(.*\\))?!:", group = "<!-- 0 -->⚠️ Breaking Changes" },
+    { message = "^feat", group = "<!-- 1 -->🚀 Features" },
+    { message = "^fix", group = "<!-- 2 -->🐛 Bug Fixes" },
     { message = "^docs?", group = "<!-- 3 -->📚 Documentation" },
     { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
-    { message = "^ref(actor)?", group = "<!-- 2 -->🚜 Refactor" },
-    { message = "^style", group = "<!-- 5 -->🎨 Styling" },
-    { message = "^tests?", group = "<!-- 6 -->🧪 Testing" },
+    { message = "^ref(actor)?", group = "<!-- 5 -->🚜 Refactor" },
+    { message = "^style", group = "<!-- 6 -->🎨 Styling" },
+    { message = "^tests?", group = "<!-- 7 -->🧪 Testing" },
     { message = "^chore\\(release\\):", skip = true },
     { message = "^chore\\(deps.*\\)", skip = true },
+    { message = "^build\\(deps.*\\)", skip = true }, # PRs from dependabot have these for commit/pr title.
     { message = "^chore\\(pr\\)", skip = true },
     { message = "^chore\\(pull\\)", skip = true },
     { message = "^chore\\(changelog\\)", skip = true },
     { message = "^chore\\(ignore\\)", skip = true },
-    { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
-    { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
-    { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
-    { message = "^[cC]o-authored-by:", group = "<!-- 10 -->👥 Contributors" },
+    { message = "^chore|^ci", group = "<!-- 8 -->⚙️ Miscellaneous Tasks" },
+    { body    = ".*security", group = "<!-- 9 -->🛡️ Security" },
+    { message = "^revert", group = "<!-- 10 -->◀️ Revert" },
+    { message = "^[cC]o-authored-by:", group = "<!-- 999999 -->👥 Contributors" },
+    { body    = ".*[cC]o-authored-by:", group = "<!-- 999999 -->👥 Contributors" },
     # No catch-all `{ message = ".*", skip = true }` here: it matches the
     # non-conventional subject of GitHub PR squash-merge commits before
     # `split_commits` runs, which prevents the body lines from being parsed
@@ -148,7 +151,7 @@ topo_order = false
 topo_order_commits = true
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
-sort_commits = "oldest"
+sort_commits = "newest"
 # Process submodules commits
 recurse_submodules = false
 
