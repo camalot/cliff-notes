@@ -37,7 +37,7 @@ export function CommitsPane({
   commits, tags, onAdd, onAddRandom, onUpdate, onRemove, onMove, onClear, onTagHere,
 }: Props) {
   const [manual, setManual] = useState("");
-  const [type, setType] = useState<ConventionalType>("feat");
+  const [type, setType] = useState<ConventionalType | "random">("random");
   const [breaking, setBreaking] = useState(false);
   const [count, setCount] = useState(1);
   const [squash, setSquash] = useState(false);
@@ -90,10 +90,11 @@ export function CommitsPane({
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs p-2 border border-border rounded-md bg-card/50">
           <Select
             value={type}
-            onChange={(e) => setType(e.target.value as ConventionalType)}
+            onChange={(e) => setType(e.target.value as ConventionalType | "random")}
             className="text-xs"
             aria-label="type"
           >
+            <option value="random">random</option>
             {CONVENTIONAL_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
@@ -142,10 +143,15 @@ export function CommitsPane({
             size="sm"
             variant="secondary"
             className="ml-auto"
-            onClick={() => onAddRandom(type, breaking, effectiveCount, squash, squash ? coAuthors : 0)}
+            onClick={() => {
+              const resolved: ConventionalType = type === "random"
+                ? CONVENTIONAL_TYPES[Math.floor(Math.random() * CONVENTIONAL_TYPES.length)]!
+                : type;
+              onAddRandom(resolved, breaking, effectiveCount, squash, squash ? coAuthors : 0);
+            }}
           >
             <i className="bi bi-arrow-bar-left" aria-hidden="true" />
-            Insert {breaking ? `${type}!` : type} × {effectiveCount}
+            Insert {type === "random" ? "random" : breaking ? `${type}!` : type} × {effectiveCount}
             {squash && " (squash)"}
           </Button>
         </div>
