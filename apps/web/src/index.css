@@ -1,6 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* 1. FORCE TAILWIND V4 TO USE CLASS-BASED TOGGLING */
+/* This MUST go right below the tailwind import statement */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 2. THEME DEFINITIONS MAPPED FROM THE VARIABLES */
+@theme inline {
+  --color-bg: rgb(var(--bg));
+  --color-fg: rgb(var(--fg));
+  --color-muted: rgb(var(--muted));
+  --color-muted-fg: rgb(var(--muted-fg));
+  --color-accent: rgb(var(--accent));
+  --color-accent-fg: rgb(var(--accent-fg));
+  --color-border: rgb(var(--border));
+  --color-card: rgb(var(--card));
+  --color-card-fg: rgb(var(--card-fg));
+  --color-danger: rgb(var(--danger));
+
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* 3. OPTIONAL: AUTOMATIC native elements (like scrollbars/inputs) */
+body {
+  @apply scheme-light dark:scheme-dark;
+}
+
 
 :root {
   --bg: 17 24 39;          /* slate-900 */
@@ -111,7 +135,7 @@ body,
 }
 
 /* Indeterminate progress bar — sweeps a translucent chip back and forth
-   across the track to indicate "working" when actual progress is unknown. */
+   across the track to indicate ;working' when actual progress is unknown. */
 @keyframes progress-sweep {
   0%   { left: -40%; right: 100%; }
   60%  { left: 100%; right: -40%; }
@@ -123,7 +147,7 @@ body,
   background: rgb(var(--muted));
 }
 .progress-indeterminate::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   bottom: 0;

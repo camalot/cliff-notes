@@ -6,10 +6,11 @@ import { cliffTomlContainsSecret } from "@/lib/monaco-cliff-toml";
 interface Props {
   url: string;
   cliffToml: string;
+  onSave: () => void;
   onClose: () => void;
 }
 
-export function ShareModal({ url, cliffToml, onClose }: Props) {
+export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const hasSecret = useMemo(() => cliffTomlContainsSecret(cliffToml), [cliffToml]);
 
@@ -85,6 +86,10 @@ export function ShareModal({ url, cliffToml, onClose }: Props) {
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onSave}>
+            <i className="bi bi-download" aria-hidden="true" />
+            Save
           </Button>
           <Button
             variant={hasSecret ? "danger" : "primary"}

@@ -4,6 +4,8 @@ import { Toolbar } from "./components/Toolbar";
 import { CliffTomlEditor } from "./components/CliffTomlEditor";
 import { RightPanel } from "./components/RightPanel";
 import { ToastContainer } from "./components/ToastContainer";
+import type { PersistedState } from "./lib/storage";
+import type { UiCommit, UiTag } from "./types";
 
 export default function App() {
   const s = useAppStore();
@@ -16,10 +18,26 @@ export default function App() {
     }
   }, []);
 
+  const handleLoad = (state: PersistedState) => {
+    s.replaceAll({
+      commits: state.commits as UiCommit[],
+      tags: state.tags as UiTag[],
+      cliffToml: typeof state.cliffToml === "string" ? state.cliffToml : undefined,
+    });
+    if (state.options && typeof state.options === "object") {
+      const opts = state.options as Record<string, unknown>;
+      s.setOptions({
+        unreleased: typeof opts.unreleased === "boolean" ? opts.unreleased : false,
+        bumpedVersion: typeof opts.bumpedVersion === "boolean" ? opts.bumpedVersion : false,
+      });
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <Toolbar
         onReset={s.resetToDefaults}
+        onLoad={handleLoad}
         cliffToml={s.cliffToml}
         commits={s.commits}
         tags={s.tags}
