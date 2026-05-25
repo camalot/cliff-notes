@@ -11,7 +11,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
@@ -23,6 +25,7 @@
     "clean": "rimraf dist coverage"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.4.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

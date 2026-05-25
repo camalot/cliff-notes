@@ -111,6 +111,13 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
             tabSize: 2,
             insertSpaces: true,
             renderWhitespace: "boundary",
+            // Suppress Monaco's word-based suggestions so only the schema-aware
+            // completion provider contributes — keeps suggestions on-topic.
+            wordBasedSuggestions: "off",
+            quickSuggestions: { other: true, comments: false, strings: true },
+            suggest: {
+              showWords: false,
+            },
             scrollbar: {
               vertical: "visible",
               horizontal: "visible",

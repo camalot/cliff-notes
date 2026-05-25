@@ -23,6 +23,7 @@ export default function App() {
         cliffToml={s.cliffToml}
         commits={s.commits}
         tags={s.tags}
+        options={s.options}
       />
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden">
         <CliffTomlEditor value={s.cliffToml} onChange={s.setCliffToml} onReset={s.resetToDefaults} />

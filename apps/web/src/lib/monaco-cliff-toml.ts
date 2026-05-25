@@ -2,6 +2,7 @@ import type { Monaco } from "@monaco-editor/react";
 
 export const CLIFF_TOML_LANGUAGE_ID = "cliff-toml";
 export const CLIFF_TOML_THEME_ID = "cliff-dark";
+const DIAGNOSTICS_OWNER = "cliff-toml";
 
 // Names of fields whose string values are regular expressions in git-cliff.
 const REGEX_FIELDS = ["pattern", "message", "tag_pattern"];
@@ -26,6 +27,295 @@ const TERA_FILTERS = [
   "int", "float", "round", "abs", "date", "get", "default", "escape",
   "safe", "upper_first", "lower_first", "title", "as_str", "json_encode",
 ];
+
+// ---------- Schema --------------------------------------------------------
+
+const REMOTE_SUBSECTIONS = ["github", "gitlab", "gitea", "bitbucket"];
+
+const SECTION_HEADERS = [
+  "bump",
+  "changelog",
+  "git",
+  "remote.github",
+  "remote.gitlab",
+  "remote.gitea",
+  "remote.bitbucket",
+];
+
+const SECTION_KEYS: Record<string, readonly string[]> = {
+  bump: [
+    "features_always_bump_minor",
+    "breaking_always_bump_major",
+    "initial_tag",
+    "custom_increment_regex",
+    "custom_major_increment_regex",
+    "custom_minor_increment_regex",
+  ],
+  changelog: [
+    "header",
+    "body",
+    "footer",
+    "trim",
+    "render_always",
+    "postprocessors",
+    "output",
+  ],
+  git: [
+    "conventional_commits",
+    "filter_unconventional",
+    "require_conventional",
+    "split_commits",
+    "commit_preprocessors",
+    "commit_parsers",
+    "protect_breaking_commits",
+    "filter_commits",
+    "filter_merge_commits",
+    "fail_on_unmatched_commit",
+    "link_parsers",
+    "use_branch_tags",
+    "topo_order",
+    "topo_order_commits",
+    "sort_commits",
+    "recurse_submodules",
+    "tag_pattern",
+    "skip_tags",
+    "ignore_tags",
+    "processing_order",
+    "count_tags",
+  ],
+  remote: [
+    "owner",
+    "repo",
+    "token",
+    "is_custom",
+    "api_url",
+    "native_protocol",
+  ],
+};
+
+const INLINE_TABLE_KEYS: Record<string, readonly string[]> = {
+  commit_preprocessors: ["pattern", "replace", "replace_command"],
+  postprocessors: ["pattern", "replace", "replace_command"],
+  commit_parsers: [
+    "message",
+    "body",
+    "footer",
+    "sha",
+    "field",
+    "pattern",
+    "default_scope",
+    "group",
+    "skip",
+  ],
+  link_parsers: ["pattern", "href", "text"],
+};
+
+const ENUM_VALUES: Record<string, readonly string[]> = {
+  sort_commits: ["newest", "oldest"],
+  processing_order: [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+  ],
+  field: [
+    "id",
+    "message",
+    "body",
+    "footer",
+    "author.name",
+    "author.email",
+    "committer.name",
+    "committer.email",
+  ],
+};
+
+// Keys whose presence in [remote.*] is a secret. Diagnostic warning is raised
+// and the Share dialog renders a DANGER callout when one of these is found.
+export const REMOTE_SECRET_KEYS: readonly string[] = ["token"];
+
+// Detect whether a given cliff.toml string contains any of REMOTE_SECRET_KEYS
+// assigned under a [remote.*] section.
+export function cliffTomlContainsSecret(text: string): boolean {
+  if (!text) return false;
+  const lines = text.split(/\r?\n/);
+  let inRemote = false;
+  for (const raw of lines) {
+    const line = raw.replace(/#.*$/, "");
+    const headerMatch = line.match(/^\s*\[([^\]]+)\]\s*$/);
+    if (headerMatch?.[1]) {
+      inRemote = headerMatch[1].split(".")[0] === "remote";
+      continue;
+    }
+    if (!inRemote) continue;
+    const keyMatch = line.match(/^\s*([a-z_][a-z0-9_]*)\s*=/i);
+    if (keyMatch?.[1] && REMOTE_SECRET_KEYS.includes(keyMatch[1].toLowerCase())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---------- Context helpers (for completions) -----------------------------
+
+interface MonacoModel {
+  getLineContent(line: number): string;
+  getLineCount(): number;
+  getWordUntilPosition(p: { lineNumber: number; column: number }): {
+    word: string;
+    startColumn: number;
+    endColumn: number;
+  };
+  getLanguageId(): string;
+  onDidChangeContent(cb: () => void): { dispose(): void };
+}
+
+function findCurrentSection(model: MonacoModel, lineNumber: number): string | null {
+  for (let i = lineNumber; i >= 1; i--) {
+    const line = model.getLineContent(i);
+    const m = line.match(/^\s*\[([^\]]+)\]/);
+    if (m?.[1]) return m[1];
+  }
+  return null;
+}
+
+// Walk backwards from `lineNumber` looking for an unmatched `[` that opens an
+// array. Returns the key on the left of that `=`, or null.
+function findEnclosingArrayKey(
+  model: MonacoModel,
+  lineNumber: number,
+  textBeforeCursor: string,
+  openBracePos: number,
+): string | null {
+  if (openBracePos >= 0) {
+    const beforeBrace = textBeforeCursor.substring(0, openBracePos);
+    const inlineMatch = beforeBrace.match(/(\w+)\s*=\s*\[/);
+    if (inlineMatch?.[1]) return inlineMatch[1];
+  }
+  let depth = 0;
+  for (let i = lineNumber - 1; i >= 1; i--) {
+    const line = model.getLineContent(i);
+    if (/^\s*\[[^\]]+\]\s*$/.test(line)) return null; // hit a section header
+    for (let c = line.length - 1; c >= 0; c--) {
+      const ch = line[c];
+      if (ch === "]") depth++;
+      else if (ch === "[") {
+        if (depth === 0) {
+          const before = line.substring(0, c);
+          const m = before.match(/(\w+)\s*=\s*$/);
+          return m?.[1] ?? null;
+        }
+        depth--;
+      }
+    }
+  }
+  return null;
+}
+
+// ---------- Diagnostics ---------------------------------------------------
+
+function validate(monaco: Monaco, model: MonacoModel): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markers: any[] = [];
+  let currentSection: string | null = null;
+  let currentBase: string | null = null;
+
+  for (let i = 1; i <= model.getLineCount(); i++) {
+    const rawLine = model.getLineContent(i);
+    const codeLine = rawLine.replace(/#.*$/, "");
+    const trimmed = codeLine.trim();
+    if (!trimmed) continue;
+
+    const headerMatch = trimmed.match(/^\[([^\]]+)\]$/);
+    const headerName = headerMatch?.[1];
+    if (headerName) {
+      currentSection = headerName;
+      const parts = headerName.split(".");
+      currentBase = parts[0] ?? null;
+      const sub = parts[1] ?? null;
+      const open = codeLine.indexOf("[");
+      const close = codeLine.indexOf("]");
+
+      if (!currentBase || !SECTION_KEYS[currentBase]) {
+        markers.push({
+          severity: monaco.MarkerSeverity.Warning,
+          message: `Unknown section '[${currentSection}]'. Expected one of: ${SECTION_HEADERS.join(", ")}.`,
+          startLineNumber: i,
+          startColumn: open + 1,
+          endLineNumber: i,
+          endColumn: close + 2,
+        });
+      } else if (currentBase === "remote" && sub && !REMOTE_SUBSECTIONS.includes(sub)) {
+        markers.push({
+          severity: monaco.MarkerSeverity.Warning,
+          message: `Unknown remote '${sub}'. Expected one of: ${REMOTE_SUBSECTIONS.join(", ")}.`,
+          startLineNumber: i,
+          startColumn: open + 1,
+          endLineNumber: i,
+          endColumn: close + 2,
+        });
+      }
+      continue;
+    }
+
+    // Only validate top-level key lines (skip array-continuation lines, etc.).
+    const keyMatch = trimmed.match(/^([a-z_][a-z0-9_]*)\s*=/i);
+    const key = keyMatch?.[1];
+    if (!key) continue;
+    const validKeys = currentBase ? SECTION_KEYS[currentBase] : null;
+    const keyStart = codeLine.indexOf(key);
+    const keyEnd = keyStart + key.length;
+
+    if (validKeys && !validKeys.includes(key)) {
+      markers.push({
+        severity: monaco.MarkerSeverity.Info,
+        message: `Unknown key '${key}' in [${currentSection ?? ""}].`,
+        startLineNumber: i,
+        startColumn: keyStart + 1,
+        endLineNumber: i,
+        endColumn: keyEnd + 1,
+      });
+    }
+
+    if (currentBase === "remote" && REMOTE_SECRET_KEYS.includes(key.toLowerCase())) {
+      markers.push({
+        severity: monaco.MarkerSeverity.Warning,
+        message:
+          `'${key}' is a secret. cliff-notes stores your configuration only in this browser ` +
+          `(it is never sent to the server), but Share links embed the entire config in the URL — ` +
+          `anyone with the link will see this value.`,
+        startLineNumber: i,
+        startColumn: keyStart + 1,
+        endLineNumber: i,
+        endColumn: keyEnd + 1,
+      });
+    }
+
+    // Single-line enum value: `sort_commits = "..."`
+    const enumValues = ENUM_VALUES[key];
+    if (enumValues) {
+      const valueMatch = codeLine.match(/=\s*"([^"]*)"\s*$/);
+      const value = valueMatch?.[1];
+      if (value !== undefined && !enumValues.includes(value)) {
+        const valStart = codeLine.lastIndexOf(`"${value}"`);
+        markers.push({
+          severity: monaco.MarkerSeverity.Warning,
+          message: `Invalid '${key}' value. Expected one of: ${enumValues.join(", ")}.`,
+          startLineNumber: i,
+          startColumn: valStart + 1,
+          endLineNumber: i,
+          endColumn: valStart + value.length + 3,
+        });
+      }
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  monaco.editor.setModelMarkers(model as any, DIAGNOSTICS_OWNER, markers);
+}
+
+// ---------- Registration --------------------------------------------------
 
 export function registerCliffToml(monaco: Monaco) {
   const alreadyRegistered = monaco.languages
@@ -75,13 +365,13 @@ export function registerCliffToml(monaco: Monaco) {
         [/^\s*\[\[[^\]]+\]\]/, "metatag"],
         [/^\s*\[[^\]]+\]/, "metatag"],
 
-        // body = """ ... """  → Tera-aware multiline string
-        [/(body)(\s*)(=)(\s*)(""")/, [
-          "type.identifier.body",
+        // Any `key = """ ... """` is a Tera template.
+        [/([A-Za-z_][A-Za-z0-9_-]*)(\s*)(=)(\s*)(""")/, [
+          "type.identifier.tera",
           "white",
           "operator",
           "white",
-          { token: "string.heredoc.delimiter", next: "@bodyTemplate" },
+          { token: "string.heredoc.delimiter", next: "@teraTemplate" },
         ]],
 
         // Regex-valued fields: pattern / message / tag_pattern
@@ -125,7 +415,7 @@ export function registerCliffToml(monaco: Monaco) {
         [/-?\d+\.\d+(?:[eE][+-]?\d+)?/, "number.float"],
         [/-?\d+(?:[eE][+-]?\d+)?/, "number"],
 
-        // Triple-quoted strings (not body)
+        // Unattached triple-quoted strings (rare but possible).
         [/"""/, { token: "string.heredoc.delimiter", next: "@plainTripleDQ" }],
         [/'''/, { token: "string.heredoc.delimiter", next: "@plainTripleSQ" }],
 
@@ -192,8 +482,8 @@ export function registerCliffToml(monaco: Monaco) {
         [/'/, { token: "string.replacement.delimiter", next: "@pop" }],
       ],
 
-      // ----- body = """ ... """  with embedded Tera -----
-      bodyTemplate: [
+      // ----- any """ ... """ value with embedded Tera -----
+      teraTemplate: [
         [/"""/, { token: "string.heredoc.delimiter", next: "@pop" }],
         [/\{#-?/, { token: "comment.tera", next: "@teraComment" }],
         [/\{%-?/, { token: "tag.tera", next: "@teraStmt" }],
@@ -242,7 +532,7 @@ export function registerCliffToml(monaco: Monaco) {
       { token: "comment.cliff", foreground: "64748B", fontStyle: "italic" },
       { token: "metatag.cliff", foreground: "FACC15", fontStyle: "bold" },
       { token: "type.identifier.cliff", foreground: "60A5FA" },
-      { token: "type.identifier.body.cliff", foreground: "60A5FA", fontStyle: "bold" },
+      { token: "type.identifier.tera.cliff", foreground: "60A5FA", fontStyle: "bold" },
       { token: "keyword.boolean.cliff", foreground: "F472B6" },
       { token: "number.cliff", foreground: "FB923C" },
       { token: "number.float.cliff", foreground: "FB923C" },
@@ -307,4 +597,163 @@ export function registerCliffToml(monaco: Monaco) {
       "minimapSlider.activeBackground": "#64748BC0",
     },
   });
+
+  monaco.languages.registerCompletionItemProvider(CLIFF_TOML_LANGUAGE_ID, {
+    triggerCharacters: ["[", ".", '"', "{", " ", "="],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    provideCompletionItems: (model: any, position: any) => {
+      const { lineNumber, column } = position;
+      const lineContent: string = model.getLineContent(lineNumber);
+      const textBefore = lineContent.substring(0, column - 1);
+      const word = model.getWordUntilPosition(position);
+      const wordRange = {
+        startLineNumber: lineNumber,
+        endLineNumber: lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn,
+      };
+
+      // 1. Typing a section header: `[<cursor>` or `[remote.<cursor>`
+      const sectionHeaderMatch = textBefore.match(/^\s*\[([^\]\n]*)$/);
+      if (sectionHeaderMatch) {
+        const bracketStart = textBefore.lastIndexOf("[");
+        const afterBracket = lineContent.substring(bracketStart + 1);
+        const closeBracketRel = afterBracket.indexOf("]");
+        const endCol =
+          closeBracketRel >= 0 ? bracketStart + closeBracketRel + 2 : column;
+        const sectionRange = {
+          startLineNumber: lineNumber,
+          endLineNumber: lineNumber,
+          startColumn: bracketStart + 2,
+          endColumn: endCol,
+        };
+        return {
+          suggestions: SECTION_HEADERS.map((s) => ({
+            label: s,
+            kind: monaco.languages.CompletionItemKind.Module,
+            insertText: s,
+            range: sectionRange,
+            detail: "cliff.toml section",
+            sortText: `0_${s}`,
+          })),
+        };
+      }
+
+      const section = findCurrentSection(model, lineNumber);
+      const baseSection = section?.split(".")[0] ?? null;
+
+      // Detect whether the cursor sits inside a `"..."` value.
+      const quoteCount = (textBefore.match(/(?<!\\)"/g) || []).length;
+      const inString = quoteCount % 2 === 1;
+
+      // Detect whether the cursor is inside an inline `{ ... }` table.
+      const lastOpenBrace = textBefore.lastIndexOf("{");
+      const lastCloseBrace = textBefore.lastIndexOf("}");
+      const inInlineTable = lastOpenBrace > lastCloseBrace;
+      const arrayKey = inInlineTable
+        ? findEnclosingArrayKey(model, lineNumber, textBefore, lastOpenBrace)
+        : null;
+
+      if (inString) {
+        // Find what key owns this string value.
+        let valueKey: string | null = null;
+
+        if (inInlineTable) {
+          const inlineContent = textBefore.substring(lastOpenBrace + 1);
+          const stringStart = inlineContent.lastIndexOf('"');
+          if (stringStart >= 0) {
+            const before = inlineContent.substring(0, stringStart);
+            const m = before.match(/(\w+)\s*=\s*$/);
+            valueKey = m?.[1] ?? null;
+          }
+        } else {
+          const stringStart = textBefore.lastIndexOf('"');
+          const before = textBefore.substring(0, stringStart);
+          const m = before.match(/(\w+)\s*=\s*\[?\s*$/);
+          if (m?.[1]) valueKey = m[1];
+          else {
+            // Multi-line array: walk back to find `key = [`.
+            for (let i = lineNumber - 1; i >= 1; i--) {
+              const line: string = model.getLineContent(i);
+              const m2 = line.match(/^\s*(\w+)\s*=\s*\[/);
+              if (m2?.[1]) {
+                valueKey = m2[1];
+                break;
+              }
+              if (/^\s*\[/.test(line)) break;
+            }
+          }
+        }
+
+        const valueEnum = valueKey ? ENUM_VALUES[valueKey] : null;
+        if (valueKey && valueEnum) {
+          const stringStartOnLine = textBefore.lastIndexOf('"');
+          const stringRange = {
+            startLineNumber: lineNumber,
+            endLineNumber: lineNumber,
+            startColumn: stringStartOnLine + 2,
+            endColumn: column,
+          };
+          return {
+            suggestions: valueEnum.map((v) => ({
+              label: v,
+              kind: monaco.languages.CompletionItemKind.EnumMember,
+              insertText: v,
+              range: stringRange,
+              detail: `${valueKey} value`,
+              sortText: `0_${v}`,
+            })),
+          };
+        }
+        return { suggestions: [] };
+      }
+
+      // Inside an inline table — suggest object-shape keys for known arrays.
+      if (inInlineTable && arrayKey && INLINE_TABLE_KEYS[arrayKey]) {
+        return {
+          suggestions: INLINE_TABLE_KEYS[arrayKey].map((k) => ({
+            label: k,
+            kind: monaco.languages.CompletionItemKind.Field,
+            insertText: `${k} = `,
+            range: wordRange,
+            detail: `${arrayKey} field`,
+            sortText: `0_${k}`,
+          })),
+        };
+      }
+
+      // Otherwise, suggest top-level keys for the current section.
+      if (baseSection && SECTION_KEYS[baseSection] && /^\s*\w*$/.test(textBefore)) {
+        return {
+          suggestions: SECTION_KEYS[baseSection].map((k) => {
+            const isSecret =
+              baseSection === "remote" && REMOTE_SECRET_KEYS.includes(k);
+            return {
+              label: k,
+              kind: monaco.languages.CompletionItemKind.Property,
+              insertText: `${k} = `,
+              range: wordRange,
+              detail: isSecret
+                ? "⚠ sensitive — visible in Share links"
+                : `[${section}] key`,
+              sortText: `${isSecret ? "9" : "0"}_${k}`,
+            };
+          }),
+        };
+      }
+
+      return { suggestions: [] };
+    },
+  });
+
+  // Diagnostics: validate existing and future models with this language id.
+  const attach = (model: MonacoModel) => {
+    if (model.getLanguageId() !== CLIFF_TOML_LANGUAGE_ID) return;
+    validate(monaco, model);
+    model.onDidChangeContent(() => validate(monaco, model));
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  monaco.editor.getModels().forEach(attach as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  monaco.editor.onDidCreateModel(attach as any);
 }
