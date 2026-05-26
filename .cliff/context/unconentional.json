@@ -1,0 +1,57 @@
+{
+  "version": "v0.1.0-rc.21",
+  "message": "The annotated tag message for the release",
+  "commits": [
+    {
+      "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
+      "group": "(overridden by commit_parsers)",
+      "scope": "(overridden by commit_parsers)",
+      "message": "(full commit message including description, footers, etc.)",
+      "conventional": false,
+      "merge_commit": false,
+      "links": [
+        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+      ],
+      "author": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "committer": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "statistics": {
+        "files_changed": 1,
+        "additions": 1,
+        "deletions": 0
+      },
+      "raw_message": "(full commit message including description, footers, etc.)"
+    }
+  ],
+  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
+  "timestamp": 1625169301,
+  "repository": "/path/to/repository",
+  "commit_range": {
+      "from": "(id of the first commit used for this release)",
+      "to": "(id of the last commit used for this release)"
+  },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 0,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
+  },
+  "bump_type": "minor",
+  "previous": {
+    "version": "previous release"
+  }
+}

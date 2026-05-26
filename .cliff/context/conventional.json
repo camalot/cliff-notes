@@ -1,0 +1,76 @@
+{
+  "version": "v0.1.0-rc.21",
+  "message": "The annotated tag message for the release",
+  "commits": [
+    {
+      "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
+      "group": "<type> (overridden by commit_parsers)",
+      "scope": "[scope]",
+      "message": "<description>",
+      "body": "[body]",
+      "footers": [
+        {
+          "token": "<name of the footer, such as 'Signed-off-by'>",
+          "separator": "<the separator between the token and value, such as ':'>",
+          "value": "<the value following the separator",
+          "breaking": false
+        }
+      ],
+      "breaking_description": "<description>",
+      "breaking": false,
+      "conventional": true,
+      "merge_commit": false,
+      "links": [
+        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+      ],
+      "author": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "committer": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "statistics": {
+        "files_changed": 1,
+        "additions": 1,
+        "deletions": 0
+      },
+      "raw_message": "<type>[scope]: <description>\n[body]\n[footer(s)]"
+    }
+  ],
+  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
+  "timestamp": 1625169301,
+  "repository": "/path/to/repository",
+  "commit_range": {
+      "from": "(id of the first commit used for this release)",
+      "to": "(id of the last commit used for this release)"
+  },
+  "submodule_commits": {
+    "<relative/submodule_path/in/repository>": [
+      {
+        "id": "c10d0f12e85975bc1e8f41eed693c58eca1894eb",
+        "message": "release (#1671)"
+      }
+    ]
+  },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 1,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
+  },
+  "bump_type": "minor",
+  "previous": {
+    "version": "previous release"
+  }
+}

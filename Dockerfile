@@ -43,10 +43,10 @@ COPY cliff.toml ./cliff.toml
 COPY submodules/git-cliff/examples ./submodules/git-cliff/examples
 COPY submodules/git-cliff/config/cliff.toml ./submodules/git-cliff/config/cliff.toml
 COPY submodules/git-cliff/cliff.toml ./submodules/git-cliff/cliff.toml
-COPY .cliff-configs ./.cliff-configs
-RUN cp -rL .cliff-configs /tmp/cliff-configs-resolved \
- && rm -rf .cliff-configs \
- && mv /tmp/cliff-configs-resolved .cliff-configs
+COPY .cliff/tomls ./.cliff/tomls
+RUN cp -rL .cliff/tomls /tmp/cliff-tomls-resolved \
+ && rm -rf .cliff/tomls \
+ && mv /tmp/cliff-tomls-resolved .cliff/tomls
 
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
@@ -55,7 +55,7 @@ ENV NODE_ENV=production \
     PORT=3001 \
     HOST=0.0.0.0 \
     STATIC_DIR=/app/static \
-    CONFIGS_DIR=/app/.cliff-configs \
+    CONFIGS_DIR=/app/.cliff/tomls \
     GIT_CLIFF_BIN=/usr/local/bin/git-cliff \
     GIT_BIN=/usr/bin/git
 WORKDIR /app
@@ -93,9 +93,9 @@ COPY --from=build /app/packages/shared/package.json ./packages/shared/package.js
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/web/dist ./static
-COPY --from=build /app/.cliff-configs ./.cliff-configs
-RUN count=$(find .cliff-configs -maxdepth 1 -name "*.toml" -type l | wc -l); \
-    [ "$count" -eq 0 ] || { echo "ERROR: $count symlink(s) still present in .cliff-configs"; exit 1; }
+COPY --from=build /app/.cliff/tomls ./.cliff/tomls
+RUN count=$(find .cliff/tomls -maxdepth 1 -name "*.toml" -type l | wc -l); \
+    [ "$count" -eq 0 ] || { echo "ERROR: $count symlink(s) still present in .cliff/tomls"; exit 1; }
 
 # Run as a non-root user
 RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 cliffnotes && \

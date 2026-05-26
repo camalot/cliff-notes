@@ -1,0 +1,22 @@
+{
+  "github": {
+    "owner": "orhun",
+    "repo": "git-cliff"
+  },
+  "gitlab": {
+    "owner": "orhun",
+    "repo": "git-cliff"
+  },
+  "gitea": {
+    "owner": "orhun",
+    "repo": "git-cliff"
+  },
+  "bitbucket": {
+    "owner": "orhun",
+    "repo": "git-cliff"
+  },
+  "azure_devops": {
+    "owner": "orhun-org/myproject",
+    "repo": "git-cliff"
+  }
+}

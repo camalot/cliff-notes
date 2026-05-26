@@ -15,7 +15,7 @@ RUN if id -u "${USERNAME}" >/dev/null 2>&1; then \
   else \
     useradd -m -s /bin/zsh "${USERNAME}"; \
   fi \
-  && mkdir -p /home/${USERNAME}/bin/ /home/${USERNAME}/.zsh/ /home/${USERNAME}/.zsh-history/ /home/${USERNAME}/.ssh \
+  && mkdir -p /home/${USERNAME}/bin/ /home/${USERNAME}/.zsh/ /home/${USERNAME}/.zsh_history/ /home/${USERNAME}/.ssh \
   && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}
 
 
