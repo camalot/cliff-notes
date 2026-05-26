@@ -15,6 +15,7 @@ import { cn } from "@/lib/cn";
 import { CLIFF_TOML_THEME_ID } from "@/lib/monaco-cliff-toml";
 import { toast } from "@/lib/toast";
 import type { UiCommit, UiTag } from "../types";
+import { Icon } from "./ui/Icon";
 
 type Tab = "config" | "changelog" | "raw";
 
@@ -111,12 +112,12 @@ export function RightPanel(props: Props) {
             onClick={props.onGenerate}
             disabled={props.isRendering || (!props.configDirty && hasOutput)}
           >
-            <i className="bi bi-cpu" aria-hidden="true" />
+            <Icon name="vsc:chip" aria-hidden="true" />
             {props.isRendering ? "Generating…" : "Generate"}
           </Button>
           <span className="w-px h-5 bg-border" aria-hidden="true" />
           <IconButton
-            icon="arrow-counterclockwise"
+            icon="vsc:discard"
             label="Reset Config"
             onClick={props.onResetConfig}
           />
@@ -124,7 +125,7 @@ export function RightPanel(props: Props) {
             <>
               <span className="w-px h-5 bg-border" aria-hidden="true" />
               <IconButton
-                icon={justCopied ? "check" : "copy"}
+                icon={justCopied ? "vsc:check" : "vsc:copy"}
                 label={justCopied ? "Copied!" : "Copy"}
                 onClick={copy}
                 disabled={!props.markdown}
@@ -177,7 +178,7 @@ function Tabs({
         extraClass,
       )}
     >
-      <i className={`bi bi-${icon}`} aria-hidden="true" />
+      <Icon name={icon} aria-hidden="true" />
       <span>{label}</span>
       {dirty && <span aria-hidden="true">{"•"}</span>}
     </button>

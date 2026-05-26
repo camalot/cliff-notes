@@ -7,11 +7,11 @@ import {
 } from "./cliff-toml-remote.js";
 
 const DEFAULTS: RemoteMockDefaults = {
-  github: { owner: "orhun", repo: "git-cliff" },
-  gitlab: { owner: "orhun", repo: "git-cliff" },
-  gitea: { owner: "orhun", repo: "git-cliff" },
-  bitbucket: { owner: "orhun", repo: "git-cliff" },
-  azure_devops: { owner: "orhun-org/myproject", repo: "git-cliff" },
+  github: { owner: "camalot", repo: "cliff-notes" },
+  gitlab: { owner: "camalot", repo: "cliff-notes" },
+  gitea: { owner: "camalot", repo: "cliff-notes" },
+  bitbucket: { owner: "camalot", repo: "cliff-notes" },
+  azure_devops: { owner: "camalot-org/myproject", repo: "cliff-notes" },
 };
 
 describe("parseAndStripRemote", () => {
@@ -143,7 +143,7 @@ describe("injectMockedRemoteBlocks", () => {
     );
     expect(out).toMatch(/\[remote\]\noffline = true/);
     expect(out).toMatch(/\[remote\.github\]\nowner = "u"\nrepo = "r"\ntoken = ""/);
-    expect(out).toMatch(/\[remote\.gitlab\]\nowner = "orhun"\nrepo = "git-cliff"\ntoken = ""/);
+    expect(out).toMatch(/\[remote\.gitlab\]\nowner = "camalot"\nrepo = "cliff-notes"\ntoken = ""/);
   });
 
   it("includes api_url when carried over", () => {

@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
 import { tryDecodeInput, parsePlayground } from "@/lib/playground-file";
 import type { PersistedState } from "@/lib/storage";
+import { Icon } from "./ui/Icon";
 
 interface Props {
   onClose: () => void;
@@ -95,7 +96,7 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <i className="bi bi-x-lg" aria-hidden="true" />
+            <Icon name="bi:x-lg" aria-hidden="true" />
           </button>
         </div>
 
@@ -129,7 +130,7 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
           role="button"
           aria-label="Upload .cliff-notes file"
         >
-          <i className="bi bi-file-earmark-arrow-up text-2xl text-muted-fg" aria-hidden="true" />
+          <Icon name="bi:file-earmark-arrow-up" className="text-2xl text-muted-fg" aria-hidden="true" />
           <p className="text-xs text-muted-fg mt-2">
             Drop a <code className="font-mono">.cliff-notes</code> file here, or click to browse
           </p>
@@ -147,14 +148,14 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
             role="alert"
             className="flex items-center gap-2 rounded-md border border-danger bg-danger/10 px-3 py-2 mb-4 text-xs text-danger"
           >
-            <i className="bi bi-exclamation-circle-fill" aria-hidden="true" />
+            <Icon name="bi:exclamation-circle-fill" aria-hidden="true" />
             {fileError}
           </div>
         )}
 
         {parsedState && !fileError && (
           <div className="flex items-center gap-2 rounded-md border border-green-500 bg-green-500/10 px-3 py-2 mb-4 text-xs text-green-400">
-            <i className="bi bi-check-circle-fill" aria-hidden="true" />
+            <Icon name="bi:check-circle-fill" aria-hidden="true" />
             Playground ready to load
           </div>
         )}
@@ -164,7 +165,7 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
             Cancel
           </Button>
           <Button variant="primary" size="sm" onClick={handleLoad} disabled={!parsedState}>
-            <i className="bi bi-file-earmark-arrow-up-fill" aria-hidden="true" />
+            <Icon name="bi:file-earmark-arrow-up-fill" aria-hidden="true" />
             Load Playground
           </Button>
         </div>

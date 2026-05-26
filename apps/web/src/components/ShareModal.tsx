@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
 import { cliffTomlContainsSecret } from "@/lib/monaco-cliff-toml";
+import { Icon } from "./ui/Icon";
 
 interface Props {
   url: string;
@@ -49,7 +50,7 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <i className="bi bi-x-lg" aria-hidden="true" />
+            <Icon name="bi:x-lg" aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-muted-fg mb-3">
@@ -66,7 +67,7 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
             role="alert"
             className="flex items-start gap-2 rounded-md border border-danger bg-danger/10 px-3 py-2 mb-4 text-xs text-danger"
           >
-            <i className="bi bi-exclamation-octagon-fill mt-0.5" aria-hidden="true" />
+            <Icon name="bi:exclamation-octagon-fill" className="mt-0.5" aria-hidden="true" />
             <div>
               <div className="font-semibold uppercase tracking-wide">Danger — secret detected</div>
               <p className="mt-1 text-danger/90">
@@ -88,7 +89,7 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
             Cancel
           </Button>
           <Button variant="secondary" size="sm" onClick={onSave}>
-            <i className="bi bi-download" aria-hidden="true" />
+            <Icon name="bi:download" aria-hidden="true" />
             Save
           </Button>
           <Button
@@ -96,10 +97,7 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
             size="sm"
             onClick={copyAndClose}
           >
-            <i
-              className={`bi ${hasSecret ? "bi-exclamation-octagon-fill" : "bi-share"}`}
-              aria-hidden="true"
-            />
+            <Icon name={hasSecret ? "bi:exclamation-octagon-fill" : "bi:share"} aria-hidden="true" />
             Copy Share Link
           </Button>
         </div>

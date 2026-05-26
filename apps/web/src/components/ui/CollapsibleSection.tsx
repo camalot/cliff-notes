@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type MouseEvent } from "react";
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 interface Props {
   title: string;
@@ -42,13 +43,7 @@ export function CollapsibleSection({
         className="flex items-center justify-between gap-2 min-h-7 cursor-pointer select-none -mx-1 px-1 rounded hover:bg-muted/40"
       >
         <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-fg">
-          <i
-            className={cn(
-              "bi text-muted-fg/70 transition-transform",
-              expanded ? "bi-chevron-down" : "bi-chevron-right",
-            )}
-            aria-hidden="true"
-          />
+          <Icon name={`vsc:chevron-${expanded ? "down" : "right"}`} className="text-muted-fg/70 transition-transform" aria-hidden="true" />
           <span>{title}</span>
           {typeof count === "number" && (
             <span className="text-muted-fg/70 normal-case font-normal">({count})</span>

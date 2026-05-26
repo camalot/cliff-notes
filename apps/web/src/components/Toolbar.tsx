@@ -6,6 +6,7 @@ import { siteConfig } from "@/lib/site-config";
 import { ShareModal } from "./ShareModal";
 import { LoadPlaygroundModal } from "./LoadPlaygroundModal";
 import type { RenderOptionsState } from "./OptionsPane";
+import { Icon } from "./ui/Icon";
 
 interface Props {
   onReset: () => void;
@@ -37,9 +38,17 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
 
   return (
     <>
-      <header className="flex items-center justify-between gap-3 px-4 border-b border-border bg-card" style={{ height: 52 }}>
+      <header
+        className="flex items-center justify-between gap-3 px-4 border-b border-border bg-card"
+        style={{ height: 52 }}
+      >
         <div className="flex items-center gap-3">
-          <img src="/images/cliff-notes.svg" alt="cliff-notes logo" width={48} height={48} />
+          <img
+            src="/images/cliff-notes.svg"
+            alt="cliff-notes logo"
+            width={48}
+            height={48}
+          />
           <div className="flex flex-col">
             <span className="text-lg font-semibold leading-tight">
               <span className="text-accent">cliff</span>-notes
@@ -66,7 +75,7 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
               aria-label="GitHub Repository"
               className={navLinkClass}
             >
-              <i className="bi bi-git" aria-hidden="true" />
+              <Icon name="go:mark-github" aria-hidden="true" />
             </a>
             <a
               href={siteConfig.issuesUrl}
@@ -76,7 +85,7 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
               aria-label="Report an Issue"
               className={navLinkClass}
             >
-              <i className="bi bi-github" aria-hidden="true" />
+              <Icon name="go:bug" aria-hidden="true" />
             </a>
             <a
               href={siteConfig.sponsorUrl}
@@ -87,7 +96,7 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
               className="inline-flex items-center justify-center w-7 h-7 rounded transition-colors hover:opacity-80"
               style={{ color: siteConfig.sponsorColor }}
             >
-              <i className="bi bi-heart-fill" aria-hidden="true" />
+              <Icon name="go:heart-fill" aria-hidden="true" />
             </a>
             <a
               href={siteConfig.coffeeUrl}
@@ -97,27 +106,42 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
               aria-label="Buy Me a Coffee"
               className={navLinkClass}
             >
-              <i className="bi bi-cup-hot-fill" aria-hidden="true" />
+              <Icon name="bi:cup-hot-fill" aria-hidden="true" />
             </a>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
-          <IconButton icon="arrow-clockwise" label="Reset to defaults" onClick={onReset} />
+          <IconButton
+            icon="arrow-clockwise"
+            label="Reset to defaults"
+            onClick={onReset}
+          />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
             icon="file-earmark-arrow-up-fill"
             label="Load Playground"
             onClick={() => setShowLoadModal(true)}
           />
-          <IconButton icon="download" label="Save Playground" onClick={handleSave} />
+          <IconButton
+            icon="download"
+            label="Save Playground"
+            onClick={handleSave}
+          />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
-          <IconButton icon="share-fill" label="Share Cliff Notes" onClick={() => setShowShareModal(true)} />
+          <IconButton
+            icon="share-fill"
+            label="Share Cliff Notes"
+            onClick={() => setShowShareModal(true)}
+          />
         </div>
       </header>
 
       {showLoadModal && (
-        <LoadPlaygroundModal onClose={() => setShowLoadModal(false)} onLoad={onLoad} />
+        <LoadPlaygroundModal
+          onClose={() => setShowLoadModal(false)}
+          onLoad={onLoad}
+        />
       )}
       {showShareModal && shareUrl && (
         <ShareModal

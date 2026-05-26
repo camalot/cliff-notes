@@ -1,8 +1,9 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Bootstrap-icons class fragment without the `bi-` prefix, e.g. "trash3-fill". */
+  /** Icon name: "bi:name" or bare "name" for Bootstrap, "octicon:name" for Octicons, or "/path" for URLs. */
   icon: string;
   /** Accessible label; also used as the tooltip. */
   label: string;
@@ -23,7 +24,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       )}
       {...props}
     >
-      <i className={`bi bi-${icon}`} aria-hidden="true" />
+      <Icon name={icon} size={16} />
     </button>
   ),
 );

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
+import { faker } from "@faker-js/faker";
 import type { RemoteKind } from "./cliff-toml-remote.js";
 
 const DEFAULT_FIXTURES_DIR = resolve(
@@ -78,10 +79,10 @@ export function loadRemoteMocks(dir: string = DEFAULT_FIXTURES_DIR): RemoteMocks
     extractContributorsFromFixture(github, "github").find(
       (c) => c.username === "cliffjumper",
     ) ?? {
-      username: "cliffjumper",
-      pr_title: "I love jumping",
-      pr_number: 999,
-      pr_labels: ["rust"],
+      username: faker.internet.username(),
+      pr_title: faker.lorem.sentence(),
+      pr_number: faker.number.int({ min: 1, max: 9999 }),
+      pr_labels: [faker.word.noun()],
     };
 
   cachedMocks = { defaults: remote, synthetic, labelsByKind };

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { ToastKind } from "@/lib/toast";
+import { Icon } from "./Icon";
 
 const KIND_STYLES: Record<
   ToastKind,
@@ -91,7 +92,7 @@ export function Toast({
         title="Dismiss"
         className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded text-muted-fg hover:text-fg hover:bg-muted/60"
       >
-        <i className="bi bi-x text-lg leading-none" aria-hidden="true" />
+        <Icon name="bi:x" className="text-lg leading-none" aria-hidden="true" />
       </button>
 
       <div

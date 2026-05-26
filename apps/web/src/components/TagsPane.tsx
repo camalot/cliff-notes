@@ -5,6 +5,7 @@ import { Select } from "./ui/select";
 import { IconButton } from "./ui/IconButton";
 import { CollapsibleSection } from "./ui/CollapsibleSection";
 import type { UiCommit, UiTag } from "../types";
+import { Icon } from "./ui/Icon";
 
 interface Props {
   tags: UiTag[];
@@ -33,7 +34,7 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
       count={tags.length}
       headerActions={
         <IconButton
-          icon="slash-square"
+          icon="vsc:clear-all"
           label="Clear all tags"
           onClick={onClear}
           disabled={tags.length === 0}
@@ -64,7 +65,7 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
           ))}
         </Select>
         <Button onClick={submit} disabled={!name.trim()} size="sm">
-          <i className="bi bi-plus-square-fill" aria-hidden="true" />
+          <Icon name="bi:plus-square-fill" aria-hidden="true" />
           Add
         </Button>
       </div>
@@ -84,7 +85,9 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
               />
               <Select
                 value={String(t.afterIndex)}
-                onChange={(e) => onUpdate(i, { afterIndex: Number(e.target.value) })}
+                onChange={(e) =>
+                  onUpdate(i, { afterIndex: Number(e.target.value) })
+                }
                 className="flex-1 min-w-0 text-xs"
               >
                 <option value={-1}>(dangling)</option>
@@ -94,7 +97,11 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
                   </option>
                 ))}
               </Select>
-              {dangling && <span className="text-xs text-danger" title="dangling tag">!</span>}
+              {dangling && (
+                <span className="text-xs text-danger" title="dangling tag">
+                  !
+                </span>
+              )}
               <IconButton
                 icon="trash3-fill"
                 label="Delete tag"

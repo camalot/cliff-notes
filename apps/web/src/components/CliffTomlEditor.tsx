@@ -10,6 +10,7 @@ import {
   CLIFF_TOML_THEME_ID,
   registerCliffToml,
 } from "@/lib/monaco-cliff-toml";
+import { Icon } from "./ui/Icon";
 
 interface Props {
   value: string;
@@ -135,9 +136,10 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
                 "disabled:opacity-50 disabled:pointer-events-none",
               )}
             >
-              <img src="/icons/toml.svg" alt="" aria-hidden="true" className="w-4 h-4" />
+              {/* <img src="/icons/toml.svg" alt="" aria-hidden="true" className="w-4 h-4" /> */}
+              <Icon name="/icons/toml.svg" aria-hidden="true" className="w-4 h-4" />
               <span>cliff.toml</span>
-              <i className={`bi bi-chevron-${dropdownOpen ? "up" : "down"} text-[10px]`} aria-hidden="true" />
+              <Icon name={`vsc:chevron-${dropdownOpen ? "up" : "down"}`} className="text-[10px]" aria-hidden="true" />
             </button>
           </div>
 
