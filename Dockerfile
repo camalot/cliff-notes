@@ -5,12 +5,14 @@
 # Stage 3 (runtime): node + git + git-cliff, serving the SPA from the API
 ###############################################################################
 
-ARG NODE_VERSION=20
-ARG GIT_CLIFF_VERSION=2.7.0
+ARG NODE_VERSION=25
+ARG GIT_CLIFF_VERSION=2.13.1
 
-FROM node:${NODE_VERSION}-bookworm-slim AS deps
+FROM node:${NODE_VERSION}-trixie-slim AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+RUN npm install -g corepack@latest --force \
+  && corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
@@ -20,6 +22,11 @@ RUN pnpm install --frozen-lockfile=false --ignore-scripts
 
 
 FROM deps AS build
+ARG GIT_CLIFF_VERSION
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends git ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY tsconfig.base.json ./
 COPY packages ./packages
@@ -28,6 +35,9 @@ COPY assets ./assets
 RUN pnpm --filter @cliff-notes/shared run build && \
     pnpm --filter @cliff-notes/api run build && \
     pnpm --filter @cliff-notes/web run build
+
+# Checkout the git-cliff repo to get access to the example configs and test them with real commits
+RUN git clone --depth 1 --branch v${GIT_CLIFF_VERSION} https://github.com/orhun/git-cliff.git submodules/git-cliff
 
 COPY cliff.toml ./cliff.toml
 COPY submodules/git-cliff/examples ./submodules/git-cliff/examples
@@ -69,7 +79,8 @@ RUN ARCH=$(uname -m) && \
     git-cliff --version
 
 # Install only production deps in the runtime image
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN npm install -g corepack@latest --force \
+  && corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
