@@ -29,6 +29,15 @@ RUN pnpm --filter @cliff-notes/shared run build && \
     pnpm --filter @cliff-notes/api run build && \
     pnpm --filter @cliff-notes/web run build
 
+COPY cliff.toml ./cliff.toml
+COPY submodules/git-cliff/examples ./submodules/git-cliff/examples
+COPY submodules/git-cliff/config/cliff.toml ./submodules/git-cliff/config/cliff.toml
+COPY submodules/git-cliff/cliff.toml ./submodules/git-cliff/cliff.toml
+COPY .cliff-configs ./.cliff-configs
+RUN cp -rL .cliff-configs /tmp/cliff-configs-resolved \
+ && rm -rf .cliff-configs \
+ && mv /tmp/cliff-configs-resolved .cliff-configs
+
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ARG GIT_CLIFF_VERSION
@@ -73,7 +82,9 @@ COPY --from=build /app/packages/shared/package.json ./packages/shared/package.js
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/web/dist ./static
-COPY .cliff-configs ./.cliff-configs
+COPY --from=build /app/.cliff-configs ./.cliff-configs
+RUN count=$(find .cliff-configs -maxdepth 1 -name "*.toml" -type l | wc -l); \
+    [ "$count" -eq 0 ] || { echo "ERROR: $count symlink(s) still present in .cliff-configs"; exit 1; }
 
 # Run as a non-root user
 RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 cliffnotes && \
