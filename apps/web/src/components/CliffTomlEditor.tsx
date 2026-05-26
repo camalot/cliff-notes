@@ -68,8 +68,8 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
     }
   };
 
-  const handleBeforeMount = (monaco: Monaco) => {
-    registerCliffToml(monaco);
+  const handleBeforeMount = async (monaco: Monaco) => {
+    await registerCliffToml(monaco);
   };
 
   const handleOpenClick = () => fileInputRef.current?.click();

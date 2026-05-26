@@ -1,0 +1,42 @@
+{
+  "name": "@cliff-notes/tera-lang",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./grammars/cliff-toml.tmLanguage.json": "./grammars/cliff-toml.tmLanguage.json",
+    "./schemas/*.json": "./schemas/*.json",
+    "./snippets/tera.snippets.json": "./snippets/tera.snippets.json",
+    "./data/tera-builtins.json": "./data/tera-builtins.json",
+    "./data/cliff-fields.json": "./data/cliff-fields.json"
+  },
+  "files": [
+    "dist",
+    "grammars",
+    "schemas",
+    "snippets",
+    "data"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'no lint configured for tera-lang'",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:junit": "vitest run --reporter=junit --outputFile=../../reports/tera-lang-junit.xml",
+    "clean": "rimraf dist coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
+    "rimraf": "^6.1.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

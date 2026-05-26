@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.base.schema.json",
+  "title": "Base release context",
+  "description": "Variables git-cliff always exposes to Tera templates, regardless of configuration.",
+  "x-tera-source": "base",
+  "x-tera-root": "Release",
+  "x-tera-contributes": {
+    "Release": {
+      "version": { "$ref": "#/$defs/Version" },
+      "message": { "$ref": "#/$defs/TagMessage" },
+      "commits": { "$ref": "#/$defs/CommitArray" },
+      "commit_id": { "$ref": "#/$defs/CommitId" },
+      "timestamp": { "$ref": "#/$defs/Timestamp" },
+      "repository": { "$ref": "#/$defs/Repository" },
+      "commit_range": { "$ref": "#/$defs/CommitRange" },
+      "statistics": { "$ref": "#/$defs/ReleaseStatistics" },
+      "bump_type": { "$ref": "#/$defs/BumpType" },
+      "previous": { "$ref": "#/$defs/PreviousRelease" }
+    },
+    "Commit": {
+      "id": { "$ref": "#/$defs/CommitId" },
+      "message": { "$ref": "#/$defs/CommitMessage" },
+      "body": { "$ref": "#/$defs/CommitBody" },
+      "raw_message": { "$ref": "#/$defs/CommitRawMessage" },
+      "merge_commit": { "$ref": "#/$defs/CommitMergeFlag" },
+      "links": { "$ref": "#/$defs/CommitLinkArray" },
+      "author": { "$ref": "#/$defs/Signature" },
+      "committer": { "$ref": "#/$defs/Signature" },
+      "statistics": { "$ref": "#/$defs/CommitStatistics" }
+    }
+  },
+  "$defs": {
+    "Version": {
+      "type": "string",
+      "description": "The release tag, e.g. `v1.2.3`.",
+      "x-tera-example": "v0.1.0-rc.21",
+      "x-tera-source": "base"
+    },
+    "TagMessage": {
+      "type": "string",
+      "description": "The annotated tag message for the release.",
+      "x-tera-example": "Release v1.2.3",
+      "x-tera-source": "base"
+    },
+    "CommitId": {
+      "type": "string",
+      "description": "The full SHA-1 hash of the commit.",
+      "x-tera-example": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
+      "x-tera-source": "base"
+    },
+    "CommitMessage": {
+      "type": "string",
+      "description": "The commit summary line (everything before the first blank line).",
+      "x-tera-example": "feat(api): add /healthz endpoint",
+      "x-tera-source": "base"
+    },
+    "CommitBody": {
+      "type": ["string", "null"],
+      "description": "The commit body (everything after the first blank line, before footers). May be null.",
+      "x-tera-source": "base"
+    },
+    "CommitRawMessage": {
+      "type": "string",
+      "description": "The full unparsed commit message, including subject, body, and footers.",
+      "x-tera-source": "base"
+    },
+    "CommitMergeFlag": {
+      "type": "boolean",
+      "description": "True if this commit is a merge commit.",
+      "x-tera-example": "false",
+      "x-tera-source": "base"
+    },
+    "Timestamp": {
+      "type": "integer",
+      "description": "Unix timestamp (seconds since epoch) of the release.",
+      "x-tera-example": "1625169301",
+      "x-tera-source": "base"
+    },
+    "Repository": {
+      "type": "string",
+      "description": "Absolute path to the git repository on disk.",
+      "x-tera-source": "base"
+    },
+    "BumpType": {
+      "type": "string",
+      "enum": ["major", "minor", "patch"],
+      "description": "Computed semver bump for this release.",
+      "x-tera-example": "minor",
+      "x-tera-source": "base"
+    },
+    "CommitArray": {
+      "type": "array",
+      "items": { "x-tera-type": "Commit" },
+      "description": "Commits included in this release.",
+      "x-tera-source": "base"
+    },
+    "CommitRange": {
+      "type": "object",
+      "description": "The first and last commit SHAs in this release.",
+      "x-tera-source": "base",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "First commit SHA in this release.",
+          "x-tera-source": "base"
+        },
+        "to": {
+          "type": "string",
+          "description": "Last commit SHA in this release.",
+          "x-tera-source": "base"
+        }
+      }
+    },
+    "PreviousRelease": {
+      "type": ["object", "null"],
+      "description": "The previous release, or null if this is the first release.",
+      "x-tera-source": "base",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "The previous release version tag.",
+          "x-tera-source": "base"
+        }
+      }
+    },
+    "ReleaseStatistics": {
+      "type": "object",
+      "description": "Aggregate statistics for this release.",
+      "x-tera-source": "base",
+      "properties": {
+        "commit_count": {
+          "type": "integer",
+          "description": "Total number of commits in this release.",
+          "x-tera-source": "base"
+        },
+        "commits_timespan": {
+          "type": "integer",
+          "description": "Seconds between the first and last commit in this release.",
+          "x-tera-source": "base"
+        },
+        "conventional_commit_count": {
+          "type": "integer",
+          "description": "Number of commits parseable as conventional commits.",
+          "x-tera-source": "base"
+        },
+        "days_passed_since_last_release": {
+          "type": "integer",
+          "description": "Whole days between this release and the previous one.",
+          "x-tera-source": "base"
+        },
+        "links": {
+          "type": "array",
+          "description": "Aggregated links extracted across all commits in this release.",
+          "x-tera-source": "base",
+          "items": { "$ref": "#/$defs/AggregatedLink" }
+        }
+      }
+    },
+    "AggregatedLink": {
+      "type": "object",
+      "description": "A link mention aggregated across commits.",
+      "x-tera-source": "base",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The link label, e.g. `#452`.",
+          "x-tera-example": "#452",
+          "x-tera-source": "base"
+        },
+        "href": {
+          "type": "string",
+          "description": "The link target URL.",
+          "x-tera-example": "https://github.com/orhun/git-cliff/issues/452",
+          "x-tera-source": "base"
+        },
+        "count": {
+          "type": "integer",
+          "description": "How many times this link was mentioned across commits.",
+          "x-tera-source": "base"
+        }
+      }
+    },
+    "CommitLinkArray": {
+      "type": "array",
+      "description": "Links extracted from this commit (configured via `[git.link_parsers]`).",
+      "x-tera-source": "base",
+      "items": { "$ref": "#/$defs/CommitLink" }
+    },
+    "CommitLink": {
+      "type": "object",
+      "description": "A link extracted from a commit message.",
+      "x-tera-source": "base",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The link label as it appears in the commit message.",
+          "x-tera-source": "base"
+        },
+        "href": {
+          "type": "string",
+          "description": "The resolved link URL.",
+          "x-tera-source": "base"
+        }
+      }
+    },
+    "Signature": {
+      "type": "object",
+      "description": "Git author or committer signature.",
+      "x-tera-source": "base",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name from the git signature.",
+          "x-tera-example": "Jane Doe",
+          "x-tera-source": "base"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address from the git signature.",
+          "x-tera-example": "jane@example.com",
+          "x-tera-source": "base"
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Unix timestamp (seconds) the commit was authored/committed.",
+          "x-tera-source": "base"
+        }
+      }
+    },
+    "CommitStatistics": {
+      "type": "object",
+      "description": "Diff statistics for a single commit.",
+      "x-tera-source": "base",
+      "properties": {
+        "files_changed": {
+          "type": "integer",
+          "description": "Number of files modified by this commit.",
+          "x-tera-source": "base"
+        },
+        "additions": {
+          "type": "integer",
+          "description": "Lines added by this commit.",
+          "x-tera-source": "base"
+        },
+        "deletions": {
+          "type": "integer",
+          "description": "Lines removed by this commit.",
+          "x-tera-source": "base"
+        }
+      }
+    }
+  }
+}

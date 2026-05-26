@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.gitea.schema.json",
+  "title": "Gitea remote profile",
+  "description": "Variables added when [remote.gitea] is configured in cliff.toml.",
+  "x-tera-source": "gitea",
+  "x-tera-contributes": {
+    "Release": {
+      "gitea": { "$ref": "#/$defs/GiteaRelease" },
+      "remote": { "$ref": "#/$defs/RemoteIdentity" }
+    },
+    "Commit": {
+      "gitea": { "$ref": "#/$defs/GiteaCommit" },
+      "remote": { "$ref": "#/$defs/CommitRemote" }
+    }
+  },
+  "$defs": {
+    "GiteaRelease": {
+      "type": "object",
+      "description": "Release-level data fetched from the Gitea API.",
+      "x-tera-source": "gitea",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "description": "Contributors aggregated across this release's pull requests.",
+          "x-tera-source": "gitea",
+          "items": { "$ref": "#/$defs/Contributor" }
+        }
+      }
+    },
+    "GiteaCommit": {
+      "type": "object",
+      "description": "Per-commit data fetched from the Gitea API.",
+      "x-tera-source": "gitea",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "RemoteIdentity": {
+      "type": "object",
+      "description": "Owner/repo pair for the configured Gitea remote.",
+      "x-tera-source": "gitea",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Gitea user or organization that owns the repository.",
+          "x-tera-example": "orhun",
+          "x-tera-source": "gitea"
+        },
+        "repo": {
+          "type": "string",
+          "description": "Gitea repository name.",
+          "x-tera-example": "git-cliff",
+          "x-tera-source": "gitea"
+        }
+      }
+    },
+    "CommitRemote": {
+      "type": "object",
+      "description": "Per-commit data resolved against the active remote.",
+      "x-tera-source": "gitea",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Contributor": {
+      "type": "object",
+      "description": "A contributor record for a single pull request in this release.",
+      "x-tera-source": "gitea",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Username": {
+      "type": "string",
+      "description": "Gitea username of the PR author.",
+      "x-tera-example": "orhun",
+      "x-tera-source": "gitea"
+    },
+    "PrTitle": {
+      "type": "string",
+      "description": "Title of the pull request that contained this commit.",
+      "x-tera-source": "gitea"
+    },
+    "PrNumber": {
+      "type": "integer",
+      "description": "Pull request number on Gitea.",
+      "x-tera-example": "420",
+      "x-tera-source": "gitea"
+    },
+    "PrLabels": {
+      "type": "array",
+      "description": "Labels applied to the PR.",
+      "x-tera-source": "gitea",
+      "items": {
+        "type": "string",
+        "x-tera-source": "gitea"
+      }
+    },
+    "IsFirstTime": {
+      "type": "boolean",
+      "description": "True if this is the contributor's first merged PR in the repository.",
+      "x-tera-example": "true",
+      "x-tera-source": "gitea"
+    }
+  }
+}

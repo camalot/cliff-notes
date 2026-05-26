@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.conventional.schema.json",
+  "title": "Conventional-commits profile",
+  "description": "Variables added when commits are parsed (which is the default for git-cliff via `commit_parsers`).",
+  "x-tera-source": "conventional",
+  "x-tera-contributes": {
+    "Commit": {
+      "group": { "$ref": "#/$defs/Group" },
+      "scope": { "$ref": "#/$defs/Scope" },
+      "breaking": { "$ref": "#/$defs/Breaking" },
+      "breaking_description": { "$ref": "#/$defs/BreakingDescription" },
+      "conventional": { "$ref": "#/$defs/IsConventional" },
+      "footers": { "$ref": "#/$defs/FooterArray" }
+    }
+  },
+  "$defs": {
+    "Group": {
+      "type": ["string", "null"],
+      "description": "The commit group, typically derived from the conventional-commit type and overridden by `[git.commit_parsers]`.",
+      "x-tera-example": "feat",
+      "x-tera-source": "conventional"
+    },
+    "Scope": {
+      "type": ["string", "null"],
+      "description": "The conventional-commit scope (the text between parentheses after the type), or null if absent.",
+      "x-tera-example": "api",
+      "x-tera-source": "conventional"
+    },
+    "Breaking": {
+      "type": "boolean",
+      "description": "True if this commit is marked as a breaking change (via `!` after the type or a `BREAKING CHANGE:` footer).",
+      "x-tera-example": "false",
+      "x-tera-source": "conventional"
+    },
+    "BreakingDescription": {
+      "type": ["string", "null"],
+      "description": "The description of the breaking change, sourced from the `BREAKING CHANGE:` footer.",
+      "x-tera-source": "conventional"
+    },
+    "IsConventional": {
+      "type": "boolean",
+      "description": "True if the commit message parsed cleanly as a conventional commit.",
+      "x-tera-example": "true",
+      "x-tera-source": "conventional"
+    },
+    "FooterArray": {
+      "type": "array",
+      "description": "Trailers parsed from the commit message footer block.",
+      "x-tera-source": "conventional",
+      "items": { "$ref": "#/$defs/Footer" }
+    },
+    "Footer": {
+      "type": "object",
+      "description": "A single trailer (footer line) from a commit message.",
+      "x-tera-source": "conventional",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "The trailer key, e.g. `Signed-off-by` or `Co-Authored-By`.",
+          "x-tera-example": "Co-Authored-By",
+          "x-tera-source": "conventional"
+        },
+        "separator": {
+          "type": "string",
+          "description": "The separator between the token and the value (usually `:`).",
+          "x-tera-example": ":",
+          "x-tera-source": "conventional"
+        },
+        "value": {
+          "type": "string",
+          "description": "The trailer value (everything after the separator).",
+          "x-tera-source": "conventional"
+        },
+        "breaking": {
+          "type": "boolean",
+          "description": "True if this trailer marks the commit as breaking (`BREAKING CHANGE:` footer).",
+          "x-tera-source": "conventional"
+        }
+      }
+    }
+  }
+}

@@ -1,32 +1,10 @@
 import type { Monaco } from "@monaco-editor/react";
+import { bootstrapTextMate } from "./monaco/textmate-bootstrap";
+import { registerTeraProviders } from "./monaco/tera-providers";
 
 export const CLIFF_TOML_LANGUAGE_ID = "cliff-toml";
 export const CLIFF_TOML_THEME_ID = "cliff-dark";
 const DIAGNOSTICS_OWNER = "cliff-toml";
-
-// Names of fields whose string values are regular expressions in git-cliff.
-const REGEX_FIELDS = ["pattern", "message", "tag_pattern"];
-// Names of fields whose string values are replacement templates ($1, ${1}).
-const REPLACE_FIELDS = ["replace", "href"];
-
-const TERA_KEYWORDS = [
-  "if", "elif", "else", "endif",
-  "for", "endfor", "in",
-  "block", "endblock", "extends", "include", "import",
-  "macro", "endmacro", "raw", "endraw",
-  "set", "filter", "endfilter", "as",
-  "and", "or", "not", "is",
-  "true", "false", "self",
-];
-
-const TERA_FILTERS = [
-  "lower", "upper", "wordcount", "capitalize", "replace", "reverse", "length",
-  "trim", "trim_start", "trim_end", "trim_start_matches", "trim_end_matches",
-  "truncate", "linebreaksbr", "striptags", "join", "sort", "unique", "slice",
-  "first", "last", "nth", "filter", "map", "group_by", "concat", "split",
-  "int", "float", "round", "abs", "date", "get", "default", "escape",
-  "safe", "upper_first", "lower_first", "title", "as_str", "json_encode",
-];
 
 // ---------- Schema --------------------------------------------------------
 
@@ -197,7 +175,7 @@ function findEnclosingArrayKey(
   let depth = 0;
   for (let i = lineNumber - 1; i >= 1; i--) {
     const line = model.getLineContent(i);
-    if (/^\s*\[[^\]]+\]\s*$/.test(line)) return null; // hit a section header
+    if (/^\s*\[[^\]]+\]\s*$/.test(line)) return null;
     for (let c = line.length - 1; c >= 0; c--) {
       const ch = line[c];
       if (ch === "]") depth++;
@@ -260,7 +238,6 @@ function validate(monaco: Monaco, model: MonacoModel): void {
       continue;
     }
 
-    // Only validate top-level key lines (skip array-continuation lines, etc.).
     const keyMatch = trimmed.match(/^([a-z_][a-z0-9_]*)\s*=/i);
     const key = keyMatch?.[1];
     if (!key) continue;
@@ -293,7 +270,6 @@ function validate(monaco: Monaco, model: MonacoModel): void {
       });
     }
 
-    // Single-line enum value: `sort_commits = "..."`
     const enumValues = ENUM_VALUES[key];
     if (enumValues) {
       const valueMatch = codeLine.match(/=\s*"([^"]*)"\s*$/);
@@ -318,255 +294,117 @@ function validate(monaco: Monaco, model: MonacoModel): void {
 
 // ---------- Registration --------------------------------------------------
 
-export function registerCliffToml(monaco: Monaco) {
+export async function registerCliffToml(monaco: Monaco): Promise<void> {
   const alreadyRegistered = monaco.languages
     .getLanguages()
     .some((l: { id: string }) => l.id === CLIFF_TOML_LANGUAGE_ID);
-  if (alreadyRegistered) return;
+  if (!alreadyRegistered) {
+    monaco.languages.register({
+      id: CLIFF_TOML_LANGUAGE_ID,
+      extensions: [".toml"],
+      aliases: ["cliff.toml", "git-cliff"],
+    });
 
-  monaco.languages.register({
-    id: CLIFF_TOML_LANGUAGE_ID,
-    extensions: [".toml"],
-    aliases: ["cliff.toml", "git-cliff"],
-  });
-
-  monaco.languages.setLanguageConfiguration(CLIFF_TOML_LANGUAGE_ID, {
-    comments: { lineComment: "#" },
-    brackets: [
-      ["{", "}"],
-      ["[", "]"],
-    ],
-    autoClosingPairs: [
-      { open: "{", close: "}" },
-      { open: "[", close: "]" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-    ],
-    surroundingPairs: [
-      { open: "{", close: "}" },
-      { open: "[", close: "]" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-    ],
-  });
-
-  const regexFieldsAlt = REGEX_FIELDS.join("|");
-  const replaceFieldsAlt = REPLACE_FIELDS.join("|");
-
-  monaco.languages.setMonarchTokensProvider(CLIFF_TOML_LANGUAGE_ID, {
-    defaultToken: "",
-    tokenPostfix: ".cliff",
-    teraKeywords: TERA_KEYWORDS,
-    teraFilters: TERA_FILTERS,
-
-    tokenizer: {
-      root: [
-        [/\s+/, "white"],
-        [/#.*$/, "comment"],
-        [/^\s*\[\[[^\]]+\]\]/, "metatag"],
-        [/^\s*\[[^\]]+\]/, "metatag"],
-
-        // Any `key = """ ... """` is a Tera template.
-        [/([A-Za-z_][A-Za-z0-9_-]*)(\s*)(=)(\s*)(""")/, [
-          "type.identifier.tera",
-          "white",
-          "operator",
-          "white",
-          { token: "string.heredoc.delimiter", next: "@teraTemplate" },
-        ]],
-
-        // Regex-valued fields: pattern / message / tag_pattern
-        [new RegExp(`(\\b(?:${regexFieldsAlt})\\b)(\\s*)(=)(\\s*)(")`), [
-          "type.identifier",
-          "white",
-          "operator",
-          "white",
-          { token: "string.regexp.delimiter", next: "@regexStringDQ" },
-        ]],
-        [new RegExp(`(\\b(?:${regexFieldsAlt})\\b)(\\s*)(=)(\\s*)(')`), [
-          "type.identifier",
-          "white",
-          "operator",
-          "white",
-          { token: "string.regexp.delimiter", next: "@regexStringSQ" },
-        ]],
-
-        // Replacement-template fields: replace / href
-        [new RegExp(`(\\b(?:${replaceFieldsAlt})\\b)(\\s*)(=)(\\s*)(")`), [
-          "type.identifier",
-          "white",
-          "operator",
-          "white",
-          { token: "string.replacement.delimiter", next: "@replaceStringDQ" },
-        ]],
-        [new RegExp(`(\\b(?:${replaceFieldsAlt})\\b)(\\s*)(=)(\\s*)(')`), [
-          "type.identifier",
-          "white",
-          "operator",
-          "white",
-          { token: "string.replacement.delimiter", next: "@replaceStringSQ" },
-        ]],
-
-        // Generic key
-        [/[A-Za-z_][A-Za-z0-9_-]*(?=\s*=)/, "type.identifier"],
-
-        // Booleans
-        [/\b(?:true|false)\b/, "keyword.boolean"],
-        // Numbers
-        [/-?\d+\.\d+(?:[eE][+-]?\d+)?/, "number.float"],
-        [/-?\d+(?:[eE][+-]?\d+)?/, "number"],
-
-        // Unattached triple-quoted strings (rare but possible).
-        [/"""/, { token: "string.heredoc.delimiter", next: "@plainTripleDQ" }],
-        [/'''/, { token: "string.heredoc.delimiter", next: "@plainTripleSQ" }],
-
-        // Regular strings
-        [/"/, { token: "string.quote", next: "@stringDQ" }],
-        [/'/, { token: "string.quote", next: "@stringSQ" }],
-
-        [/[=,]/, "operator"],
-        [/[{}\[\]]/, "@brackets"],
+    monaco.languages.setLanguageConfiguration(CLIFF_TOML_LANGUAGE_ID, {
+      comments: { lineComment: "#" },
+      brackets: [
+        ["{", "}"],
+        ["[", "]"],
       ],
+      autoClosingPairs: [
+        { open: "{", close: "}" },
+        { open: "[", close: "]" },
+        { open: '"', close: '"' },
+        { open: "'", close: "'" },
+      ],
+      surroundingPairs: [
+        { open: "{", close: "}" },
+        { open: "[", close: "]" },
+        { open: '"', close: '"' },
+        { open: "'", close: "'" },
+      ],
+    });
+  }
 
-      // ----- generic strings -----
-      stringDQ: [
-        [/\\./, "string.escape"],
-        [/[^\\"]+/, "string"],
-        [/"/, { token: "string.quote", next: "@pop" }],
-      ],
-      stringSQ: [
-        [/[^']+/, "string"],
-        [/'/, { token: "string.quote", next: "@pop" }],
-      ],
-      plainTripleDQ: [
-        [/"""/, { token: "string.heredoc.delimiter", next: "@pop" }],
-        [/\\./, "string.escape"],
-        [/[^"\\]+/, "string"],
-        [/"/, "string"],
-      ],
-      plainTripleSQ: [
-        [/'''/, { token: "string.heredoc.delimiter", next: "@pop" }],
-        [/[^']+/, "string"],
-        [/'/, "string"],
-      ],
+  defineCliffDarkTheme(monaco);
 
-      // ----- regex strings: highlight regex metachars + escapes -----
-      regexStringDQ: [
-        [/\\[\\"]/, "string.escape"],
-        [/\\./, "regexp.escape"],
-        [/[(){}\[\]|^$.*+?]/, "regexp.meta"],
-        [/[^\\"]+/, "regexp"],
-        [/"/, { token: "string.regexp.delimiter", next: "@pop" }],
-      ],
-      regexStringSQ: [
-        [/\\./, "regexp.escape"],
-        [/[(){}\[\]|^$.*+?]/, "regexp.meta"],
-        [/[^\\']+/, "regexp"],
-        [/'/, { token: "string.regexp.delimiter", next: "@pop" }],
-      ],
+  // Tokenization is provided by a TextMate grammar (replaces the previous
+  // Monarch tokenizer). Must complete before any model attached to this
+  // language tokenizes its first line.
+  await bootstrapTextMate(monaco, CLIFF_TOML_LANGUAGE_ID);
 
-      // ----- replacement strings: highlight $1 / ${1} backrefs -----
-      replaceStringDQ: [
-        [/\\./, "string.escape"],
-        [/\$\{\d+\}/, "regexp.backreference"],
-        [/\$\d+/, "regexp.backreference"],
-        [/[^\\"$]+/, "string"],
-        [/\$/, "string"],
-        [/"/, { token: "string.replacement.delimiter", next: "@pop" }],
-      ],
-      replaceStringSQ: [
-        [/\\./, "string.escape"],
-        [/\$\{\d+\}/, "regexp.backreference"],
-        [/\$\d+/, "regexp.backreference"],
-        [/[^'$]+/, "string"],
-        [/\$/, "string"],
-        [/'/, { token: "string.replacement.delimiter", next: "@pop" }],
-      ],
+  registerTomlCompletion(monaco);
+  registerTomlHover(monaco);
+  registerTeraProviders(monaco, CLIFF_TOML_LANGUAGE_ID);
 
-      // ----- any """ ... """ value with embedded Tera -----
-      teraTemplate: [
-        [/"""/, { token: "string.heredoc.delimiter", next: "@pop" }],
-        [/\{#-?/, { token: "comment.tera", next: "@teraComment" }],
-        [/\{%-?/, { token: "tag.tera", next: "@teraStmt" }],
-        [/\{\{-?/, { token: "tag.tera", next: "@teraExpr" }],
-        [/\\./, "string.escape"],
-        [/[^{"\\]+/, "string"],
-        [/\{/, "string"],
-        [/"/, "string"],
-      ],
-      teraComment: [
-        [/-?#\}/, { token: "comment.tera", next: "@pop" }],
-        [/[^#-]+/, "comment.tera"],
-        [/./, "comment.tera"],
-      ],
-      teraStmt: [
-        [/-?%\}/, { token: "tag.tera", next: "@pop" }],
-        { include: "@teraExpression" },
-      ],
-      teraExpr: [
-        [/-?\}\}/, { token: "tag.tera", next: "@pop" }],
-        { include: "@teraExpression" },
-      ],
-      teraExpression: [
-        [/\s+/, "white"],
-        [/"([^"\\]|\\.)*"/, "string.tera"],
-        [/'([^'\\]|\\.)*'/, "string.tera"],
-        [/\d+(?:\.\d+)?/, "number.tera"],
-        [/\|/, "delimiter.pipe.tera"],
-        [/[A-Za-z_][\w]*/, {
-          cases: {
-            "@teraKeywords": "keyword.tera",
-            "@teraFilters": "support.function.tera",
-            "@default": "identifier.tera",
-          },
-        }],
-        [/[=<>!]=?|&&|\|\||[+\-*/%]/, "operator.tera"],
-        [/[(),.:\[\]]/, "delimiter.tera"],
-      ],
-    },
-  });
+  const attach = (model: MonacoModel) => {
+    if (model.getLanguageId() !== CLIFF_TOML_LANGUAGE_ID) return;
+    validate(monaco, model);
+    model.onDidChangeContent(() => validate(monaco, model));
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  monaco.editor.getModels().forEach(attach as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  monaco.editor.onDidCreateModel(attach as any);
+}
 
+function defineCliffDarkTheme(monaco: Monaco): void {
   monaco.editor.defineTheme(CLIFF_TOML_THEME_ID, {
     base: "vs-dark",
     inherit: true,
     rules: [
-      { token: "comment.cliff", foreground: "64748B", fontStyle: "italic" },
-      { token: "metatag.cliff", foreground: "FACC15", fontStyle: "bold" },
-      { token: "type.identifier.cliff", foreground: "60A5FA" },
-      { token: "type.identifier.tera.cliff", foreground: "60A5FA", fontStyle: "bold" },
-      { token: "keyword.boolean.cliff", foreground: "F472B6" },
-      { token: "number.cliff", foreground: "FB923C" },
-      { token: "number.float.cliff", foreground: "FB923C" },
-      { token: "operator.cliff", foreground: "94A3B8" },
+      // TOML base
+      { token: "comment", foreground: "64748B", fontStyle: "italic" },
+      { token: "entity.name.section", foreground: "FACC15", fontStyle: "bold" },
+      { token: "punctuation.definition.section", foreground: "FACC15" },
+      { token: "support.type.property-name", foreground: "60A5FA" },
+      { token: "support.type.property-name.tera-binding", foreground: "60A5FA", fontStyle: "bold" },
+      { token: "support.type.property-name.regex", foreground: "60A5FA" },
+      { token: "support.type.property-name.replace", foreground: "60A5FA" },
+      { token: "punctuation.separator.key-value", foreground: "94A3B8" },
+      { token: "punctuation.separator", foreground: "94A3B8" },
+      { token: "punctuation.bracket", foreground: "94A3B8" },
+      { token: "constant.language.boolean", foreground: "F472B6" },
+      { token: "constant.numeric.integer", foreground: "FB923C" },
+      { token: "constant.numeric.float", foreground: "FB923C" },
 
-      { token: "string.cliff", foreground: "A7F3D0" },
-      { token: "string.quote.cliff", foreground: "6EE7B7" },
-      { token: "string.heredoc.delimiter.cliff", foreground: "6EE7B7" },
-      { token: "string.escape.cliff", foreground: "FBBF24" },
+      // Strings
+      { token: "string.quoted.double", foreground: "A7F3D0" },
+      { token: "string.quoted.single", foreground: "A7F3D0" },
+      { token: "string.quoted.triple", foreground: "A7F3D0" },
+      { token: "punctuation.definition.string.template", foreground: "6EE7B7" },
+      { token: "constant.character.escape", foreground: "FBBF24" },
 
-      // Regex-valued field strings
-      { token: "regexp.cliff", foreground: "F0ABFC" },
-      { token: "regexp.meta.cliff", foreground: "C084FC", fontStyle: "bold" },
-      { token: "regexp.escape.cliff", foreground: "FBBF24" },
-      { token: "string.regexp.delimiter.cliff", foreground: "C084FC" },
+      // Regex-valued fields
+      { token: "string.regexp", foreground: "F0ABFC" },
+      { token: "keyword.other.regexp.meta", foreground: "C084FC", fontStyle: "bold" },
+      { token: "constant.character.escape.regexp", foreground: "FBBF24" },
+      { token: "punctuation.definition.string.regex", foreground: "C084FC" },
 
-      // Replacement template strings
-      { token: "string.replacement.delimiter.cliff", foreground: "6EE7B7" },
-      { token: "regexp.backreference.cliff", foreground: "FBBF24", fontStyle: "bold" },
+      // Replacement templates ($1, ${1})
+      { token: "string.template.replace", foreground: "A7F3D0" },
+      { token: "punctuation.definition.string.replace", foreground: "6EE7B7" },
+      { token: "variable.other.regexp.backreference", foreground: "FBBF24", fontStyle: "bold" },
 
-      // Tera
-      { token: "tag.tera.cliff", foreground: "FCD34D", fontStyle: "bold" },
-      { token: "comment.tera.cliff", foreground: "64748B", fontStyle: "italic" },
-      { token: "keyword.tera.cliff", foreground: "F472B6", fontStyle: "bold" },
-      { token: "support.function.tera.cliff", foreground: "67E8F9" },
-      { token: "identifier.tera.cliff", foreground: "E2E8F0" },
-      { token: "string.tera.cliff", foreground: "A7F3D0" },
-      { token: "number.tera.cliff", foreground: "FB923C" },
-      { token: "operator.tera.cliff", foreground: "94A3B8" },
-      { token: "delimiter.tera.cliff", foreground: "94A3B8" },
-      { token: "delimiter.pipe.tera.cliff", foreground: "67E8F9" },
+      // Tera template
+      { token: "punctuation.definition.template", foreground: "FCD34D", fontStyle: "bold" },
+      { token: "comment.block.tera", foreground: "64748B", fontStyle: "italic" },
+      { token: "punctuation.definition.comment.tera", foreground: "FCD34D" },
+      { token: "keyword.control.tera", foreground: "F472B6", fontStyle: "bold" },
+      { token: "constant.language.boolean.tera", foreground: "F472B6" },
+      { token: "variable.language.tera", foreground: "F472B6", fontStyle: "italic" },
+      { token: "support.function.filter.tera", foreground: "67E8F9" },
+      { token: "support.function.builtin.tera", foreground: "67E8F9" },
+      { token: "support.function.test.tera", foreground: "67E8F9" },
+      { token: "variable.other.tera", foreground: "E2E8F0" },
+      { token: "string.quoted.double.tera", foreground: "A7F3D0" },
+      { token: "string.quoted.single.tera", foreground: "A7F3D0" },
+      { token: "constant.numeric.tera", foreground: "FB923C" },
+      { token: "keyword.operator.pipe.tera", foreground: "67E8F9" },
+      { token: "keyword.operator.tera", foreground: "94A3B8" },
+      { token: "punctuation.separator.tera", foreground: "94A3B8" },
 
-      // Git commit message syntax (no .cliff suffix — different language)
+      // Git commit message syntax (separate language)
       { token: "type.commit", foreground: "60A5FA" },
       { token: "type.breaking.commit", foreground: "EF4444", fontStyle: "bold" },
       { token: "scope.commit", foreground: "C084FC" },
@@ -598,7 +436,9 @@ export function registerCliffToml(monaco: Monaco) {
       "minimapSlider.activeBackground": "#64748BC0",
     },
   });
+}
 
+function registerTomlCompletion(monaco: Monaco): void {
   monaco.languages.registerCompletionItemProvider(CLIFF_TOML_LANGUAGE_ID, {
     triggerCharacters: ["[", ".", '"', "{", " ", "="],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -614,7 +454,6 @@ export function registerCliffToml(monaco: Monaco) {
         endColumn: word.endColumn,
       };
 
-      // 1. Typing a section header: `[<cursor>` or `[remote.<cursor>`
       const sectionHeaderMatch = textBefore.match(/^\s*\[([^\]\n]*)$/);
       if (sectionHeaderMatch) {
         const bracketStart = textBefore.lastIndexOf("[");
@@ -643,11 +482,9 @@ export function registerCliffToml(monaco: Monaco) {
       const section = findCurrentSection(model, lineNumber);
       const baseSection = section?.split(".")[0] ?? null;
 
-      // Detect whether the cursor sits inside a `"..."` value.
       const quoteCount = (textBefore.match(/(?<!\\)"/g) || []).length;
       const inString = quoteCount % 2 === 1;
 
-      // Detect whether the cursor is inside an inline `{ ... }` table.
       const lastOpenBrace = textBefore.lastIndexOf("{");
       const lastCloseBrace = textBefore.lastIndexOf("}");
       const inInlineTable = lastOpenBrace > lastCloseBrace;
@@ -656,7 +493,6 @@ export function registerCliffToml(monaco: Monaco) {
         : null;
 
       if (inString) {
-        // Find what key owns this string value.
         let valueKey: string | null = null;
 
         if (inInlineTable) {
@@ -673,7 +509,6 @@ export function registerCliffToml(monaco: Monaco) {
           const m = before.match(/(\w+)\s*=\s*\[?\s*$/);
           if (m?.[1]) valueKey = m[1];
           else {
-            // Multi-line array: walk back to find `key = [`.
             for (let i = lineNumber - 1; i >= 1; i--) {
               const line: string = model.getLineContent(i);
               const m2 = line.match(/^\s*(\w+)\s*=\s*\[/);
@@ -709,7 +544,6 @@ export function registerCliffToml(monaco: Monaco) {
         return { suggestions: [] };
       }
 
-      // Inside an inline table — suggest object-shape keys for known arrays.
       if (inInlineTable && arrayKey && INLINE_TABLE_KEYS[arrayKey]) {
         return {
           suggestions: INLINE_TABLE_KEYS[arrayKey].map((k) => ({
@@ -723,7 +557,6 @@ export function registerCliffToml(monaco: Monaco) {
         };
       }
 
-      // Otherwise, suggest top-level keys for the current section.
       if (baseSection && SECTION_KEYS[baseSection] && /^\s*\w*$/.test(textBefore)) {
         return {
           suggestions: SECTION_KEYS[baseSection].map((k) => {
@@ -746,8 +579,9 @@ export function registerCliffToml(monaco: Monaco) {
       return { suggestions: [] };
     },
   });
+}
 
-  // Hover: explain that [remote.*] sections are mocked server-side.
+function registerTomlHover(monaco: Monaco): void {
   monaco.languages.registerHoverProvider(CLIFF_TOML_LANGUAGE_ID, {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     provideHover: (model: any, position: any) => {
@@ -758,7 +592,6 @@ export function registerCliffToml(monaco: Monaco) {
       if (!headerMatch) return null;
       const open = lineContent.indexOf("[");
       const close = lineContent.indexOf("]");
-      // Only fire when the cursor is on the header tokens themselves.
       if (position.column < open + 1 || position.column > close + 2) return null;
       const header = headerMatch[1] ?? "";
       const lines = [
@@ -784,15 +617,4 @@ export function registerCliffToml(monaco: Monaco) {
       };
     },
   });
-
-  // Diagnostics: validate existing and future models with this language id.
-  const attach = (model: MonacoModel) => {
-    if (model.getLanguageId() !== CLIFF_TOML_LANGUAGE_ID) return;
-    validate(monaco, model);
-    model.onDidChangeContent(() => validate(monaco, model));
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  monaco.editor.getModels().forEach(attach as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  monaco.editor.onDidCreateModel(attach as any);
 }

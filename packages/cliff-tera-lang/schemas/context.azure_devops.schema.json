@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.azure_devops.schema.json",
+  "title": "Azure DevOps remote profile",
+  "description": "Variables added when [remote.azure_devops] is configured in cliff.toml.",
+  "x-tera-source": "azure_devops",
+  "x-tera-contributes": {
+    "Release": {
+      "azure_devops": { "$ref": "#/$defs/AzureRelease" },
+      "remote": { "$ref": "#/$defs/RemoteIdentity" }
+    },
+    "Commit": {
+      "azure_devops": { "$ref": "#/$defs/AzureCommit" },
+      "remote": { "$ref": "#/$defs/CommitRemote" }
+    }
+  },
+  "$defs": {
+    "AzureRelease": {
+      "type": "object",
+      "description": "Release-level data fetched from the Azure DevOps API.",
+      "x-tera-source": "azure_devops",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "description": "Contributors aggregated across this release's pull requests.",
+          "x-tera-source": "azure_devops",
+          "items": { "$ref": "#/$defs/Contributor" }
+        }
+      }
+    },
+    "AzureCommit": {
+      "type": "object",
+      "description": "Per-commit data fetched from the Azure DevOps API.",
+      "x-tera-source": "azure_devops",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "RemoteIdentity": {
+      "type": "object",
+      "description": "Owner/repo pair for the configured Azure DevOps remote. Owner is typically `organization/project`.",
+      "x-tera-source": "azure_devops",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Azure DevOps owner, typically `<organization>/<project>`.",
+          "x-tera-example": "orhun-org/myproject",
+          "x-tera-source": "azure_devops"
+        },
+        "repo": {
+          "type": "string",
+          "description": "Azure DevOps repository name.",
+          "x-tera-example": "git-cliff",
+          "x-tera-source": "azure_devops"
+        }
+      }
+    },
+    "CommitRemote": {
+      "type": "object",
+      "description": "Per-commit data resolved against the active remote.",
+      "x-tera-source": "azure_devops",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Contributor": {
+      "type": "object",
+      "description": "A contributor record for a single pull request in this release.",
+      "x-tera-source": "azure_devops",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Username": {
+      "type": "string",
+      "description": "Azure DevOps username of the PR author.",
+      "x-tera-example": "orhun",
+      "x-tera-source": "azure_devops"
+    },
+    "PrTitle": {
+      "type": "string",
+      "description": "Title of the pull request that contained this commit.",
+      "x-tera-source": "azure_devops"
+    },
+    "PrNumber": {
+      "type": "integer",
+      "description": "Pull request ID on Azure DevOps.",
+      "x-tera-example": "420",
+      "x-tera-source": "azure_devops"
+    },
+    "PrLabels": {
+      "type": "array",
+      "description": "Labels applied to the PR.",
+      "x-tera-source": "azure_devops",
+      "items": {
+        "type": "string",
+        "x-tera-source": "azure_devops"
+      }
+    },
+    "IsFirstTime": {
+      "type": "boolean",
+      "description": "True if this is the contributor's first merged PR in the repository.",
+      "x-tera-example": "true",
+      "x-tera-source": "azure_devops"
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "https://cliff-notes.dev/schemas/tera-snippets.schema.json",
+  "snippets": [
+    {
+      "prefix": "for",
+      "description": "Loop over a collection",
+      "body": [
+        "{% for ${1:item} in ${2:items} %}",
+        "  $0",
+        "{% endfor %}"
+      ]
+    },
+    {
+      "prefix": "for-commits",
+      "description": "Iterate over commits in a release",
+      "body": [
+        "{% for commit in commits %}",
+        "  - ${1:{{ commit.message | upper_first }}}$0",
+        "{% endfor %}"
+      ]
+    },
+    {
+      "prefix": "for-commits-grouped",
+      "description": "Group commits by their parser group, then iterate",
+      "body": [
+        "{% for group, commits in commits | group_by(attribute=\"group\") %}",
+        "  ### ${1:{{ group | upper_first }}}",
+        "",
+        "  {% for commit in commits %}",
+        "    - {{ commit.message | upper_first }}$0",
+        "  {% endfor %}",
+        "{% endfor %}"
+      ]
+    },
+    {
+      "prefix": "if",
+      "description": "Conditional",
+      "body": [
+        "{% if ${1:condition} %}",
+        "  $0",
+        "{% endif %}"
+      ]
+    },
+    {
+      "prefix": "if-else",
+      "description": "Conditional with else branch",
+      "body": [
+        "{% if ${1:condition} %}",
+        "  $2",
+        "{% else %}",
+        "  $0",
+        "{% endif %}"
+      ]
+    },
+    {
+      "prefix": "if-breaking",
+      "description": "Render breaking-change commits differently",
+      "body": [
+        "{% if commit.breaking %}",
+        "  **BREAKING**: ${1:{{ commit.message }}}$0",
+        "{% else %}",
+        "  {{ commit.message }}",
+        "{% endif %}"
+      ]
+    },
+    {
+      "prefix": "filter-pr",
+      "description": "Skip commits without a remote PR/MR",
+      "body": [
+        "{% if commit.remote.pr_number %}",
+        "  - {{ commit.message }} (#{{ commit.remote.pr_number }})$0",
+        "{% endif %}"
+      ]
+    },
+    {
+      "prefix": "set",
+      "description": "Bind a value to a name",
+      "body": ["{% set ${1:name} = ${2:value} %}$0"]
+    },
+    {
+      "prefix": "macro",
+      "description": "Define a macro",
+      "body": [
+        "{% macro ${1:name}(${2:arg}) %}",
+        "  $0",
+        "{% endmacro %}"
+      ]
+    },
+    {
+      "prefix": "expr",
+      "description": "Inline expression",
+      "body": ["{{ ${1:expression} }}$0"]
+    },
+    {
+      "prefix": "comment",
+      "description": "Tera comment",
+      "body": ["{# ${1:comment} #}$0"]
+    },
+    {
+      "prefix": "contributors-github",
+      "description": "List first-time contributors from the GitHub profile",
+      "body": [
+        "{% if github.contributors | filter(attribute=\"is_first_time\", value=true) | length > 0 %}",
+        "  ## New contributors",
+        "  {% for contributor in github.contributors | filter(attribute=\"is_first_time\", value=true) %}",
+        "    - @{{ contributor.username }} in #{{ contributor.pr_number }}$0",
+        "  {% endfor %}",
+        "{% endif %}"
+      ]
+    }
+  ]
+}

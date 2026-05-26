@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.submodule.schema.json",
+  "title": "Submodule profile",
+  "description": "Variables added when git-cliff is configured with `recurse_submodules = true` under [git].",
+  "x-tera-source": "submodule",
+  "x-tera-contributes": {
+    "Release": {
+      "submodule_commits": { "$ref": "#/$defs/SubmoduleCommits" }
+    }
+  },
+  "$defs": {
+    "SubmoduleCommits": {
+      "type": "object",
+      "description": "Map of relative submodule path → array of commits in that submodule for this release.",
+      "x-tera-source": "submodule",
+      "additionalProperties": {
+        "type": "array",
+        "x-tera-source": "submodule",
+        "items": { "$ref": "#/$defs/SubmoduleCommit" }
+      }
+    },
+    "SubmoduleCommit": {
+      "type": "object",
+      "description": "A commit in a submodule, with the bare minimum metadata.",
+      "x-tera-source": "submodule",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Full SHA-1 hash of the submodule commit.",
+          "x-tera-example": "c10d0f12e85975bc1e8f41eed693c58eca1894eb",
+          "x-tera-source": "submodule"
+        },
+        "message": {
+          "type": "string",
+          "description": "Commit message of the submodule commit.",
+          "x-tera-example": "release (#1671)",
+          "x-tera-source": "submodule"
+        }
+      }
+    }
+  }
+}

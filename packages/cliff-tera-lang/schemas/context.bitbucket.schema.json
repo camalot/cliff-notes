@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.bitbucket.schema.json",
+  "title": "Bitbucket remote profile",
+  "description": "Variables added when [remote.bitbucket] is configured in cliff.toml.",
+  "x-tera-source": "bitbucket",
+  "x-tera-contributes": {
+    "Release": {
+      "bitbucket": { "$ref": "#/$defs/BitbucketRelease" },
+      "remote": { "$ref": "#/$defs/RemoteIdentity" }
+    },
+    "Commit": {
+      "bitbucket": { "$ref": "#/$defs/BitbucketCommit" },
+      "remote": { "$ref": "#/$defs/CommitRemote" }
+    }
+  },
+  "$defs": {
+    "BitbucketRelease": {
+      "type": "object",
+      "description": "Release-level data fetched from the Bitbucket API.",
+      "x-tera-source": "bitbucket",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "description": "Contributors aggregated across this release's pull requests.",
+          "x-tera-source": "bitbucket",
+          "items": { "$ref": "#/$defs/Contributor" }
+        }
+      }
+    },
+    "BitbucketCommit": {
+      "type": "object",
+      "description": "Per-commit data fetched from the Bitbucket API.",
+      "x-tera-source": "bitbucket",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "RemoteIdentity": {
+      "type": "object",
+      "description": "Workspace/repo pair for the configured Bitbucket remote.",
+      "x-tera-source": "bitbucket",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Bitbucket workspace that owns the repository.",
+          "x-tera-example": "orhun",
+          "x-tera-source": "bitbucket"
+        },
+        "repo": {
+          "type": "string",
+          "description": "Bitbucket repository slug.",
+          "x-tera-example": "git-cliff",
+          "x-tera-source": "bitbucket"
+        }
+      }
+    },
+    "CommitRemote": {
+      "type": "object",
+      "description": "Per-commit data resolved against the active remote.",
+      "x-tera-source": "bitbucket",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Contributor": {
+      "type": "object",
+      "description": "A contributor record for a single pull request in this release.",
+      "x-tera-source": "bitbucket",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Username": {
+      "type": "string",
+      "description": "Bitbucket username of the PR author.",
+      "x-tera-example": "orhun",
+      "x-tera-source": "bitbucket"
+    },
+    "PrTitle": {
+      "type": "string",
+      "description": "Title of the pull request that contained this commit.",
+      "x-tera-source": "bitbucket"
+    },
+    "PrNumber": {
+      "type": "integer",
+      "description": "Pull request ID on Bitbucket.",
+      "x-tera-example": "420",
+      "x-tera-source": "bitbucket"
+    },
+    "PrLabels": {
+      "type": "array",
+      "description": "Labels applied to the PR.",
+      "x-tera-source": "bitbucket",
+      "items": {
+        "type": "string",
+        "x-tera-source": "bitbucket"
+      }
+    },
+    "IsFirstTime": {
+      "type": "boolean",
+      "description": "True if this is the contributor's first merged PR in the repository.",
+      "x-tera-example": "true",
+      "x-tera-source": "bitbucket"
+    }
+  }
+}

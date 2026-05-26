@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.gitlab.schema.json",
+  "title": "GitLab remote profile",
+  "description": "Variables added when [remote.gitlab] is configured in cliff.toml.",
+  "x-tera-source": "gitlab",
+  "x-tera-contributes": {
+    "Release": {
+      "gitlab": { "$ref": "#/$defs/GitlabRelease" },
+      "remote": { "$ref": "#/$defs/RemoteIdentity" }
+    },
+    "Commit": {
+      "gitlab": { "$ref": "#/$defs/GitlabCommit" },
+      "remote": { "$ref": "#/$defs/CommitRemote" }
+    }
+  },
+  "$defs": {
+    "GitlabRelease": {
+      "type": "object",
+      "description": "Release-level data fetched from the GitLab API.",
+      "x-tera-source": "gitlab",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "description": "Contributors aggregated across this release's merge requests.",
+          "x-tera-source": "gitlab",
+          "items": { "$ref": "#/$defs/Contributor" }
+        }
+      }
+    },
+    "GitlabCommit": {
+      "type": "object",
+      "description": "Per-commit data fetched from the GitLab API.",
+      "x-tera-source": "gitlab",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "RemoteIdentity": {
+      "type": "object",
+      "description": "Owner/repo pair for the configured GitLab remote.",
+      "x-tera-source": "gitlab",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "GitLab user or group that owns the project.",
+          "x-tera-example": "orhun",
+          "x-tera-source": "gitlab"
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitLab project name.",
+          "x-tera-example": "git-cliff",
+          "x-tera-source": "gitlab"
+        }
+      }
+    },
+    "CommitRemote": {
+      "type": "object",
+      "description": "Per-commit data resolved against the active remote.",
+      "x-tera-source": "gitlab",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Contributor": {
+      "type": "object",
+      "description": "A contributor record for a single merge request in this release.",
+      "x-tera-source": "gitlab",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Username": {
+      "type": "string",
+      "description": "GitLab username of the merge request author.",
+      "x-tera-example": "orhun",
+      "x-tera-source": "gitlab"
+    },
+    "PrTitle": {
+      "type": "string",
+      "description": "Title of the merge request that contained this commit. (git-cliff uses `pr_*` field names regardless of platform.)",
+      "x-tera-source": "gitlab"
+    },
+    "PrNumber": {
+      "type": "integer",
+      "description": "Merge request IID on GitLab.",
+      "x-tera-example": "420",
+      "x-tera-source": "gitlab"
+    },
+    "PrLabels": {
+      "type": "array",
+      "description": "Labels applied to the merge request.",
+      "x-tera-source": "gitlab",
+      "items": {
+        "type": "string",
+        "x-tera-source": "gitlab"
+      }
+    },
+    "IsFirstTime": {
+      "type": "boolean",
+      "description": "True if this is the contributor's first merged MR in the project.",
+      "x-tera-example": "true",
+      "x-tera-source": "gitlab"
+    }
+  }
+}

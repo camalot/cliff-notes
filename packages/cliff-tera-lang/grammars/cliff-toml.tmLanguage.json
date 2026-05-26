@@ -1,0 +1,173 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Cliff TOML",
+  "scopeName": "source.cliff-toml",
+  "fileTypes": ["cliff.toml"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#section-header" },
+    { "include": "#tera-template-binding" },
+    { "include": "#regex-field" },
+    { "include": "#replace-field" },
+    { "include": "#key-value" },
+    { "include": "#triple-string" },
+    { "include": "#string" },
+    { "include": "#number" },
+    { "include": "#boolean" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.cliff-toml"
+    },
+    "section-header": {
+      "match": "^\\s*(\\[\\[?)([^\\]\\n]+)(\\]?\\])\\s*$",
+      "captures": {
+        "1": { "name": "punctuation.definition.section.begin.cliff-toml" },
+        "2": { "name": "entity.name.section.cliff-toml" },
+        "3": { "name": "punctuation.definition.section.end.cliff-toml" }
+      }
+    },
+    "tera-template-binding": {
+      "begin": "([A-Za-z_][A-Za-z0-9_-]*)(\\s*)(=)(\\s*)(\"\"\")",
+      "beginCaptures": {
+        "1": { "name": "support.type.property-name.tera-binding.cliff-toml" },
+        "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+        "5": { "name": "punctuation.definition.string.template.begin.cliff-toml" }
+      },
+      "end": "(\"\"\")",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.template.end.cliff-toml" }
+      },
+      "name": "meta.template.tera.cliff-toml",
+      "patterns": [
+        { "include": "#tera-comment" },
+        { "include": "#tera-statement" },
+        { "include": "#tera-expression-block" },
+        { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
+        { "match": "[^{\"\\\\]+", "name": "string.quoted.triple.cliff-toml" }
+      ]
+    },
+    "tera-comment": {
+      "begin": "\\{#-?",
+      "end": "-?#\\}",
+      "name": "comment.block.tera.cliff-toml",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.tera.cliff-toml" } },
+      "endCaptures":   { "0": { "name": "punctuation.definition.comment.tera.cliff-toml" } }
+    },
+    "tera-statement": {
+      "begin": "\\{%-?",
+      "end": "-?%\\}",
+      "name": "meta.tag.statement.tera.cliff-toml",
+      "beginCaptures": { "0": { "name": "punctuation.definition.template.statement.begin.tera.cliff-toml" } },
+      "endCaptures":   { "0": { "name": "punctuation.definition.template.statement.end.tera.cliff-toml" } },
+      "patterns": [{ "include": "#tera-inside" }]
+    },
+    "tera-expression-block": {
+      "begin": "\\{\\{-?",
+      "end": "-?\\}\\}",
+      "name": "meta.tag.expression.tera.cliff-toml",
+      "beginCaptures": { "0": { "name": "punctuation.definition.template.expression.begin.tera.cliff-toml" } },
+      "endCaptures":   { "0": { "name": "punctuation.definition.template.expression.end.tera.cliff-toml" } },
+      "patterns": [{ "include": "#tera-inside" }]
+    },
+    "tera-inside": {
+      "patterns": [
+        { "match": "\\b(if|elif|else|endif|for|endfor|in|break|continue|block|endblock|extends|include|import|macro|endmacro|raw|endraw|set|set_global|filter|endfilter|as|and|or|not|is)\\b",
+          "name": "keyword.control.tera.cliff-toml" },
+        { "match": "\\b(true|false)\\b", "name": "constant.language.boolean.tera.cliff-toml" },
+        { "match": "\\bself\\b", "name": "variable.language.tera.cliff-toml" },
+        { "match": "\\b(lower|upper|wordcount|capitalize|title|replace|reverse|length|trim|trim_start|trim_end|trim_start_matches|trim_end_matches|truncate|linebreaksbr|striptags|join|sort|unique|slice|first|last|nth|filter|map|group_by|concat|split|int|float|round|abs|date|get|default|escape|safe|upper_first|lower_first|as_str|json_encode|urlencode|urlencode_strict|filesizeformat|pluralize|indent|spaceless|escape_xml|trim_lines|get_random)\\b",
+          "name": "support.function.filter.tera.cliff-toml" },
+        { "match": "\\b(range|now|throw|get_env)\\b", "name": "support.function.builtin.tera.cliff-toml" },
+        { "match": "\\b(defined|undefined|string|number|iterable|odd|even|divisibleby|matching|containing|starting_with|ending_with)\\b",
+          "name": "support.function.test.tera.cliff-toml" },
+        { "match": "\"([^\"\\\\]|\\\\.)*\"", "name": "string.quoted.double.tera.cliff-toml" },
+        { "match": "'([^'\\\\]|\\\\.)*'", "name": "string.quoted.single.tera.cliff-toml" },
+        { "match": "\\b\\d+(?:\\.\\d+)?\\b", "name": "constant.numeric.tera.cliff-toml" },
+        { "match": "\\|", "name": "keyword.operator.pipe.tera.cliff-toml" },
+        { "match": "==|!=|<=|>=|<|>|&&|\\|\\||[+\\-*/%]", "name": "keyword.operator.tera.cliff-toml" },
+        { "match": "[A-Za-z_][A-Za-z0-9_]*", "name": "variable.other.tera.cliff-toml" },
+        { "match": "[(),.:\\[\\]=]", "name": "punctuation.separator.tera.cliff-toml" }
+      ]
+    },
+    "regex-field": {
+      "begin": "\\b(pattern|message|tag_pattern)\\b(\\s*)(=)(\\s*)(\")",
+      "beginCaptures": {
+        "1": { "name": "support.type.property-name.regex.cliff-toml" },
+        "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+        "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
+      },
+      "end": "(\")",
+      "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
+      "name": "string.regexp.cliff-toml",
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
+        { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+      ]
+    },
+    "replace-field": {
+      "begin": "\\b(replace|href)\\b(\\s*)(=)(\\s*)(\")",
+      "beginCaptures": {
+        "1": { "name": "support.type.property-name.replace.cliff-toml" },
+        "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+        "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
+      },
+      "end": "(\")",
+      "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
+      "name": "string.template.replace.cliff-toml",
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
+        { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
+        { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+      ]
+    },
+    "key-value": {
+      "match": "([A-Za-z_][A-Za-z0-9_-]*)(\\s*)(=)",
+      "captures": {
+        "1": { "name": "support.type.property-name.cliff-toml" },
+        "3": { "name": "punctuation.separator.key-value.cliff-toml" }
+      }
+    },
+    "triple-string": {
+      "begin": "\"\"\"|'''",
+      "end": "\"\"\"|'''",
+      "name": "string.quoted.triple.cliff-toml",
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.cliff-toml",
+          "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.cliff-toml" }]
+        },
+        {
+          "begin": "'",
+          "end": "'",
+          "name": "string.quoted.single.cliff-toml"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        { "match": "-?\\d+\\.\\d+(?:[eE][+-]?\\d+)?", "name": "constant.numeric.float.cliff-toml" },
+        { "match": "-?\\d+(?:[eE][+-]?\\d+)?", "name": "constant.numeric.integer.cliff-toml" }
+      ]
+    },
+    "boolean": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.boolean.cliff-toml"
+    },
+    "punctuation": {
+      "patterns": [
+        { "match": "[=,]", "name": "punctuation.separator.cliff-toml" },
+        { "match": "[{}\\[\\]]", "name": "punctuation.bracket.cliff-toml" }
+      ]
+    }
+  }
+}

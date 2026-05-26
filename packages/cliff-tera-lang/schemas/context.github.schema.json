@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cliff-notes.dev/schemas/context.github.schema.json",
+  "title": "GitHub remote profile",
+  "description": "Variables added when [remote.github] is configured in cliff.toml.",
+  "x-tera-source": "github",
+  "x-tera-contributes": {
+    "Release": {
+      "github": { "$ref": "#/$defs/GithubRelease" },
+      "remote": { "$ref": "#/$defs/RemoteIdentity" }
+    },
+    "Commit": {
+      "github": { "$ref": "#/$defs/GithubCommit" },
+      "remote": { "$ref": "#/$defs/CommitRemote" }
+    }
+  },
+  "$defs": {
+    "GithubRelease": {
+      "type": "object",
+      "description": "Release-level data fetched from the GitHub API.",
+      "x-tera-source": "github",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "description": "Contributors aggregated across this release's PRs.",
+          "x-tera-source": "github",
+          "items": { "$ref": "#/$defs/Contributor" }
+        }
+      }
+    },
+    "GithubCommit": {
+      "type": "object",
+      "description": "Per-commit data fetched from the GitHub API. Alias for `commit.remote` when [remote.github] is the active remote.",
+      "x-tera-source": "github",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "RemoteIdentity": {
+      "type": "object",
+      "description": "Owner/repo pair for the configured GitHub remote.",
+      "x-tera-source": "github",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "GitHub user or organization that owns the repository.",
+          "x-tera-example": "orhun",
+          "x-tera-source": "github"
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository name.",
+          "x-tera-example": "git-cliff",
+          "x-tera-source": "github"
+        }
+      }
+    },
+    "CommitRemote": {
+      "type": "object",
+      "description": "Per-commit data resolved against the active remote.",
+      "x-tera-source": "github",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Contributor": {
+      "type": "object",
+      "description": "A contributor record for a single PR in this release.",
+      "x-tera-source": "github",
+      "properties": {
+        "username": { "$ref": "#/$defs/Username" },
+        "pr_title": { "$ref": "#/$defs/PrTitle" },
+        "pr_number": { "$ref": "#/$defs/PrNumber" },
+        "pr_labels": { "$ref": "#/$defs/PrLabels" },
+        "is_first_time": { "$ref": "#/$defs/IsFirstTime" }
+      }
+    },
+    "Username": {
+      "type": "string",
+      "description": "GitHub username of the PR author.",
+      "x-tera-example": "orhun",
+      "x-tera-source": "github"
+    },
+    "PrTitle": {
+      "type": "string",
+      "description": "Title of the pull request that contained this commit.",
+      "x-tera-source": "github"
+    },
+    "PrNumber": {
+      "type": "integer",
+      "description": "Pull request number on GitHub.",
+      "x-tera-example": "420",
+      "x-tera-source": "github"
+    },
+    "PrLabels": {
+      "type": "array",
+      "description": "Labels applied to the PR.",
+      "x-tera-source": "github",
+      "items": {
+        "type": "string",
+        "x-tera-source": "github"
+      }
+    },
+    "IsFirstTime": {
+      "type": "boolean",
+      "description": "True if this is the contributor's first merged PR in the repository.",
+      "x-tera-example": "true",
+      "x-tera-source": "github"
+    }
+  }
+}

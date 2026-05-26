@@ -1,0 +1,105 @@
+{
+  "$schema": "https://cliff-notes.dev/schemas/cliff-fields.schema.json",
+  "docs": "https://git-cliff.org/docs/configuration",
+  "sections": [
+    "bump",
+    "changelog",
+    "git",
+    "remote",
+    "remote.github",
+    "remote.gitlab",
+    "remote.gitea",
+    "remote.bitbucket",
+    "remote.azure_devops"
+  ],
+  "section_keys": {
+    "bump": [
+      "features_always_bump_minor",
+      "breaking_always_bump_major",
+      "initial_tag",
+      "custom_increment_regex",
+      "custom_major_increment_regex",
+      "custom_minor_increment_regex"
+    ],
+    "changelog": [
+      "header",
+      "body",
+      "footer",
+      "trim",
+      "render_always",
+      "postprocessors",
+      "output"
+    ],
+    "git": [
+      "conventional_commits",
+      "filter_unconventional",
+      "require_conventional",
+      "split_commits",
+      "commit_preprocessors",
+      "commit_parsers",
+      "protect_breaking_commits",
+      "filter_commits",
+      "filter_merge_commits",
+      "fail_on_unmatched_commit",
+      "link_parsers",
+      "use_branch_tags",
+      "topo_order",
+      "topo_order_commits",
+      "sort_commits",
+      "recurse_submodules",
+      "tag_pattern",
+      "skip_tags",
+      "ignore_tags",
+      "processing_order",
+      "count_tags"
+    ],
+    "remote": [
+      "owner",
+      "repo",
+      "token",
+      "is_custom",
+      "api_url",
+      "native_protocol"
+    ]
+  },
+  "inline_table_keys": {
+    "commit_preprocessors": ["pattern", "replace", "replace_command"],
+    "postprocessors": ["pattern", "replace", "replace_command"],
+    "commit_parsers": [
+      "message",
+      "body",
+      "footer",
+      "sha",
+      "field",
+      "pattern",
+      "default_scope",
+      "group",
+      "skip"
+    ],
+    "link_parsers": ["pattern", "href", "text"]
+  },
+  "enum_values": {
+    "sort_commits": ["newest", "oldest"],
+    "processing_order": [
+      "commit_preprocessors",
+      "split_commits",
+      "conventional_commits",
+      "commit_parsers",
+      "link_parsers"
+    ],
+    "field": [
+      "id",
+      "message",
+      "body",
+      "footer",
+      "author.name",
+      "author.email",
+      "committer.name",
+      "committer.email"
+    ]
+  },
+  "regex_fields": ["pattern", "message", "tag_pattern"],
+  "replace_template_fields": ["replace", "href"],
+  "remote_secret_keys": ["token"],
+  "remote_subsections": ["github", "gitlab", "gitea", "bitbucket", "azure_devops"]
+}
