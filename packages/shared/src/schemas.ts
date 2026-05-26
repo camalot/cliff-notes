@@ -76,11 +76,22 @@ export const renderRequestSchema = z.object({
 });
 export type RenderRequest = z.infer<typeof renderRequestSchema>;
 
+export const REMOTE_KINDS = [
+  "github",
+  "gitlab",
+  "gitea",
+  "bitbucket",
+  "azure_devops",
+] as const;
+export type RemoteKind = (typeof REMOTE_KINDS)[number];
+
 export const renderResponseSchema = z.object({
   markdown: z.string(),
   warnings: z.array(z.string()).optional(),
   nextTag: z.string().optional(),
   nextTagFallback: z.boolean().optional(),
+  /** Remote integrations whose data was mocked for this render. */
+  mockedRemotes: z.array(z.enum(REMOTE_KINDS)).optional(),
 });
 export type RenderResponse = z.infer<typeof renderResponseSchema>;
 

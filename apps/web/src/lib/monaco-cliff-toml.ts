@@ -30,7 +30,7 @@ const TERA_FILTERS = [
 
 // ---------- Schema --------------------------------------------------------
 
-const REMOTE_SUBSECTIONS = ["github", "gitlab", "gitea", "bitbucket"];
+const REMOTE_SUBSECTIONS = ["github", "gitlab", "gitea", "bitbucket", "azure_devops"];
 
 const SECTION_HEADERS = [
   "bump",
@@ -40,6 +40,7 @@ const SECTION_HEADERS = [
   "remote.gitlab",
   "remote.gitea",
   "remote.bitbucket",
+  "remote.azure_devops",
 ];
 
 const SECTION_KEYS: Record<string, readonly string[]> = {
@@ -743,6 +744,44 @@ export function registerCliffToml(monaco: Monaco) {
       }
 
       return { suggestions: [] };
+    },
+  });
+
+  // Hover: explain that [remote.*] sections are mocked server-side.
+  monaco.languages.registerHoverProvider(CLIFF_TOML_LANGUAGE_ID, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    provideHover: (model: any, position: any) => {
+      const lineContent: string = model.getLineContent(position.lineNumber);
+      const headerMatch = /^\s*\[(remote(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\]\s*$/.exec(
+        lineContent.replace(/#.*$/, ""),
+      );
+      if (!headerMatch) return null;
+      const open = lineContent.indexOf("[");
+      const close = lineContent.indexOf("]");
+      // Only fire when the cursor is on the header tokens themselves.
+      if (position.column < open + 1 || position.column > close + 2) return null;
+      const header = headerMatch[1] ?? "";
+      const lines = [
+        `**\`[${header}]\` is mocked by cliff-notes**`,
+        "",
+        "cliff-notes strips `[remote.*]` sections before invoking git-cliff so no",
+        "outbound API call is made and `token` is never written to disk. The",
+        "section is replaced with deterministic mock data so templates that",
+        "reference `commit.remote.*`, `<kind>.contributors`, and",
+        "`remote.<kind>.{owner, repo}` still render.",
+        "",
+        "PR numbers, contributor lists, and `is_first_time` flags here will not",
+        "match what real git-cliff would produce against your live repo.",
+      ];
+      return {
+        range: {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: open + 1,
+          endColumn: close + 2,
+        },
+        contents: [{ value: lines.join("\n") }],
+      };
     },
   });
 

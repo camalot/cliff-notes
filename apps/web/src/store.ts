@@ -211,7 +211,15 @@ export const useAppStore = create<AppState>((set, get) => ({
           bumpedVersion: options.bumpedVersion,
         },
       });
-      set({ output: { markdown: out.markdown, warnings: out.warnings ?? [] }, isRendering: false, configDirty: false });
+      set({
+        output: {
+          markdown: out.markdown,
+          warnings: out.warnings ?? [],
+          mockedRemotes: out.mockedRemotes ?? [],
+        },
+        isRendering: false,
+        configDirty: false,
+      });
       if (options.bumpedVersion && out.nextTagFallback && out.nextTag) {
         toast.info("Next tag computed from fallback", {
           message: `git-cliff didn't return a bumped version; using ${out.nextTag} instead.`,

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ConventionalType } from "@cliff-notes/shared";
+import type { ConventionalType, RemoteKind } from "@cliff-notes/shared";
 import { Card, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { IconButton } from "./ui/IconButton";
@@ -28,6 +28,7 @@ interface Props {
   // Output
   markdown: string | null;
   warnings: string[];
+  mockedRemotes: RemoteKind[];
 
   // Config — options
   options: RenderOptionsState;
@@ -138,7 +139,11 @@ export function RightPanel(props: Props) {
       <div className="flex-1 min-h-0">
         {tab === "config" && <ConfigTab {...props} />}
         {tab === "changelog" && (
-          <ChangelogTab markdown={props.markdown} warnings={props.warnings} />
+          <ChangelogTab
+            markdown={props.markdown}
+            warnings={props.warnings}
+            mockedRemotes={props.mockedRemotes}
+          />
         )}
         {tab === "raw" && <RawTab markdown={props.markdown} />}
       </div>
@@ -218,10 +223,11 @@ function ConfigTab(props: Props) {
 }
 
 function ChangelogTab({
-  markdown, warnings,
+  markdown, warnings, mockedRemotes,
 }: {
   markdown: string | null;
   warnings: string[];
+  mockedRemotes: RemoteKind[];
 }) {
   if (!markdown) {
     return (
@@ -237,6 +243,15 @@ function ChangelogTab({
   }
   return (
     <div className="h-full overflow-auto">
+      {mockedRemotes.length > 0 && (
+        <div
+          className="m-3 rounded-md border border-sky-500/50 bg-sky-500/10 text-sky-200 p-2 text-xs"
+          title="cliff-notes stripped your [remote.*] section(s) and substituted deterministic mock data. PR numbers and contributor lists here won't match your real repo."
+        >
+          <span className="font-semibold">Remote data is mocked:</span>{" "}
+          <span className="font-mono">{mockedRemotes.join(", ")}</span>
+        </div>
+      )}
       {warnings.length > 0 && (
         <div className="m-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 p-2 text-xs space-y-1">
           {warnings.map((w, i) => (

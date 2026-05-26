@@ -4,10 +4,11 @@ import { resolve } from "node:path";
 // Default configsDir: .cliff/tomls at the workspace/project root.
 // Resolves to the same location whether running from src/ or dist/ since both
 // are one level deep inside apps/api/.
-const DEFAULT_CONFIGS_DIR = resolve(
+const WORKSPACE_ROOT = resolve(
   fileURLToPath(new URL("../../..", import.meta.url)),
-  ".cliff/tomls",
 );
+const DEFAULT_CONFIGS_DIR = resolve(WORKSPACE_ROOT, ".cliff/tomls");
+const DEFAULT_REMOTE_MOCKS_DIR = resolve(WORKSPACE_ROOT, ".cliff/context");
 
 export interface AppConfig {
   port: number;
@@ -16,6 +17,8 @@ export interface AppConfig {
   staticDir?: string;
   /** Absolute path to the directory containing cliff.toml configuration presets. */
   configsDir: string;
+  /** Absolute path to the directory containing remote-mock fixture JSON files. */
+  remoteMocksDir: string;
   gitCliffBin: string;
   gitBin: string;
   cloneTimeoutMs: number;
@@ -31,6 +34,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     host: env.HOST ?? "0.0.0.0",
     staticDir: env.STATIC_DIR,
     configsDir: env.CONFIGS_DIR ?? DEFAULT_CONFIGS_DIR,
+    remoteMocksDir: env.REMOTE_MOCKS_DIR ?? DEFAULT_REMOTE_MOCKS_DIR,
     gitCliffBin: env.GIT_CLIFF_BIN ?? "git-cliff",
     gitBin: env.GIT_BIN ?? "git",
     cloneTimeoutMs: env.CLONE_TIMEOUT_MS ? Number(env.CLONE_TIMEOUT_MS) : 30_000,

@@ -1,6 +1,13 @@
 import { execProcess, ExecError } from "../lib/exec.js";
 import { withTempDir } from "../lib/temp.js";
 import { buildTempRepo } from "./repo-builder.js";
+import {
+  parseAndStripRemote,
+  injectMockedRemoteBlocks,
+  InlineRemoteTableError,
+  type RemoteKind,
+} from "./cliff-toml-remote.js";
+import { decorateContext, loadRemoteMocks } from "./remote-mock.js";
 import type { AppConfig } from "../config.js";
 import type { Release, RenderOptions } from "@cliff-notes/shared";
 
@@ -15,6 +22,7 @@ export interface RenderOutput {
   warnings: string[];
   nextTag?: string;
   nextTagFallback?: boolean;
+  mockedRemotes?: RemoteKind[];
 }
 
 export class RenderError extends Error {
@@ -132,6 +140,13 @@ async function computeBumpedVersion(
   return { nextTag: defaultWithV, fallback: true };
 }
 
+function splitStderrLines(stderr: string): string[] {
+  return stderr
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+}
+
 export async function renderChangelog(
   input: RenderInput,
   config: AppConfig,
@@ -139,8 +154,30 @@ export async function renderChangelog(
 ): Promise<RenderOutput> {
   const opts = input.options ?? {};
 
+  // Strip BEFORE writing to disk so the user's token never lands in /tmp.
+  let stripResult;
+  try {
+    stripResult = parseAndStripRemote(input.cliffToml);
+  } catch (err) {
+    if (err instanceof InlineRemoteTableError) {
+      throw new RenderError(err.message, err.message);
+    }
+    throw err;
+  }
+
+  const { detectedKinds, carriedOver, referencedToken } = stripResult;
+  const mocks = detectedKinds.length > 0 ? loadRemoteMocks(config.remoteMocksDir) : null;
+  const tomlForDisk = mocks
+    ? injectMockedRemoteBlocks(
+        stripResult.cleanedToml,
+        detectedKinds,
+        carriedOver,
+        mocks.defaults,
+      )
+    : stripResult.cleanedToml;
+
   return withTempDir("render", projectId, async (dir) => {
-    await buildTempRepo(dir, input.releases, input.cliffToml, config);
+    await buildTempRepo(dir, input.releases, tomlForDisk, config);
 
     let nextTag: string | undefined;
     let nextTagFallback: boolean | undefined;
@@ -150,32 +187,49 @@ export async function renderChangelog(
         dir,
         config.renderTimeoutMs,
         input.releases,
-        input.cliffToml,
+        tomlForDisk,
       );
       nextTag = bumped.nextTag;
       nextTagFallback = bumped.fallback;
     }
 
-    const args: string[] = [];
-    if (nextTag) args.push("--tag", nextTag);
-    if (opts.unreleased) args.push("--unreleased");
+    const baseArgs: string[] = [];
+    if (nextTag) baseArgs.push("--tag", nextTag);
+    if (opts.unreleased) baseArgs.push("--unreleased");
 
+    if (detectedKinds.length === 0 || !mocks) {
+      // Single-pass: existing flow.
+      try {
+        const result = await execProcess(config.gitCliffBin, {
+          args: baseArgs,
+          cwd: dir,
+          timeoutMs: config.renderTimeoutMs,
+        });
+        return {
+          markdown: result.stdout,
+          warnings: splitStderrLines(result.stderr),
+          ...(nextTag !== undefined ? { nextTag } : {}),
+          ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
+        };
+      } catch (err) {
+        if (err instanceof ExecError) {
+          throw new RenderError(
+            `git-cliff exited with code ${err.exitCode ?? "null"}.`,
+            err.stderr,
+          );
+        }
+        throw err;
+      }
+    }
+
+    // Two-pass flow: capture --context, decorate, then render from context.
+    let pass1: { stdout: string; stderr: string };
     try {
-      const result = await execProcess(config.gitCliffBin, {
-        args,
+      pass1 = await execProcess(config.gitCliffBin, {
+        args: [...baseArgs, "--context", "--offline"],
         cwd: dir,
         timeoutMs: config.renderTimeoutMs,
       });
-      const warnings = result.stderr
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0);
-      return {
-        markdown: result.stdout,
-        warnings,
-        ...(nextTag !== undefined ? { nextTag } : {}),
-        ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
-      };
     } catch (err) {
       if (err instanceof ExecError) {
         throw new RenderError(
@@ -185,5 +239,62 @@ export async function renderChangelog(
       }
       throw err;
     }
+
+    let parsedContext: unknown;
+    try {
+      parsedContext = JSON.parse(pass1.stdout);
+    } catch (err) {
+      throw new RenderError(
+        "git-cliff --context did not produce valid JSON.",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+    if (!Array.isArray(parsedContext)) {
+      throw new RenderError(
+        "git-cliff --context output was not a JSON array.",
+        "",
+      );
+    }
+    const decorated = decorateContext(
+      parsedContext as never[],
+      detectedKinds,
+      mocks,
+    );
+
+    let pass2;
+    try {
+      pass2 = await execProcess(config.gitCliffBin, {
+        args: [...baseArgs, "--from-context", "-", "--offline"],
+        cwd: dir,
+        timeoutMs: config.renderTimeoutMs,
+        stdin: JSON.stringify(decorated),
+      });
+    } catch (err) {
+      if (err instanceof ExecError) {
+        throw new RenderError(
+          `git-cliff exited with code ${err.exitCode ?? "null"}.`,
+          err.stderr,
+        );
+      }
+      throw err;
+    }
+
+    const warnings = splitStderrLines(pass1.stderr);
+    if (referencedToken) {
+      const kindLabel = detectedKinds.join(", ");
+      warnings.push(
+        `remote.${kindLabel}.token was set in your cliff.toml. cliff-notes mocks ` +
+          `this to an empty string; templates that reference {{ remote.<kind>.token }} ` +
+          `will render empty here, even though they wouldn't in real git-cliff.`,
+      );
+    }
+
+    return {
+      markdown: pass2.stdout,
+      warnings,
+      mockedRemotes: detectedKinds,
+      ...(nextTag !== undefined ? { nextTag } : {}),
+      ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
+    };
   });
 }

@@ -27,6 +27,9 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
           ...(result.nextTagFallback !== undefined
             ? { nextTagFallback: result.nextTagFallback }
             : {}),
+          ...(result.mockedRemotes && result.mockedRemotes.length > 0
+            ? { mockedRemotes: result.mockedRemotes }
+            : {}),
         });
       } catch (err) {
         if (err instanceof RenderError) {

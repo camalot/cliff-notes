@@ -60,6 +60,7 @@ export default function App() {
           configDirty={s.configDirty}
           markdown={s.output?.markdown ?? null}
           warnings={s.output?.warnings ?? []}
+          mockedRemotes={s.output?.mockedRemotes ?? []}
           options={s.options}
           onChangeOptions={s.setOptions}
           isLoadingRepo={s.isLoadingRepo}

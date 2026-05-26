@@ -1,4 +1,4 @@
-import type { Commit } from "@cliff-notes/shared";
+import type { Commit, RemoteKind } from "@cliff-notes/shared";
 
 /**
  * UI-side tag: same as a shared Tag, plus an `afterIndex` indicating which
@@ -27,4 +27,5 @@ export interface UiCommit extends Commit {
 export interface AppOutput {
   markdown: string;
   warnings: string[];
+  mockedRemotes: RemoteKind[];
 }
