@@ -24,6 +24,7 @@ WORKDIR /app
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps ./apps
+COPY assets ./assets
 RUN pnpm --filter @cliff-notes/shared run build && \
     pnpm --filter @cliff-notes/api run build && \
     pnpm --filter @cliff-notes/web run build
