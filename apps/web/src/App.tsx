@@ -52,10 +52,12 @@ export default function App() {
         options={s.options}
       />
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden">
-        <CliffTomlEditor value={s.cliffToml} onChange={s.setCliffToml} onReset={s.resetToDefaults} />
+        <CliffTomlEditor value={s.cliffToml} onChange={s.setCliffToml} onReset={s.resetCliffToml} />
         <RightPanel
           isRendering={s.isRendering}
           onGenerate={s.render}
+          onResetConfig={s.resetConfig}
+          configDirty={s.configDirty}
           markdown={s.output?.markdown ?? null}
           warnings={s.output?.warnings ?? []}
           options={s.options}

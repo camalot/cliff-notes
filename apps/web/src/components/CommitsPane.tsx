@@ -212,12 +212,21 @@ export function CommitsPane({
           const ignored = !!c.ignored;
           return (
             <li key={i} className="space-y-1">
+              {tagsHere.map((t) => (
+                <div
+                  key={t.name + i}
+                  className="ml-7 text-[11px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40 font-mono inline-flex items-center gap-1"
+                >
+                  <i className="bi bi-tag" aria-hidden="true" />
+                  {t.name}
+                </div>
+              ))}
               <div className="flex gap-1.5 items-start group">
                 <div className="flex items-center gap-1 pt-2 shrink-0">
                   <span className="text-[10px] text-muted-fg font-mono w-5 text-right">{i}</span>
-                  {breaking && (
-                    <span className="text-[10px] font-bold text-red-400 shrink-0" title="Breaking change">!</span>
-                  )}
+                  <span className="text-[10px] font-bold text-red-400 shrink-0 w-3" title={breaking ? "Breaking change" : undefined}>
+                    {breaking && "!"}
+                  </span>
                 </div>
                 <IconButton
                   icon={ignored ? "eye-slash" : "eye"}
@@ -247,15 +256,6 @@ export function CommitsPane({
                   />
                 </div>
               </div>
-              {tagsHere.map((t) => (
-                <div
-                  key={t.name + i}
-                  className="ml-7 text-[11px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40 font-mono inline-flex items-center gap-1"
-                >
-                  <i className="bi bi-tag" aria-hidden="true" />
-                  {t.name}
-                </div>
-              ))}
             </li>
           );
         })}

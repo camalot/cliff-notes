@@ -22,7 +22,8 @@ interface Props {
   // Generate
   isRendering: boolean;
   onGenerate: () => void;
-  onResetConfig?: () => void;
+  onResetConfig: () => void;
+  configDirty: boolean;
 
   // Output
   markdown: string | null;
@@ -97,33 +98,38 @@ export function RightPanel(props: Props) {
     }
   };
 
+  const isDirty = props.configDirty && hasOutput;
+
   return (
     <Card className="flex flex-col min-h-0">
       <CardHeader className="p-0 gap-0">
-        <Tabs tab={tab} setTab={setTab} hasOutput={hasOutput} />
+        <Tabs tab={tab} setTab={setTab} hasOutput={hasOutput} isDirty={isDirty} />
         <div className="flex items-center gap-2 py-2 pr-3">
           <Button
             size="sm"
             onClick={props.onGenerate}
-            disabled={props.isRendering}
+            disabled={props.isRendering || (!props.configDirty && hasOutput)}
           >
             <i className="bi bi-cpu" aria-hidden="true" />
             {props.isRendering ? "Generating…" : "Generate"}
           </Button>
           <span className="w-px h-5 bg-border" aria-hidden="true" />
-          {tab !== "config" && (
-            <IconButton
-              icon={justCopied ? "check" : "copy"}
-              label={justCopied ? "Copied!" : "Copy"}
-              onClick={copy}
-              disabled={!props.markdown}
-            />
-          )}
           <IconButton
-            icon="arrow-clockwise"
+            icon="arrow-counterclockwise"
             label="Reset Config"
-            onClick={props.onResetConfig ?? (() => {})}
+            onClick={props.onResetConfig}
           />
+          {tab !== "config" && (
+            <>
+              <span className="w-px h-5 bg-border" aria-hidden="true" />
+              <IconButton
+                icon={justCopied ? "check" : "copy"}
+                label={justCopied ? "Copied!" : "Copy"}
+                onClick={copy}
+                disabled={!props.markdown}
+              />
+            </>
+          )}
         </div>
       </CardHeader>
 
@@ -141,13 +147,14 @@ export function RightPanel(props: Props) {
 }
 
 function Tabs({
-  tab, setTab, hasOutput,
+  tab, setTab, hasOutput, isDirty,
 }: {
   tab: Tab;
   setTab: (t: Tab) => void;
   hasOutput: boolean;
+  isDirty: boolean;
 }) {
-  const item = (id: Tab, label: string, icon: string, disabled = false, extraClass = "") => (
+  const item = (id: Tab, label: string, icon: string, disabled = false, dirty = false, extraClass = "") => (
     <button
       key={id}
       type="button"
@@ -167,14 +174,15 @@ function Tabs({
     >
       <i className={`bi bi-${icon}`} aria-hidden="true" />
       <span>{label}</span>
+      {dirty && <span aria-hidden="true">{"•"}</span>}
     </button>
   );
 
   return (
     <div className="flex self-stretch overflow-hidden rounded-tl-lg">
       {item("config", "Config", "gear-fill")}
-      {item("changelog", "Changelog", "eye-fill", !hasOutput)}
-      {item("raw", "Markdown", "markdown", !hasOutput, "border-r border-border")}
+      {item("changelog", "Changelog", "eye-fill", !hasOutput, isDirty)}
+      {item("raw", "Markdown", "markdown", !hasOutput, isDirty, "border-r border-border")}
     </div>
   );
 }

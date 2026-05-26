@@ -41,6 +41,7 @@ interface AppState {
   output: AppOutput | null;
   isRendering: boolean;
   isLoadingRepo: boolean;
+  configDirty: boolean;
 
   setCliffToml: (v: string) => void;
   setOptions: (patch: Partial<RenderOptionsState>) => void;
@@ -64,6 +65,8 @@ interface AppState {
 
   replaceAll: (input: { commits: UiCommit[]; tags: UiTag[]; cliffToml?: string }) => void;
   resetToDefaults: () => Promise<void>;
+  resetConfig: () => void;
+  resetCliffToml: () => Promise<void>;
   loadDefaultConfig: () => Promise<void>;
 
   render: () => Promise<void>;
@@ -104,18 +107,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   output: null,
   isRendering: false,
   isLoadingRepo: false,
+  configDirty: false,
 
-  setCliffToml: (v) => set({ cliffToml: v }),
-  setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
+  setCliffToml: (v) => set({ cliffToml: v, configDirty: true }),
+  setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch }, configDirty: true })),
 
-  addCommit: (c) => set((s) => ({ commits: [...s.commits, c] })),
+  addCommit: (c) => set((s) => ({ commits: [...s.commits, c], configDirty: true })),
   insertRandomCommits: (type, breaking, count, squash, coAuthors) =>
     set((s) => ({
       commits: [...s.commits, ...generateRandomCommits({ type, breaking, count, squash, coAuthors })],
+      configDirty: true,
     })),
   updateCommit: (idx, patch) =>
     set((s) => ({
       commits: s.commits.map((c, i) => (i === idx ? { ...c, ...patch } : c)),
+      configDirty: true,
     })),
   removeCommit: (idx) =>
     set((s) => {
@@ -127,7 +133,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (t.afterIndex > idx) return { ...t, afterIndex: t.afterIndex - 1 };
         return t;
       });
-      return { commits, tags };
+      return { commits, tags, configDirty: true };
     }),
   moveCommit: (from, to) =>
     set((s) => {
@@ -137,21 +143,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       const commits = [...s.commits];
       const [m] = commits.splice(from, 1);
       commits.splice(to, 0, m!);
-      return { commits };
+      return { commits, configDirty: true };
     }),
-  clearCommits: () => set({ commits: [], tags: [] }),
+  clearCommits: () => set({ commits: [], tags: [], configDirty: true }),
 
-  addTag: (t) => set((s) => ({ tags: [...s.tags, t] })),
+  addTag: (t) => set((s) => ({ tags: [...s.tags, t], configDirty: true })),
   updateTag: (idx, patch) =>
-    set((s) => ({ tags: s.tags.map((t, i) => (i === idx ? { ...t, ...patch } : t)) })),
-  removeTag: (idx) => set((s) => ({ tags: s.tags.filter((_, i) => i !== idx) })),
-  clearTags: () => set({ tags: [] }),
+    set((s) => ({ tags: s.tags.map((t, i) => (i === idx ? { ...t, ...patch } : t)), configDirty: true })),
+  removeTag: (idx) => set((s) => ({ tags: s.tags.filter((_, i) => i !== idx), configDirty: true })),
+  clearTags: () => set({ tags: [], configDirty: true }),
 
   replaceAll: (input) =>
     set((s) => ({
       commits: input.commits,
       tags: input.tags,
       cliffToml: input.cliffToml ?? s.cliffToml,
+      configDirty: true,
     })),
   loadDefaultConfig: async () => {
     try {
@@ -167,10 +174,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       tags: SAMPLE_TAGS,
       options: { ...DEFAULT_OPTIONS },
       output: null,
+      configDirty: false,
     });
     try {
       const toml = await api.getToml("default.toml");
       set({ cliffToml: toml });
+    } catch (err) {
+      toast.error("Failed to load default config", { message: String(err) });
+    }
+  },
+  resetConfig: () =>
+    set({ commits: SAMPLE_COMMITS, tags: SAMPLE_TAGS, options: { ...DEFAULT_OPTIONS }, output: null, configDirty: true }),
+  resetCliffToml: async () => {
+    try {
+      const toml = await api.getToml("default.toml");
+      set({ cliffToml: toml, configDirty: true });
     } catch (err) {
       toast.error("Failed to load default config", { message: String(err) });
     }
@@ -193,7 +211,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           bumpedVersion: options.bumpedVersion,
         },
       });
-      set({ output: { markdown: out.markdown, warnings: out.warnings ?? [] }, isRendering: false });
+      set({ output: { markdown: out.markdown, warnings: out.warnings ?? [] }, isRendering: false, configDirty: false });
       if (options.bumpedVersion && out.nextTagFallback && out.nextTag) {
         toast.info("Next tag computed from fallback", {
           message: `git-cliff didn't return a bumped version; using ${out.nextTag} instead.`,
@@ -234,6 +252,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         tags,
         cliffToml: result.cliffToml ?? get().cliffToml,
         isLoadingRepo: false,
+        configDirty: true,
       });
       toast.success("Repository loaded", {
         message: `${commits.length} commit${commits.length === 1 ? "" : "s"}, ${tags.length} tag${tags.length === 1 ? "" : "s"}`,

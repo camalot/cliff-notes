@@ -108,7 +108,6 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-    { message = "^\\w+(\\(.*\\))?!:", group = "<!-- 0 -->⚠️ Breaking Changes" },
     { message = "^feat", group = "<!-- 1 -->🚀 Features" },
     { message = "^fix", group = "<!-- 2 -->🐛 Bug Fixes" },
     { message = "^docs?", group = "<!-- 3 -->📚 Documentation" },
@@ -126,6 +125,7 @@ commit_parsers = [
     { message = "^chore|^ci", group = "<!-- 8 -->⚙️ Miscellaneous Tasks" },
     { body    = ".*security", group = "<!-- 9 -->🛡️ Security" },
     { message = "^revert", group = "<!-- 10 -->◀️ Revert" },
+    { message = "^\\w+(\\(.*\\))?!:", group = "<!-- -1 -->💥 Breaking Changes" },
     { message = "^[cC]o-authored-by:", group = "<!-- 999999 -->👥 Contributors" },
     { body    = ".*[cC]o-authored-by:", group = "<!-- 999999 -->👥 Contributors" },
     # No catch-all `{ message = ".*", skip = true }` here: it matches the

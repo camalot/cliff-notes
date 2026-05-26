@@ -21,11 +21,6 @@
         "label": "git-cliff Default",
         "description": "The default configuration defined by git-cliff itself, which can be used as a base for custom configurations."
       },
-      "git-cliff.toml": {
-        "sort": 2,
-        "label": "git-cliff Official",
-        "description": "The configuration used directly by git-cliff to generate their official changelogs."
-      },
       "github.toml": {
         "sort": 6,
         "label": "GitHub",

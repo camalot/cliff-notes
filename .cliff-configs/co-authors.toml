@@ -1,0 +1,67 @@
+[changelog]
+header = """
+# Changelog
+All notable changes to this project will be documented in this file.
+"""
+body = """
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {% if commit.scope %}*({{ commit.scope }})* {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}
+{%- endfor %}
+{% endfor %}
+{# --- Build a string list of authors separated by commas --- #}
+{%- set authors_str = "" -%}
+{%- for commit in commits -%}
+  {%- if commit.group | matching(pattern="Co-Authors") -%}
+    {%- set clean_name = commit.message | replace(from="co-authored-by: ", to="") | replace(from="Co-authored-by: ", to="") | trim -%}
+    {%- set_global authors_str = authors_str | concat(with=clean_name) | concat(with=",") -%}
+  {%- endif -%}
+{%- endfor -%}
+{# --- Split the string into a clean array and deduplicate --- #}
+{%- if authors_str != "" %}
+### 📢 Co-Authors
+{%- set authors_list = authors_str | split(pat=",") -%}
+{%- for author in authors_list | unique | sort %}
+  {%- if author | trim != "" %}
+- {{ author | trim }}
+  {%- endif %}
+{%- endfor %}
+{%- endif %}\
+"""
+trim = true
+render_always = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+require_conventional = false
+split_commits = true
+
+commit_preprocessors = [
+  { pattern = '(?m)^\s*\*\s*', replace = "" },
+  { pattern = '(?m)^-{3,}\s*$', replace = "" },
+]
+
+commit_parsers = [
+  { message = "^\\w+(\\(.*\\))?!:", group = "<!-- -1 -->💥 Breaking Changes" },
+  { message = "^feat", group = "<!-- 0 -->🚀 Features" },
+  { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+  { message = "^docs?", group = "<!-- 2 -->📚 Documentation" },
+  { message = "^perf", group = "<!-- 3 -->⚡ Performance" },
+  { message = "^ref(actor)?", group = "<!-- 4 -->🚜 Refactor" },
+  { message = "^style", group = "<!-- 5 -->🎨 Styling" },
+  { message = "^tests?", group = "<!-- 6 -->🧪 Testing" },
+  { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
+  { message = "^revert", group = "<!-- 8 -->◀️ Revert" },
+  { message = "^[Cc]o-[Aa]uthored-[Bb]y:", group = "<!-- z9999 -->Co-Authors" },
+]
+filter_commits = false
+filter_merge_commits = true
+sort_commits = "oldest"
+tag_pattern = "v[0-9]+\\.[0-9]+\\.[0-9]+$"
