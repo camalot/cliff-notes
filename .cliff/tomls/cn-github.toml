@@ -1,10 +1,6 @@
 # git-cliff ~ configuration file
 # https://git-cliff.org/docs/configuration
 
-[remote.github]
-owner = "camalot"
-repo = "cliff-notes"
-token = "gh_abcdefg123456789hijklmnopqrstuvwxyz"
 
 [changelog]
 # A Tera template to be rendered for each release in the changelog.
@@ -51,8 +47,6 @@ body = """
     ## Azure DevOps
   {% elif remote.gitea.owner and remote.gitea.repo %}
     ## Gitea
-  {% else %}
-    ## Unknown Remote
   {% endif %}
 {%- endmacro get_remote_header -%}
 
@@ -143,9 +137,9 @@ trim = true
 render_always = true
 # An array of regex based postprocessors to modify the changelog.
 postprocessors = [
-    { pattern = '<REMOTE_URL>', replace = "https://bitbucket.com" },
+    { pattern = '<REMOTE_URL>', replace = "https://gitea.com" },
     # Replace the placeholder <REPO> with a URL.
-    { pattern = '<REPO>', replace = "https://bitbucket.com/orhun/git-cliff" },
+    { pattern = '<REPO>', replace = "https://gitea.com/orhun/git-cliff" },
 ]
 # render body even when there are no releases to process
 # render_always = true
