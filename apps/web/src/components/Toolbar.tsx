@@ -1,36 +1,43 @@
 import { useState } from "react";
 import { IconButton } from "./ui/IconButton";
-import { buildShareUrl, type PersistedState } from "@/lib/storage";
 import { downloadPlayground } from "@/lib/playground-file";
 import { siteConfig } from "@/lib/site-config";
 import { ShareModal } from "./ShareModal";
 import { LoadPlaygroundModal } from "./LoadPlaygroundModal";
+import { ProjectName } from "./ProjectName";
+import { IntegrityError } from "@/lib/integrity";
+import type { PersistedState } from "@/lib/storage";
 import type { RenderOptionsState } from "./OptionsPane";
 import { Icon } from "./ui/Icon";
 
 interface Props {
   onReset: () => void;
   onLoad: (state: PersistedState) => void;
+  onIntegrityError: (error: IntegrityError, recoveredState?: PersistedState) => void;
   cliffToml: string;
   commits: unknown[];
   tags: unknown[];
   options: RenderOptionsState;
+  name: string;
+  onChangeName: (v: string) => void;
 }
 
-export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: Props) {
+export function Toolbar({
+  onReset,
+  onLoad,
+  onIntegrityError,
+  cliffToml,
+  commits,
+  tags,
+  options,
+  name,
+  onChangeName,
+}: Props) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
 
-  const shareUrl = showShareModal
-    ? buildShareUrl(
-        { cliffToml, commits, tags, options },
-        window.location.origin,
-        window.location.pathname,
-      )
-    : null;
-
-  const handleSave = () => {
-    downloadPlayground({ cliffToml, commits, tags, options });
+  const handleSave = async () => {
+    await downloadPlayground({ cliffToml, commits, tags, options, name });
   };
 
   const navLinkClass =
@@ -39,10 +46,10 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
   return (
     <>
       <header
-        className="flex items-center justify-between gap-3 px-4 border-b border-border bg-card"
+        className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 border-b border-border bg-card"
         style={{ height: 52 }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 justify-self-start min-w-0">
           <img
             src="/images/cliff-notes.svg"
             alt="cliff-notes logo"
@@ -111,7 +118,11 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="justify-self-center min-w-0">
+          <ProjectName value={name} onChange={onChangeName} />
+        </div>
+
+        <div className="flex items-center gap-1 justify-self-end">
           <IconButton
             icon="arrow-clockwise"
             label="Reset to defaults"
@@ -126,7 +137,7 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
           <IconButton
             icon="download"
             label="Save Playground"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
           />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
@@ -141,13 +152,14 @@ export function Toolbar({ onReset, onLoad, cliffToml, commits, tags, options }: 
         <LoadPlaygroundModal
           onClose={() => setShowLoadModal(false)}
           onLoad={onLoad}
+          onIntegrityError={onIntegrityError}
         />
       )}
-      {showShareModal && shareUrl && (
+      {showShareModal && (
         <ShareModal
-          url={shareUrl}
+          state={{ cliffToml, commits, tags, options, name }}
           cliffToml={cliffToml}
-          onSave={handleSave}
+          onSave={() => void handleSave()}
           onClose={() => setShowShareModal(false)}
         />
       )}

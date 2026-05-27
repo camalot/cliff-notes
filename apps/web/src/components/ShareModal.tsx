@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
 import { cliffTomlContainsSecret } from "@/lib/monaco-cliff-toml";
+import { buildShareUrl, type PersistedState } from "@/lib/storage";
 import { Icon } from "./ui/Icon";
 
 interface Props {
-  url: string;
+  state: PersistedState;
   cliffToml: string;
   onSave: () => void;
   onClose: () => void;
 }
 
-export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
+export function ShareModal({ state, cliffToml, onSave, onClose }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const hasSecret = useMemo(() => cliffTomlContainsSecret(cliffToml), [cliffToml]);
+  const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -23,7 +25,14 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  // Build the share URL asynchronously on first render.
+  useEffect(() => {
+    void buildShareUrl(state, window.location.origin, window.location.pathname).then(setUrl);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const copyAndClose = async () => {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -78,12 +87,16 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
             </div>
           </div>
         )}
-        <input
-          readOnly
-          value={url}
-          onFocus={(e) => e.currentTarget.select()}
-          className="w-full text-xs font-mono bg-muted/40 border border-border rounded px-3 py-2 mb-5 text-muted-fg focus:outline-none focus:ring-2 focus:ring-border"
-        />
+        {url === null ? (
+          <div className="w-full h-9 bg-muted/40 border border-border rounded px-3 py-2 mb-5 animate-pulse" />
+        ) : (
+          <input
+            readOnly
+            value={url}
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full text-xs font-mono bg-muted/40 border border-border rounded px-3 py-2 mb-5 text-muted-fg focus:outline-none focus:ring-2 focus:ring-border"
+          />
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
@@ -95,7 +108,8 @@ export function ShareModal({ url, cliffToml, onSave, onClose }: Props) {
           <Button
             variant={hasSecret ? "danger" : "primary"}
             size="sm"
-            onClick={copyAndClose}
+            onClick={() => void copyAndClose()}
+            disabled={url === null}
           >
             <Icon name={hasSecret ? "bi:exclamation-octagon-fill" : "bi:share"} aria-hidden="true" />
             Copy Share Link

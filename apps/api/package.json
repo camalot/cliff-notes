@@ -16,6 +16,11 @@
         "label": "Cliff Notes",
         "description": "The configuration used directly by cliff-notes to generate changelogs."
       },
+      "cliff-notes-remote.toml": {
+        "sort": 2,
+        "label": "Cliff Notes (Remote)",
+        "description": "A configuration that for works for any remote."
+      },
       "git-cliff-default.toml": {
         "sort": 1,
         "label": "git-cliff Default",

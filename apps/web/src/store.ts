@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { generateRandomCommits, type ConventionalType } from "@cliff-notes/shared";
 import type { AppOutput, UiCommit, UiTag } from "./types";
-import { decodeFromUrlHash, loadFromLocalStorage, saveToLocalStorage } from "./lib/storage";
+import { loadFromLocalStorage, saveToLocalStorage, type PersistedState } from "./lib/storage";
 import { stateToReleases } from "./lib/state-to-releases";
 import { api, ApiError } from "./lib/api";
 import { toast } from "./lib/toast";
@@ -38,6 +38,8 @@ interface AppState {
   commits: UiCommit[];
   tags: UiTag[];
   options: RenderOptionsState;
+  name: string;
+  untrusted: boolean;
   output: AppOutput | null;
   isRendering: boolean;
   isLoadingRepo: boolean;
@@ -45,6 +47,12 @@ interface AppState {
 
   setCliffToml: (v: string) => void;
   setOptions: (patch: Partial<RenderOptionsState>) => void;
+  setName: (v: string) => void;
+  setUntrusted: (v: boolean) => void;
+
+  /** Single entry point for loading external state (URL hash, file, repo). */
+  applyPersistedState: (state: PersistedState) => void;
+
   addCommit: (c: UiCommit) => void;
   insertRandomCommits: (
     type: ConventionalType | undefined,
@@ -78,13 +86,12 @@ interface AppState {
 
 function persisted() {
   if (typeof window === "undefined") return null;
-  // URL hash wins over localStorage so shared links don't get clobbered.
-  const fromHash = decodeFromUrlHash(window.location.hash);
-  if (fromHash) return fromHash;
+  // URL hash is handled asynchronously in App.tsx (requires integrity verification).
+  // Only load from localStorage here.
   return loadFromLocalStorage();
 }
 
-function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "options"> {
+function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "options" | "name" | "untrusted"> {
   const p = persisted();
   if (p) {
     return {
@@ -92,6 +99,8 @@ function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "opti
       commits: Array.isArray(p.commits) ? (p.commits as UiCommit[]) : SAMPLE_COMMITS,
       tags: Array.isArray(p.tags) ? (p.tags as UiTag[]) : SAMPLE_TAGS,
       options: normalizeOptions(p.options),
+      name: typeof p.name === "string" ? p.name : "",
+      untrusted: typeof p.untrusted === "boolean" ? p.untrusted : false,
     };
   }
   return {
@@ -99,6 +108,8 @@ function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "opti
     commits: SAMPLE_COMMITS,
     tags: SAMPLE_TAGS,
     options: { ...DEFAULT_OPTIONS },
+    name: "",
+    untrusted: false,
   };
 }
 
@@ -109,31 +120,46 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoadingRepo: false,
   configDirty: false,
 
-  setCliffToml: (v) => set({ cliffToml: v, configDirty: true }),
-  setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch }, configDirty: true })),
+  setCliffToml: (v) => set({ cliffToml: v, configDirty: true, untrusted: false }),
+  setOptions: (patch) =>
+    set((s) => ({ options: { ...s.options, ...patch }, configDirty: true, untrusted: false })),
+  setName: (v) => set({ name: v, untrusted: false }),
+  setUntrusted: (v) => set({ untrusted: v }),
 
-  addCommit: (c) => set((s) => ({ commits: [...s.commits, c], configDirty: true })),
+  applyPersistedState: (state) =>
+    set({
+      commits: Array.isArray(state.commits) ? (state.commits as UiCommit[]) : SAMPLE_COMMITS,
+      tags: Array.isArray(state.tags) ? (state.tags as UiTag[]) : SAMPLE_TAGS,
+      cliffToml: typeof state.cliffToml === "string" ? state.cliffToml : "",
+      options: normalizeOptions(state.options),
+      name: typeof state.name === "string" ? state.name : "",
+      configDirty: true,
+      output: null,
+    }),
+
+  addCommit: (c) => set((s) => ({ commits: [...s.commits, c], configDirty: true, untrusted: false })),
   insertRandomCommits: (type, breaking, count, squash, coAuthors) =>
     set((s) => ({
       commits: [...s.commits, ...generateRandomCommits({ type, breaking, count, squash, coAuthors })],
       configDirty: true,
+      untrusted: false,
     })),
   updateCommit: (idx, patch) =>
     set((s) => ({
       commits: s.commits.map((c, i) => (i === idx ? { ...c, ...patch } : c)),
       configDirty: true,
+      untrusted: false,
     })),
   removeCommit: (idx) =>
     set((s) => {
       const commits = s.commits.filter((_, i) => i !== idx);
-      // shift down any tag.afterIndex that pointed past the removed commit
       const tags = s.tags.map((t) => {
         if (t.afterIndex < 0) return t;
         if (t.afterIndex === idx) return { ...t, afterIndex: idx - 1 };
         if (t.afterIndex > idx) return { ...t, afterIndex: t.afterIndex - 1 };
         return t;
       });
-      return { commits, tags, configDirty: true };
+      return { commits, tags, configDirty: true, untrusted: false };
     }),
   moveCommit: (from, to) =>
     set((s) => {
@@ -143,15 +169,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       const commits = [...s.commits];
       const [m] = commits.splice(from, 1);
       commits.splice(to, 0, m!);
-      return { commits, configDirty: true };
+      return { commits, configDirty: true, untrusted: false };
     }),
-  clearCommits: () => set({ commits: [], tags: [], configDirty: true }),
+  clearCommits: () => set({ commits: [], tags: [], configDirty: true, untrusted: false }),
 
-  addTag: (t) => set((s) => ({ tags: [...s.tags, t], configDirty: true })),
+  addTag: (t) => set((s) => ({ tags: [...s.tags, t], configDirty: true, untrusted: false })),
   updateTag: (idx, patch) =>
-    set((s) => ({ tags: s.tags.map((t, i) => (i === idx ? { ...t, ...patch } : t)), configDirty: true })),
-  removeTag: (idx) => set((s) => ({ tags: s.tags.filter((_, i) => i !== idx), configDirty: true })),
-  clearTags: () => set({ tags: [], configDirty: true }),
+    set((s) => ({
+      tags: s.tags.map((t, i) => (i === idx ? { ...t, ...patch } : t)),
+      configDirty: true,
+      untrusted: false,
+    })),
+  removeTag: (idx) =>
+    set((s) => ({ tags: s.tags.filter((_, i) => i !== idx), configDirty: true, untrusted: false })),
+  clearTags: () => set({ tags: [], configDirty: true, untrusted: false }),
 
   replaceAll: (input) =>
     set((s) => ({
@@ -159,7 +190,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       tags: input.tags,
       cliffToml: input.cliffToml ?? s.cliffToml,
       configDirty: true,
+      untrusted: false,
     })),
+
   loadDefaultConfig: async () => {
     try {
       const toml = await api.getToml("default.toml");
@@ -173,6 +206,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       commits: SAMPLE_COMMITS,
       tags: SAMPLE_TAGS,
       options: { ...DEFAULT_OPTIONS },
+      name: "",
+      untrusted: false,
       output: null,
       configDirty: false,
     });
@@ -184,11 +219,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   resetConfig: () =>
-    set({ commits: SAMPLE_COMMITS, tags: SAMPLE_TAGS, options: { ...DEFAULT_OPTIONS }, output: null, configDirty: true }),
+    set({
+      commits: SAMPLE_COMMITS,
+      tags: SAMPLE_TAGS,
+      options: { ...DEFAULT_OPTIONS },
+      output: null,
+      configDirty: true,
+      untrusted: false,
+    }),
   resetCliffToml: async () => {
     try {
       const toml = await api.getToml("default.toml");
-      set({ cliffToml: toml, configDirty: true });
+      set({ cliffToml: toml, configDirty: true, untrusted: false });
     } catch (err) {
       toast.error("Failed to load default config", { message: String(err) });
     }
@@ -242,7 +284,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         branch: opts?.branch,
         cliffTomlPath: opts?.cliffTomlPath,
       });
-      // commits come newest-first from git log; flip to oldest-first for our model.
       const commits: UiCommit[] = [...result.commits].reverse();
       const idToIndex = new Map<string, number>();
       commits.forEach((c, i) => {
@@ -261,6 +302,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         cliffToml: result.cliffToml ?? get().cliffToml,
         isLoadingRepo: false,
         configDirty: true,
+        untrusted: false,
       });
       toast.success("Repository loaded", {
         message: `${commits.length} commit${commits.length === 1 ? "" : "s"}, ${tags.length} tag${tags.length === 1 ? "" : "s"}`,
@@ -275,13 +317,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 }));
 
 if (typeof window !== "undefined") {
-  // Persist (without `output`/`isRendering`) on every change.
   useAppStore.subscribe((s) => {
     saveToLocalStorage({
       cliffToml: s.cliffToml,
       commits: s.commits,
       tags: s.tags,
       options: s.options,
+      name: s.name,
+      untrusted: s.untrusted,
     });
   });
 }

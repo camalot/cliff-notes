@@ -20,6 +20,9 @@
     "test:e2e": "pnpm --filter @cliff-notes/e2e run test",
     "clean": "pnpm -r run clean && rimraf coverage reports"
   },
+  "cliffNotes": {
+    "hashSeed": "cliff-notes-v1-9f2a7e4b1c8d3f6a0e5b2d9c4f7a1e8b"
+  },
   "devDependencies": {
     "rimraf": "^6.1.3",
     "typescript": "^6.0.3"

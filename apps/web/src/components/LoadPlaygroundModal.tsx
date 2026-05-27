@@ -1,22 +1,31 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
-import { tryDecodeInput, parsePlayground } from "@/lib/playground-file";
+import {
+  parsePlayground,
+  tryRecoverFromFile,
+  tryRecoverFromUrlInput,
+  decodeAndVerifyUrlInput,
+} from "@/lib/playground-file";
+import { IntegrityError } from "@/lib/integrity";
 import type { PersistedState } from "@/lib/storage";
 import { Icon } from "./ui/Icon";
 
 interface Props {
   onClose: () => void;
   onLoad: (state: PersistedState) => void;
+  onIntegrityError: (error: IntegrityError, recoveredState?: PersistedState) => void;
 }
 
-export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
-  const [hashInput, setHashInput] = useState("");
+export function LoadPlaygroundModal({ onClose, onLoad, onIntegrityError }: Props) {
+  const [urlInput, setUrlInput] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsedState, setParsedState] = useState<PersistedState | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Monotonic counter for last-write-wins in async URL decode
+  const seqRef = useRef(0);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -26,15 +35,35 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const handleHashChange = (value: string) => {
-    setHashInput(value);
-    const result = tryDecodeInput(value);
-    if (result) {
-      setParsedState(result);
-      setFileError(null);
-    } else if (!value.trim()) {
+  const handleUrlChange = (value: string) => {
+    setUrlInput(value);
+    if (!value.trim()) {
       setParsedState(null);
+      setFileError(null);
+      return;
     }
+
+    const seq = ++seqRef.current;
+
+    void (async () => {
+      try {
+        const state = await decodeAndVerifyUrlInput(value);
+        if (seq !== seqRef.current) return; // stale
+        setParsedState(state);
+        setFileError(null);
+      } catch (err) {
+        if (seq !== seqRef.current) return; // stale
+        if (err instanceof IntegrityError) {
+          setParsedState(null);
+          setFileError(null);
+          onClose();
+          onIntegrityError(err, tryRecoverFromUrlInput(value) ?? undefined);
+        } else {
+          setParsedState(null);
+          setFileError("Could not decode the pasted link.");
+        }
+      }
+    })();
   };
 
   const processFile = useCallback((file: File) => {
@@ -45,19 +74,28 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
     }
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const state = parsePlayground(content);
-        setParsedState(state);
-        setFileError(null);
-        setHashInput("");
-      } catch {
-        setFileError("Invalid cliff-notes file: failed to parse");
-        setParsedState(null);
-      }
+      const content = e.target?.result as string;
+      void (async () => {
+        try {
+          const state = await parsePlayground(content);
+          setParsedState(state);
+          setFileError(null);
+          setUrlInput("");
+        } catch (err) {
+          if (err instanceof IntegrityError) {
+            setParsedState(null);
+            setFileError(null);
+            onClose();
+            onIntegrityError(err, tryRecoverFromFile(content) ?? undefined);
+          } else {
+            setFileError("Invalid cliff-notes file: failed to parse");
+            setParsedState(null);
+          }
+        }
+      })();
     };
     reader.readAsText(file);
-  }, []);
+  }, [onClose, onIntegrityError]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,14 +139,14 @@ export function LoadPlaygroundModal({ onClose, onLoad }: Props) {
         </div>
 
         <label className="block text-xs font-medium text-muted-fg mb-1">
-          Paste a playground link or hash
+          Paste a playground share link
         </label>
         <textarea
           className="w-full text-xs font-mono bg-muted/40 border border-border rounded px-3 py-2 mb-4 text-fg focus:outline-none focus:ring-2 focus:ring-border resize-none"
           rows={3}
-          placeholder="https://example.com/#state=…  or paste just the encoded hash"
-          value={hashInput}
-          onChange={(e) => handleHashChange(e.target.value)}
+          placeholder="https://cliff-notes.dev/#s=…&h=…&v=1"
+          value={urlInput}
+          onChange={(e) => handleUrlChange(e.target.value)}
         />
 
         <label className="block text-xs font-medium text-muted-fg mb-1">
