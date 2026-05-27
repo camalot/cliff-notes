@@ -22,15 +22,15 @@ body = """
 
 {%- macro remote_url() -%}
   {% if remote.github.owner and remote.github.repo -%}
-    {%- raw -%}<REMOTE_URL>/{{ remote.github.owner }}/{{ remote.github.repo }}{%- endraw -%}
+    {%- raw -%}<REMOTE_URL>/{%- endraw -%}{{- remote.github.owner }}/{{ remote.github.repo -}}
   {% elif remote.azure_devops.owner and remote.azure_devops.repo -%}
-    {%- raw -%}<REMOTE_URL>/{{ remote.azure_devops.owner }}/{{ remote.azure_devops.repo }}{%- endraw -%}
+    {%- raw -%}<REMOTE_URL>/{%- endraw -%}{{- remote.azure_devops.owner }}/{{ remote.azure_devops.repo -}}
   {% elif remote.bitbucket.owner and remote.bitbucket.repo -%}
-    {%- raw -%}<REMOTE_URL>/{{ remote.bitbucket.owner }}/{{ remote.bitbucket.repo }}{%- endraw -%}
+    {%- raw -%}<REMOTE_URL>/{%- endraw -%}{{- remote.bitbucket.owner }}/{{ remote.bitbucket.repo -}}
   {% elif remote.gitlab.owner and remote.gitlab.repo -%}
-    {%- raw -%}<REMOTE_URL>/{{ remote.gitlab.owner }}/{{ remote.gitlab.repo }}{%- endraw -%}
+    {%- raw -%}<REMOTE_URL>/{%- endraw -%}{{- remote.gitlab.owner }}/{{ remote.gitlab.repo -}}
   {% elif remote.gitea.owner and remote.gitea.repo -%}
-    {%- raw -%}<REMOTE_URL>/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}{%- endraw -%}
+    {%- raw -%}<REMOTE_URL>/{%- endraw -%}{{- remote.gitea.owner }}/{{ remote.gitea.repo -}}
   {%- else -%}
     {%- raw -%}<REPO>{%- endraw -%}
   {%- endif -%}
