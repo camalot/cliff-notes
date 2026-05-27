@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@mdit/plugin-alert/style";
+@import "katex/dist/katex.min.css";
 
 /* 1. FORCE TAILWIND V4 TO USE CLASS-BASED TOGGLING */
 /* This MUST go right below the tailwind import statement */

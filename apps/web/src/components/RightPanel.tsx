@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { ConventionalType, RemoteKind } from "@cliff-notes/shared";
+import { renderMarkdown } from "@/lib/markdown";
 import { Card, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { IconButton } from "./ui/IconButton";
@@ -262,7 +261,7 @@ function ChangelogTab({
       )}
       {markdown && (
         <div className="markdown-preview p-4 text-sm">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+          <div dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }} />
         </div>
       )}
     </div>
