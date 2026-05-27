@@ -1,0 +1,216 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "camalot"
+repo = "cliff-notes"
+token = "gh_abcdefg123456789hijklmnopqrstuvwxyz"
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+
+{# HEADER #}
+{%- set HEADER_NEW_CONTRIBUTORS = "❤️ New Contributors" -%}
+{%- set HEADER_CONTRIBUTORS = "💛 Contributors" -%}
+
+{# MACROS #}
+{%- macro unquote(input) -%}
+  {{ input | trim_start_matches(pat='"') | trim_end_matches(pat='"') | trim_start_matches(pat="'") | trim_end_matches(pat="'")}}
+{%- endmacro input -%}
+
+{%- macro remote_url() -%}
+  {% if remote.github.owner and remote.github.repo -%}
+    {%- raw -%}<REMOTE_URL>/{{ remote.github.owner }}/{{ remote.github.repo }}{%- endraw -%}
+  {% elif remote.azure_devops.owner and remote.azure_devops.repo -%}
+    {%- raw -%}<REMOTE_URL>/{{ remote.azure_devops.owner }}/{{ remote.azure_devops.repo }}{%- endraw -%}
+  {% elif remote.bitbucket.owner and remote.bitbucket.repo -%}
+    {%- raw -%}<REMOTE_URL>/{{ remote.bitbucket.owner }}/{{ remote.bitbucket.repo }}{%- endraw -%}
+  {% elif remote.gitlab.owner and remote.gitlab.repo -%}
+    {%- raw -%}<REMOTE_URL>/{{ remote.gitlab.owner }}/{{ remote.gitlab.repo }}{%- endraw -%}
+  {% elif remote.gitea.owner and remote.gitea.repo -%}
+    {%- raw -%}<REMOTE_URL>/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}{%- endraw -%}
+  {%- else -%}
+    {%- raw -%}<REPO>{%- endraw -%}
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro user_url(name) -%}
+  [@{{name}}](<REMOTE_URL>/{{name}})
+{%- endmacro user_url -%}
+
+{%- macro get_remote_header() -%}
+  {% if remote.github.owner and remote.github.repo %}
+    ## GitHub
+  {% elif remote.bitbucket.owner and remote.bitbucket.repo %}
+    ## BitBucket
+  {% elif remote.gitlab.owner and remote.gitlab.repo %}
+    ## GitLab
+  {% elif remote.azure_devops.owner and remote.azure_devops.repo %}
+    ## Azure DevOps
+  {% elif remote.gitea.owner and remote.gitea.repo %}
+    ## Gitea
+  {% else %}
+    ## Unknown Remote
+  {% endif %}
+{%- endmacro get_remote_header -%}
+
+{%- macro print_remote(r, new_contrib_header, contrib_header) -%}
+{%- if r -%}
+  {%- set new_contributors = r.contributors | filter(attribute="is_first_time", value=true) -%}
+  {%- set contributors = r.contributors | filter(attribute="is_first_time", value=false) -%}
+  {%- if new_contributors | length > 0 %}
+    ### {{ new_contrib_header }}
+    {{ self::print_contributors(contributors=new_contributors) }}\n\n
+  {%- endif %}
+  {%- if contributors | length > 0 %}
+    ### {{ contrib_header }}\n
+    {{ self::print_contributors(contributors=contributors) }}\n\n
+  {%- endif %}
+
+  {%- if version and remote.github %}
+    \n\n---\n\n
+    \n**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{version}}
+  {%- endif %}
+{%- endif %}
+{%- endmacro print_remote -%}
+
+{%- macro print_contributors(contributors) -%}
+  {%- for contrib in contributors %}
+    \n- {{ self::user_url(name=contrib.username) }}
+    {%- if contrib.pr_number %} in \
+      [#{{ contrib.pr_number }}]({{ self::remote_url() }}/pull/{{ contrib.pr_number }})
+    {%- endif -%}
+  {%- endfor -%}
+{%- endmacro print_contributors -%}
+
+{%- macro clean_version(version, unreleased="unreleased") -%}
+  {%- if version -%}
+    {{ version | trim_start_matches(pat="v") }}
+  {%- else -%}
+    {{ HEADER_UNRELEASED | upper }}
+  {%- endif -%}
+{%- endmacro clean_version -%}
+
+{# VERSION HEADER #}
+{%- set c_version = self::clean_version(version=version, unreleased="unreleased") -%}
+  {%- if github %}
+    ## [v{{ c_version }}]({{ self::remote_url()}}/releases/tag/v{{ c_version }})
+  {%- else %}
+    ## v{{ c_version }}
+  {%- endif %} \
+
+  - {{ timestamp | date(format="%Y-%m-%d") }}
+
+{# LOOP GROUPS #}
+{%- for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {# LOOP COMMITS #}
+    {%- for commit in commits %}
+      \n- {% if commit.scope %}*({{ commit.scope }})* {% endif -%}
+        {%- if commit.breaking %}[**breaking**] {% endif -%}
+        {{ self::unquote(input=commit.message) | upper_first }}\n\n
+    {%- endfor %}
+{%- endfor %}
+
+{{ self::get_remote_header(gh=github, bb=bitbucket, gt=gitea, ad=azure_devops, gl=gitlab) }}
+{{ self::print_remote(r=bitbucket, new_contrib_header=HEADER_NEW_CONTRIBUTORS, contrib_header=HEADER_CONTRIBUTORS) }}
+{# GIHUB #}
+{#%- if github -%}
+  ## GitHub
+  {%- set new_contributors = github.contributors | filter(attribute="is_first_time", value=true) -%}
+  {%- set contributors = github.contributors | filter(attribute="is_first_time", value=false) -%}
+  {%- if new_contributors | length > 0 %}
+    ### {{ HEADER_NEW_CONTRIBUTORS }}
+    {{ self::print_contributors(contributors=new_contributors) }}\n\n
+  {%- endif %}
+  {%- if contributors | length > 0 %}
+    ### {{ HEADER_CONTRIBUTORS }}\n
+    {{ self::print_contributors(contributors=contributors) }}\n\n
+  {%- endif %}
+
+  {%- if version %}
+    \n\n---\n\n
+    \n**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{version}}
+  {%- endif %}
+{%- endif %#}
+
+"""
+# Remove leading and trailing whitespaces from the changelog's body.
+trim = true
+# Render body even when there are no releases to process.
+render_always = true
+# An array of regex based postprocessors to modify the changelog.
+postprocessors = [
+    { pattern = '<REMOTE_URL>', replace = "https://bitbucket.com" },
+    # Replace the placeholder <REPO> with a URL.
+    { pattern = '<REPO>', replace = "https://bitbucket.com/orhun/git-cliff" },
+]
+# render body even when there are no releases to process
+# render_always = true
+# output file path
+# output = "test.md"
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = true
+# Exclude commits that do not match the conventional commits specification.
+filter_unconventional = true
+# Require all commits to be conventional.
+# Takes precedence over filter_unconventional.
+require_conventional = false
+# Split commits on newlines, treating each line as an individual commit.
+split_commits = true
+# An array of regex based parsers to modify commit messages prior to further processing.
+commit_preprocessors = [
+  { pattern = '(?m)^\s*[\*-]\s*', replace = "" },
+  { pattern = '(?m)^-{3,}\s*$', replace = "" },
+
+  # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
+  #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))"},
+  # Check spelling of the commit message using https://github.com/crate-ci/typos.
+  # If the spelling is incorrect, it will be fixed automatically.
+  #{ pattern = '.*', replace_command = 'typos --write-changes -' },
+]
+# Prevent commits that are breaking from being excluded by commit parsers.
+protect_breaking_commits = false
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's scope and can decide to exclude commits from further processing.
+commit_parsers = [
+    { message = "(?i)^feat", group = "<!-- 0 -->🚀 Features" },
+    { message = "(?i)^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+    { message = "(?i)^docs?", group = "<!-- 3 -->📚 Documentation" },
+    { message = "(?i)^perf", group = "<!-- 4 -->⚡ Performance" },
+    { message = "(?i)^refactor", group = "<!-- 2 -->🚜 Refactor" },
+    { message = "(?i)^style", group = "<!-- 5 -->🎨 Styling" },
+    { message = "(?i)^tests?", group = "<!-- 6 -->🧪 Testing" },
+    { message = "(?i)^chore\\(release\\): prepare for", skip = true },
+    { message = "(?i)^(chore|build)\\(deps.*\\)", skip = true },
+    { message = "(?i)^chore\\(pr\\)", skip = true },
+    { message = "(?i)^chore\\(pull\\)", skip = true },
+    { message = "(?i)^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
+    { message = "(?i)^.*revert", group = "<!-- 9 -->◀️ Revert" },
+    { body = "(?i).*security", group = "<!-- 8 -->🛡️ Security" },
+    { message = "(?i)^co-authored-by:", skip = true },
+    { message = ".*", group = "<!-- 10 -->💼 Other" },
+]
+# Exclude commits that are not matched by any commit parser.
+filter_commits = false
+# Fail on a commit that is not matched by any commit parser.
+fail_on_unmatched_commit = false
+# An array of link parsers for extracting external references, and turning them into URLs, using regex.
+link_parsers = []
+# Include only the tags that belong to the current branch.
+use_branch_tags = false
+# Order releases topologically instead of chronologically.
+topo_order = false
+# Order commits topologically instead of chronologically.
+topo_order_commits = true
+# Order of commits in each group/release within the changelog.
+# Allowed values: newest, oldest
+sort_commits = "oldest"
+# Process submodules commits
+recurse_submodules = false

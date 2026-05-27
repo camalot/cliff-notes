@@ -21,17 +21,27 @@ export {
   findFunction,
   findTag,
   findTest,
+  renderParamsMarkdown,
   type TeraFilter,
   type TeraFunction,
+  type TeraParam,
   type TeraTag,
   type TeraTest,
 } from "./builtins.js";
 export {
+  parseMacros,
+  findMacro,
+  type UserMacro,
+} from "./macros.js";
+export {
   completionsAt,
   completionsForContext,
   hoverAt,
+  signatureHelpAt,
   type CompletionItem,
   type CompletionItemKind,
   type HoverInfo,
+  type SignatureCallableKind,
+  type SignatureHelpInfo,
   type SnippetDefinition,
 } from "./api.js";

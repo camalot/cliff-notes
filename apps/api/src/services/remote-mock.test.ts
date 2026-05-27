@@ -109,4 +109,31 @@ describe("decorateContext", () => {
       expect(typeof c.is_first_time).toBe("boolean");
     }
   });
+
+  it("produces a mix of is_first_time true/false for the synthetic across releases", () => {
+    // Sample many versions; synthetic is_first_time is deterministically random
+    // per release. With a fair hash, at least one true and one false among 16
+    // versions is overwhelmingly likely.
+    const versions = Array.from({ length: 16 }, (_, i) => `v0.${i}.0`);
+    const releases = versions.map((v) => release(v, [{ email: "a@b.com", message: "m" }]));
+    decorateContext(releases as never[], ["github"], mocks);
+    const syntheticFlags = releases.map((rel) => {
+      const r = rel as { github: { contributors: { username: string; is_first_time: boolean }[] } };
+      return r.github.contributors.find((c) => c.username === mocks.synthetic.username)?.is_first_time;
+    });
+    expect(syntheticFlags).toContain(true);
+    expect(syntheticFlags).toContain(false);
+  });
+
+  it("synthetic is_first_time is deterministic across calls for the same version", () => {
+    const a = [release("v9.9.9", [{ email: "a@b.com", message: "m" }])];
+    const b = [release("v9.9.9", [{ email: "a@b.com", message: "m" }])];
+    decorateContext(a as never[], ["github"], mocks);
+    decorateContext(b as never[], ["github"], mocks);
+    const ra = (a[0] as { github: { contributors: { username: string; is_first_time: boolean }[] } })
+      .github.contributors.find((c) => c.username === mocks.synthetic.username);
+    const rb = (b[0] as { github: { contributors: { username: string; is_first_time: boolean }[] } })
+      .github.contributors.find((c) => c.username === mocks.synthetic.username);
+    expect(ra?.is_first_time).toBe(rb?.is_first_time);
+  });
 });

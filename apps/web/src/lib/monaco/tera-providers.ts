@@ -2,8 +2,10 @@ import type { Monaco } from "@monaco-editor/react";
 import {
   completionsAt,
   hoverAt,
+  signatureHelpAt,
   type CompletionItem,
   type CompletionItemKind,
+  type TeraParam,
 } from "@cliff-notes/tera-lang";
 
 const registered = new WeakSet<Monaco>();
@@ -51,6 +53,62 @@ export function registerTeraProviders(monaco: Monaco, languageId: string): void 
       };
     },
   });
+
+  monaco.languages.registerSignatureHelpProvider(languageId, {
+    signatureHelpTriggerCharacters: ["(", ","],
+    signatureHelpRetriggerCharacters: [","],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    provideSignatureHelp: (model: any, position: any) => {
+      const offset = model.getOffsetAt(position);
+      const text = model.getValue() as string;
+      const info = signatureHelpAt(text, offset);
+      if (!info) return null;
+      return {
+        value: {
+          signatures: [
+            {
+              label: info.signature,
+              documentation: { value: composeSignatureDoc(info.description, info.params) },
+              parameters: info.params.map((p) => ({
+                label: paramLabelInSignature(info.signature, p.name),
+                documentation: paramDoc(p),
+              })),
+            },
+          ],
+          activeSignature: 0,
+          activeParameter: info.activeParameter,
+        },
+        dispose: () => {},
+      };
+    },
+  });
+}
+
+function composeSignatureDoc(description: string, params: readonly TeraParam[]): string {
+  if (params.length === 0) return description;
+  const lines = [description, ""];
+  for (const p of params) {
+    const dflt = p.default !== undefined ? `= \`${p.default}\`` : p.required === false ? "_(optional)_" : "**required**";
+    lines.push(`- \`${p.name}\` _(${p.type ?? "any"})_ ${dflt}`);
+  }
+  return lines.join("\n");
+}
+
+function paramLabelInSignature(signature: string, paramName: string): [number, number] {
+  // Find the literal parameter name in the signature so Monaco can highlight it.
+  // Falls back to [0,0] if not found, which is harmless (no highlight).
+  const re = new RegExp(`\\b${paramName}\\b`);
+  const m = re.exec(signature);
+  if (!m) return [0, 0];
+  return [m.index, m.index + paramName.length];
+}
+
+function paramDoc(p: TeraParam): string {
+  const parts: string[] = [];
+  if (p.type) parts.push(`type: \`${p.type}\``);
+  if (p.default !== undefined) parts.push(`default: \`${p.default}\``);
+  else if (p.required !== false) parts.push("**required**");
+  return parts.join(" · ");
 }
 
 function toMonacoCompletion(

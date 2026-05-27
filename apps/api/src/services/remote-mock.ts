@@ -249,13 +249,18 @@ export function decorateContext(
     // Always append the synthetic co-contributor — unless its username already
     // appears organically (very unlikely but possible).
     if (!seenInRelease.has(mocks.synthetic.username)) {
+      // Deterministically randomize the synthetic's `is_first_time` per release
+      // so multi-release renders show a realistic mix of true/false rather than
+      // the previous "true in release[0], false everywhere else" pattern.
+      const syntheticSeed = fnv1a32(
+        `${mocks.synthetic.username}:is_first_time:${release.version ?? "unreleased"}`,
+      );
       seenInRelease.set(mocks.synthetic.username, {
         username: mocks.synthetic.username,
         pr_title: mocks.synthetic.pr_title ?? "",
         pr_number: mocks.synthetic.pr_number ?? 999,
         pr_labels: mocks.synthetic.pr_labels ?? [],
-        // The synthetic contributor is only "first time" in the earliest release.
-        is_first_time: ri === 0,
+        is_first_time: (syntheticSeed & 1) === 1,
       });
     }
 

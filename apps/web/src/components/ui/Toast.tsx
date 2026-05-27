@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import type { ToastKind } from "@/lib/toast";
+import { toast, type ToastKind } from "@/lib/toast";
 import { Icon } from "./Icon";
 
 const KIND_STYLES: Record<
@@ -44,6 +44,20 @@ export function Toast({
   const [expanded, setExpanded] = useState(false);
   const styles = KIND_STYLES[kind];
   const expandable = details !== undefined && details !== null && details !== "";
+  const copyable = kind === "error";
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const parts: string[] = [title];
+    if (message) parts.push(message);
+    if (typeof details === "string") parts.push("", details);
+    try {
+      await navigator.clipboard.writeText(parts.join("\n"));
+      toast.success("Error message copied");
+    } catch (err) {
+      toast.error("Couldn't copy to clipboard", { message: String(err) });
+    }
+  };
 
   return (
     <div
@@ -77,6 +91,20 @@ export function Toast({
           {expandable && !expanded && (
             <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-fg/70">
               Click for details
+            </div>
+          )}
+          {copyable && (
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handleCopy}
+                aria-label="Copy error message"
+                title="Copy error message"
+                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-muted-fg hover:text-fg hover:bg-muted/60"
+              >
+                <Icon name="bi:clipboard" className="text-sm leading-none" />
+                Copy
+              </button>
             </div>
           )}
         </div>

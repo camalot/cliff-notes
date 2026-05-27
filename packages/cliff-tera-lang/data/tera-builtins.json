@@ -25,75 +25,123 @@
     { "name": "endraw",   "signature": "{% endraw %}",                                          "description": "Closes a `raw` block.", "url": "https://keats.github.io/tera/docs/#raw" }
   ],
   "filters": [
-    { "name": "lower",       "signature": "value | lower",                                     "description": "Convert a string to lowercase.", "example": "{{ \"FOO\" | lower }} → \"foo\"" },
-    { "name": "upper",       "signature": "value | upper",                                     "description": "Convert a string to uppercase.", "example": "{{ \"foo\" | upper }} → \"FOO\"" },
-    { "name": "capitalize",  "signature": "value | capitalize",                                "description": "Uppercase the first character; lowercase the rest.", "example": "{{ \"foo bar\" | capitalize }} → \"Foo bar\"" },
-    { "name": "title",       "signature": "value | title",                                     "description": "Capitalize the first letter of every word.", "example": "{{ \"foo bar\" | title }} → \"Foo Bar\"" },
-    { "name": "upper_first", "signature": "value | upper_first",                               "description": "Uppercase the first character only. (Available in git-cliff Tera context.)" },
-    { "name": "trim",        "signature": "value | trim",                                      "description": "Remove leading and trailing whitespace." },
-    { "name": "trim_start",  "signature": "value | trim_start",                                "description": "Remove leading whitespace." },
-    { "name": "trim_end",    "signature": "value | trim_end",                                  "description": "Remove trailing whitespace." },
-    { "name": "trim_start_matches", "signature": "value | trim_start_matches(pat=\"...\")",    "description": "Remove the given prefix repeatedly from the start." },
-    { "name": "trim_end_matches",   "signature": "value | trim_end_matches(pat=\"...\")",      "description": "Remove the given suffix repeatedly from the end." },
-    { "name": "truncate",    "signature": "value | truncate(length=255, end=\"…\")",            "description": "Truncate a string to `length` characters, appending `end` when truncated." },
-    { "name": "replace",     "signature": "value | replace(from=\"a\", to=\"b\")",              "description": "Replace all occurrences of `from` with `to`." },
-    { "name": "striptags",   "signature": "value | striptags",                                 "description": "Strip HTML/XML tags from a string." },
-    { "name": "linebreaksbr","signature": "value | linebreaksbr",                              "description": "Convert newlines into `<br>` tags." },
-    { "name": "indent",      "signature": "value | indent(prefix=\"  \", first=false)",        "description": "Indent each line with `prefix`. Set `first=true` to also indent the first line." },
-    { "name": "spaceless",   "signature": "value | spaceless",                                 "description": "Remove whitespace between HTML tags." },
-    { "name": "urlencode",   "signature": "value | urlencode",                                 "description": "Percent-encode a string for use in a URL." },
-    { "name": "urlencode_strict","signature": "value | urlencode_strict",                      "description": "Percent-encode a string, also encoding `/`." },
-    { "name": "escape",      "signature": "value | escape",                                    "description": "HTML-escape a string (`&` → `&amp;`, etc.). Aliased as `e`." },
-    { "name": "escape_xml",  "signature": "value | escape_xml",                                "description": "XML-escape a string." },
-    { "name": "safe",        "signature": "value | safe",                                      "description": "Mark a value as safe so the autoescaper won't escape it." },
-    { "name": "json_encode", "signature": "value | json_encode(pretty=false)",                 "description": "Serialize a value as JSON. Aliased as `as_json`." },
-    { "name": "as_str",      "signature": "value | as_str",                                    "description": "Coerce a value to its string representation." },
-    { "name": "int",         "signature": "value | int(default=0, base=10)",                   "description": "Parse a value as an integer." },
-    { "name": "float",       "signature": "value | float(default=0.0)",                        "description": "Parse a value as a float." },
-    { "name": "round",       "signature": "value | round(method=\"common\", precision=0)",     "description": "Round a number. `method` is `common`, `ceil`, or `floor`." },
-    { "name": "abs",         "signature": "value | abs",                                       "description": "Absolute value of a number." },
-    { "name": "filesizeformat","signature": "value | filesizeformat",                          "description": "Format a byte count as a human-readable size (e.g. `1.2 KB`)." },
-    { "name": "date",        "signature": "value | date(format=\"%Y-%m-%d\", timezone=\"UTC\", locale=\"en_US\")", "description": "Format a unix timestamp or RFC3339 string as a date." },
-    { "name": "length",      "signature": "value | length",                                    "description": "Length of a string, array, or map." },
-    { "name": "reverse",     "signature": "value | reverse",                                   "description": "Reverse a string or array." },
-    { "name": "sort",        "signature": "value | sort(attribute=\"...\")",                   "description": "Sort an array. Use `attribute` to sort an array of objects by a field." },
-    { "name": "unique",      "signature": "value | unique(attribute=\"...\", case_sensitive=false)", "description": "Deduplicate an array." },
-    { "name": "slice",       "signature": "value | slice(start=0, end=0)",                     "description": "Take a sub-slice of a string or array." },
-    { "name": "first",       "signature": "value | first",                                     "description": "First element of an array (or `null` if empty)." },
-    { "name": "last",        "signature": "value | last",                                      "description": "Last element of an array (or `null` if empty)." },
-    { "name": "nth",         "signature": "value | nth(n=0)",                                  "description": "Get the `n`-th element of an array (0-indexed)." },
-    { "name": "join",        "signature": "value | join(sep=\"\")",                            "description": "Join an array of strings into a single string." },
-    { "name": "concat",      "signature": "value | concat(with=...)",                          "description": "Concatenate arrays together." },
-    { "name": "default",     "signature": "value | default(value=...)",                        "description": "Fall back to `value` if the input is missing, null, or empty." },
-    { "name": "map",         "signature": "value | map(attribute=\"...\")",                    "description": "Extract one attribute from each item in an array of objects." },
-    { "name": "filter",      "signature": "value | filter(attribute=\"...\", value=...)",      "description": "Keep only items in an array whose `attribute` equals `value`. Pair with `is matching(...)` for regex." },
-    { "name": "group_by",    "signature": "value | group_by(attribute=\"...\")",               "description": "Group an array of objects into a map keyed by `attribute`." },
-    { "name": "split",       "signature": "value | split(pat=\"...\")",                        "description": "Split a string into an array on the given pattern." },
-    { "name": "wordcount",   "signature": "value | wordcount",                                 "description": "Count whitespace-separated words in a string." },
-    { "name": "pluralize",   "signature": "value | pluralize(singular=\"\", plural=\"s\")",    "description": "Return `singular` if the value is 1, otherwise `plural`. Useful for noun agreement." },
-    { "name": "get",         "signature": "value | get(key=\"...\", default=...)",             "description": "Index into a map or object by key." },
-    { "name": "get_random",  "signature": "value | get_random",                                "description": "Pick a random element from an array." },
-    { "name": "trim_lines",  "signature": "value | trim_lines",                                "description": "Trim whitespace from every line in a string." }
+    { "name": "lower",       "description": "Convert a string to lowercase.",                                    "params": [], "example": "{{ \"FOO\" | lower }} → \"foo\"" },
+    { "name": "upper",       "description": "Convert a string to uppercase.",                                    "params": [], "example": "{{ \"foo\" | upper }} → \"FOO\"" },
+    { "name": "capitalize",  "description": "Uppercase the first character; lowercase the rest.",                "params": [], "example": "{{ \"foo bar\" | capitalize }} → \"Foo bar\"" },
+    { "name": "title",       "description": "Capitalize the first letter of every word.",                        "params": [], "example": "{{ \"foo bar\" | title }} → \"Foo Bar\"" },
+    { "name": "upper_first", "description": "Uppercase the first character only. (Available in git-cliff Tera context.)", "params": [] },
+    { "name": "lower_first", "description": "Lowercase the first character only.",                               "params": [] },
+    { "name": "trim",        "description": "Remove leading and trailing whitespace.",                           "params": [] },
+    { "name": "trim_start",  "description": "Remove leading whitespace.",                                        "params": [] },
+    { "name": "trim_end",    "description": "Remove trailing whitespace.",                                       "params": [] },
+    { "name": "trim_start_matches", "description": "Remove the given prefix repeatedly from the start.",         "params": [{ "name": "pat", "type": "string", "required": true }] },
+    { "name": "trim_end_matches",   "description": "Remove the given suffix repeatedly from the end.",           "params": [{ "name": "pat", "type": "string", "required": true }] },
+    { "name": "trim_lines",  "description": "Trim whitespace from every line in a string.",                      "params": [] },
+    { "name": "truncate",    "description": "Truncate a string to `length` characters, appending `end` when truncated.", "params": [
+      { "name": "length", "type": "integer", "default": "255" },
+      { "name": "end",    "type": "string",  "default": "\"…\"" }
+    ] },
+    { "name": "replace",     "description": "Replace all occurrences of `from` with `to`.",                      "params": [
+      { "name": "from", "type": "string", "required": true },
+      { "name": "to",   "type": "string", "required": true }
+    ] },
+    { "name": "striptags",   "description": "Strip HTML/XML tags from a string.",                                "params": [] },
+    { "name": "linebreaksbr","description": "Convert newlines into `<br>` tags.",                                "params": [] },
+    { "name": "indent",      "description": "Indent each line with `prefix`. Set `first=true` to also indent the first line.", "params": [
+      { "name": "prefix", "type": "string",  "default": "\"  \"" },
+      { "name": "first",  "type": "boolean", "default": "false" }
+    ] },
+    { "name": "spaceless",   "description": "Remove whitespace between HTML tags.",                              "params": [] },
+    { "name": "urlencode",   "description": "Percent-encode a string for use in a URL.",                         "params": [] },
+    { "name": "urlencode_strict","description": "Percent-encode a string, also encoding `/`.",                   "params": [] },
+    { "name": "escape",      "description": "HTML-escape a string (`&` → `&amp;`, etc.). Aliased as `e`.",       "params": [] },
+    { "name": "escape_xml",  "description": "XML-escape a string.",                                              "params": [] },
+    { "name": "safe",        "description": "Mark a value as safe so the autoescaper won't escape it.",          "params": [] },
+    { "name": "json_encode", "description": "Serialize a value as JSON. Aliased as `as_json`.",                  "params": [{ "name": "pretty", "type": "boolean", "default": "false" }] },
+    { "name": "as_str",      "description": "Coerce a value to its string representation.",                      "params": [] },
+    { "name": "int",         "description": "Parse a value as an integer.",                                      "params": [
+      { "name": "default", "type": "integer", "default": "0" },
+      { "name": "base",    "type": "integer", "default": "10" }
+    ] },
+    { "name": "float",       "description": "Parse a value as a float.",                                         "params": [{ "name": "default", "type": "float", "default": "0.0" }] },
+    { "name": "round",       "description": "Round a number. `method` is `common`, `ceil`, or `floor`.",         "params": [
+      { "name": "method",    "type": "string",  "default": "\"common\"" },
+      { "name": "precision", "type": "integer", "default": "0" }
+    ] },
+    { "name": "abs",         "description": "Absolute value of a number.",                                       "params": [] },
+    { "name": "filesizeformat","description": "Format a byte count as a human-readable size (e.g. `1.2 KB`).",   "params": [] },
+    { "name": "date",        "description": "Format a unix timestamp or RFC3339 string as a date.",              "params": [
+      { "name": "format",   "type": "string", "default": "\"%Y-%m-%d\"" },
+      { "name": "timezone", "type": "string", "default": "\"UTC\"" },
+      { "name": "locale",   "type": "string", "default": "\"en_US\"" }
+    ] },
+    { "name": "length",      "description": "Length of a string, array, or map.",                                "params": [] },
+    { "name": "reverse",     "description": "Reverse a string or array.",                                        "params": [] },
+    { "name": "sort",        "description": "Sort an array. Use `attribute` to sort an array of objects by a field.", "params": [{ "name": "attribute", "type": "string" }] },
+    { "name": "unique",      "description": "Deduplicate an array.",                                             "params": [
+      { "name": "attribute",      "type": "string" },
+      { "name": "case_sensitive", "type": "boolean", "default": "false" }
+    ] },
+    { "name": "slice",       "description": "Take a sub-slice of a string or array.",                            "params": [
+      { "name": "start", "type": "integer", "default": "0" },
+      { "name": "end",   "type": "integer", "default": "0" }
+    ] },
+    { "name": "first",       "description": "First element of an array (or `null` if empty).",                   "params": [] },
+    { "name": "last",        "description": "Last element of an array (or `null` if empty).",                    "params": [] },
+    { "name": "nth",         "description": "Get the `n`-th element of an array (0-indexed).",                   "params": [{ "name": "n", "type": "integer", "default": "0" }] },
+    { "name": "join",        "description": "Join an array of strings into a single string.",                    "params": [{ "name": "sep", "type": "string", "default": "\"\"" }] },
+    { "name": "concat",      "description": "Concatenate arrays together.",                                      "params": [{ "name": "with", "type": "any", "required": true }] },
+    { "name": "default",     "description": "Fall back to `value` if the input is missing, null, or empty.",     "params": [{ "name": "value", "type": "any", "required": true }] },
+    { "name": "map",         "description": "Extract one attribute from each item in an array of objects.",      "params": [{ "name": "attribute", "type": "string", "required": true }] },
+    { "name": "filter",      "description": "Keep only items in an array whose `attribute` equals `value`. Pair with `is matching(...)` for regex.", "params": [
+      { "name": "attribute", "type": "string", "required": true },
+      { "name": "value",     "type": "any",    "required": true }
+    ] },
+    { "name": "group_by",    "description": "Group an array of objects into a map keyed by `attribute`.",        "params": [{ "name": "attribute", "type": "string", "required": true }] },
+    { "name": "split",       "description": "Split a string into an array on the given pattern.",                "params": [{ "name": "pat", "type": "string", "required": true }] },
+    { "name": "wordcount",   "description": "Count whitespace-separated words in a string.",                     "params": [] },
+    { "name": "pluralize",   "description": "Return `singular` if the value is 1, otherwise `plural`. Useful for noun agreement.", "params": [
+      { "name": "singular", "type": "string", "default": "\"\"" },
+      { "name": "plural",   "type": "string", "default": "\"s\"" }
+    ] },
+    { "name": "get",         "description": "Index into a map or object by key.",                                "params": [
+      { "name": "key",     "type": "string", "required": true },
+      { "name": "default", "type": "any" }
+    ] },
+    { "name": "get_random",  "description": "Pick a random element from an array.",                              "params": [] }
   ],
   "functions": [
-    { "name": "range",      "signature": "range(start=0, end=N, step_by=1)",                   "description": "Create a numeric range (array of integers)." },
-    { "name": "now",        "signature": "now(timestamp=false, utc=false)",                    "description": "Current time. Returns RFC3339 by default; `timestamp=true` returns a unix timestamp." },
-    { "name": "throw",      "signature": "throw(message=\"...\")",                             "description": "Abort rendering with an error." },
-    { "name": "get_random", "signature": "get_random(start=0, end=N)",                         "description": "Random integer in `[start, end)`." },
-    { "name": "get_env",    "signature": "get_env(name=\"VAR\", default=\"...\")",             "description": "Read an environment variable." }
+    { "name": "range",      "description": "Create a numeric range (array of integers).",                        "params": [
+      { "name": "start",   "type": "integer", "default": "0" },
+      { "name": "end",     "type": "integer", "required": true },
+      { "name": "step_by", "type": "integer", "default": "1" }
+    ] },
+    { "name": "now",        "description": "Current time. Returns RFC3339 by default; `timestamp=true` returns a unix timestamp.", "params": [
+      { "name": "timestamp", "type": "boolean", "default": "false" },
+      { "name": "utc",       "type": "boolean", "default": "false" }
+    ] },
+    { "name": "throw",      "description": "Abort rendering with an error.",                                     "params": [{ "name": "message", "type": "string", "required": true }] },
+    { "name": "get_random", "description": "Random integer in `[start, end)`.",                                  "params": [
+      { "name": "start", "type": "integer", "default": "0" },
+      { "name": "end",   "type": "integer", "required": true }
+    ] },
+    { "name": "get_env",    "description": "Read an environment variable.",                                      "params": [
+      { "name": "name",    "type": "string", "required": true },
+      { "name": "default", "type": "string" }
+    ] }
   ],
   "tests": [
-    { "name": "defined",     "signature": "x is defined",       "description": "True if `x` is bound in the current scope." },
-    { "name": "undefined",   "signature": "x is undefined",     "description": "True if `x` is not bound (or is null)." },
-    { "name": "string",      "signature": "x is string",        "description": "True if `x` is a string." },
-    { "name": "number",      "signature": "x is number",        "description": "True if `x` is a number." },
-    { "name": "iterable",    "signature": "x is iterable",      "description": "True if `x` is an array or map." },
-    { "name": "odd",         "signature": "x is odd",           "description": "True if `x` is an odd integer." },
-    { "name": "even",        "signature": "x is even",          "description": "True if `x` is an even integer." },
-    { "name": "divisibleby", "signature": "x is divisibleby(n)","description": "True if `x` is divisible by `n`." },
-    { "name": "matching",    "signature": "x is matching(pattern=\"...\")", "description": "True if `x` matches the given regex." },
-    { "name": "containing",  "signature": "x is containing(value=\"...\")", "description": "True if `x` contains the given substring (string) or value (array)." },
-    { "name": "starting_with","signature":"x is starting_with(value=\"...\")","description":"True if a string starts with the given prefix." },
-    { "name": "ending_with", "signature": "x is ending_with(value=\"...\")", "description": "True if a string ends with the given suffix." }
+    { "name": "defined",     "description": "True if `x` is bound in the current scope.",                        "params": [] },
+    { "name": "undefined",   "description": "True if `x` is not bound (or is null).",                            "params": [] },
+    { "name": "string",      "description": "True if `x` is a string.",                                          "params": [] },
+    { "name": "number",      "description": "True if `x` is a number.",                                          "params": [] },
+    { "name": "iterable",    "description": "True if `x` is an array or map.",                                   "params": [] },
+    { "name": "odd",         "description": "True if `x` is an odd integer.",                                    "params": [] },
+    { "name": "even",        "description": "True if `x` is an even integer.",                                   "params": [] },
+    { "name": "divisibleby", "description": "True if `x` is divisible by `n`.",                                  "params": [{ "name": "n", "type": "integer", "required": true }] },
+    { "name": "matching",    "description": "True if `x` matches the given regex.",                              "params": [{ "name": "pattern", "type": "string", "required": true }] },
+    { "name": "containing",  "description": "True if `x` contains the given substring (string) or value (array).", "params": [{ "name": "value", "type": "any", "required": true }] },
+    { "name": "starting_with","description":"True if a string starts with the given prefix.",                    "params": [{ "name": "value", "type": "string", "required": true }] },
+    { "name": "ending_with", "description": "True if a string ends with the given suffix.",                      "params": [{ "name": "value", "type": "string", "required": true }] }
   ]
 }
