@@ -283,6 +283,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           warnings: out.warnings ?? [],
           mockedRemotes: out.mockedRemotes ?? [],
           hasDisabledReplaceCommands: out.hasDisabledReplaceCommands ?? false,
+          context: out.context ?? null,
         },
         isRendering: false,
         configDirty: false,

@@ -29,4 +29,5 @@ export interface AppOutput {
   warnings: string[];
   mockedRemotes: RemoteKind[];
   hasDisabledReplaceCommands: boolean;
+  context: string | null;
 }

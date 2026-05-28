@@ -94,6 +94,8 @@ export const renderResponseSchema = z.object({
   mockedRemotes: z.array(z.enum(REMOTE_KINDS)).optional(),
   /** True when one or more commit_preprocessors had replace_command stripped. */
   hasDisabledReplaceCommands: z.boolean().optional(),
+  /** Pretty-printed JSON context used by the template renderer. */
+  context: z.string().optional(),
 });
 export type RenderResponse = z.infer<typeof renderResponseSchema>;
 

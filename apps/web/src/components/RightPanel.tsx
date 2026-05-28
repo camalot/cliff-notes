@@ -18,7 +18,7 @@ import type { UiCommit, UiTag } from "../types";
 import { Icon } from "./ui/Icon";
 import { useAppStore } from "@/store";
 
-type Tab = "config" | "changelog" | "raw";
+type Tab = "config" | "changelog" | "raw" | "context";
 
 interface Props {
   // Generate
@@ -33,6 +33,7 @@ interface Props {
   warnings: string[];
   mockedRemotes: RemoteKind[];
   hasDisabledReplaceCommands: boolean;
+  context: string | null;
 
   // Config — options
   options: RenderOptionsState;
@@ -101,12 +102,13 @@ export function RightPanel(props: Props) {
   }, [props.isRendering, props.markdown]);
 
   const copy = async () => {
-    if (!props.markdown) return;
+    const content = tab === "context" ? props.context : props.markdown;
+    if (!content) return;
     try {
-      await navigator.clipboard.writeText(props.markdown);
+      await navigator.clipboard.writeText(content);
       setJustCopied(true);
       setTimeout(() => setJustCopied(false), 1500);
-      toast.success("Changelog copied to clipboard");
+      toast.success(tab === "context" ? "Context copied to clipboard" : "Changelog copied to clipboard");
     } catch (err) {
       toast.error("Failed to copy", { message: String(err) });
     }
@@ -151,7 +153,7 @@ export function RightPanel(props: Props) {
                 icon={justCopied ? "vsc:check" : "vsc:copy"}
                 label={justCopied ? "Copied!" : "Copy"}
                 onClick={copy}
-                disabled={!props.markdown}
+                disabled={tab === "context" ? !props.context : !props.markdown}
               />
             </>
           )}
@@ -171,6 +173,7 @@ export function RightPanel(props: Props) {
           />
         )}
         {tab === "raw" && <RawTab markdown={props.markdown} />}
+        {tab === "context" && <ContextTab context={props.context} />}
       </div>
     </Card>
     </>
@@ -213,7 +216,8 @@ function Tabs({
     <div className="flex self-stretch overflow-hidden rounded-tl-lg">
       {item("config", "Config", "gear-fill")}
       {item("changelog", "Changelog", "eye-fill", !hasOutput, isDirty)}
-      {item("raw", "Markdown", "markdown", !hasOutput, isDirty, "border-r border-border")}
+      {item("raw", "Markdown", "markdown", !hasOutput, isDirty)}
+      {item("context", "Context", "vsc:json", !hasOutput, isDirty, "border-r border-border")}
     </div>
   );
 }
@@ -331,6 +335,44 @@ function RawTab({ markdown }: { markdown: string | null }) {
         },
         scrollBeyondLastLine: false,
         wordWrap: "on",
+        scrollbar: {
+          vertical: "visible",
+          horizontal: "visible",
+          useShadows: false,
+          verticalScrollbarSize: 12,
+          horizontalScrollbarSize: 12,
+        },
+      }}
+    />
+  );
+}
+
+function ContextTab({ context }: { context: string | null }) {
+  if (!context) {
+    return (
+      <div className="h-full flex items-center justify-center p-6">
+        <p className="text-sm text-muted-fg">No context yet.</p>
+      </div>
+    );
+  }
+  return (
+    <Editor
+      height="100%"
+      theme={CLIFF_TOML_THEME_ID}
+      defaultLanguage="json"
+      language="json"
+      value={context}
+      options={{
+        readOnly: true,
+        fontSize: 13,
+        minimap: {
+          enabled: true,
+          renderCharacters: false,
+          showSlider: "always",
+          size: "proportional",
+        },
+        scrollBeyondLastLine: false,
+        wordWrap: "off",
         scrollbar: {
           vertical: "visible",
           horizontal: "visible",

@@ -93,7 +93,7 @@
       ]
     },
     "regex-field": {
-      "begin": "\\b(pattern|message|tag_pattern)\\b(\\s*)(=)(\\s*)(\")",
+      "begin": "\\b(pattern|message|body|footer|tag_pattern)\\b(\\s*)(=)(\\s*)(\")",
       "beginCaptures": {
         "1": { "name": "support.type.property-name.regex.cliff-toml" },
         "3": { "name": "punctuation.separator.key-value.cliff-toml" },

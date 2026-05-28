@@ -152,6 +152,7 @@ export default function App() {
           warnings={s.output?.warnings ?? []}
           mockedRemotes={s.output?.mockedRemotes ?? []}
           hasDisabledReplaceCommands={s.output?.hasDisabledReplaceCommands ?? false}
+          context={s.output?.context ?? null}
           options={s.options}
           onChangeOptions={s.setOptions}
           isLoadingRepo={s.isLoadingRepo}

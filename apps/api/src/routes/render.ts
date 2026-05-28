@@ -33,6 +33,7 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
           ...(result.hasDisabledReplaceCommands
             ? { hasDisabledReplaceCommands: true }
             : {}),
+          ...(result.context !== undefined ? { context: result.context } : {}),
         });
       } catch (err) {
         if (err instanceof RenderError) {

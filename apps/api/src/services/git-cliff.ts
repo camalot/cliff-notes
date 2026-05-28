@@ -24,6 +24,8 @@ export interface RenderOutput {
   nextTagFallback?: boolean;
   mockedRemotes?: RemoteKind[];
   hasDisabledReplaceCommands?: boolean;
+  /** Pretty-printed JSON context that was fed to the template renderer. */
+  context?: string;
 }
 
 export class RenderError extends Error {
@@ -256,19 +258,13 @@ export async function renderChangelog(
 
     if (detectedKinds.length === 0 || !mocks) {
       // Single-pass: existing flow.
+      let result: { stdout: string; stderr: string };
       try {
-        const result = await execProcess(config.gitCliffBin, {
+        result = await execProcess(config.gitCliffBin, {
           args: baseArgs,
           cwd: dir,
           timeoutMs: config.renderTimeoutMs,
         });
-        return {
-          markdown: result.stdout,
-          warnings: splitStderrLines(result.stderr),
-          ...(nextTag !== undefined ? { nextTag } : {}),
-          ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
-          ...(disabledReplaceCommands ? { hasDisabledReplaceCommands: true } : {}),
-        };
       } catch (err) {
         if (err instanceof ExecError) {
           throw new RenderError(
@@ -278,6 +274,29 @@ export async function renderChangelog(
         }
         throw err;
       }
+
+      // Best-effort context capture for the context viewer.
+      let contextJson: string | undefined;
+      try {
+        const ctxResult = await execProcess(config.gitCliffBin, {
+          args: [...baseArgs, "--context", "--offline"],
+          cwd: dir,
+          timeoutMs: config.renderTimeoutMs,
+        });
+        const parsed = JSON.parse(ctxResult.stdout);
+        contextJson = JSON.stringify(parsed, null, 2);
+      } catch {
+        // Context is non-critical; ignore failures.
+      }
+
+      return {
+        markdown: result.stdout,
+        warnings: splitStderrLines(result.stderr),
+        ...(nextTag !== undefined ? { nextTag } : {}),
+        ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
+        ...(disabledReplaceCommands ? { hasDisabledReplaceCommands: true } : {}),
+        ...(contextJson !== undefined ? { context: contextJson } : {}),
+      };
     }
 
     // Two-pass flow: capture --context, decorate, then render from context.
@@ -351,6 +370,7 @@ export async function renderChangelog(
       markdown: pass2.stdout,
       warnings,
       mockedRemotes: detectedKinds,
+      context: JSON.stringify(decorated, null, 2),
       ...(nextTag !== undefined ? { nextTag } : {}),
       ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
       ...(disabledReplaceCommands ? { hasDisabledReplaceCommands: true } : {}),

@@ -206,7 +206,7 @@ body = """
       - {% if commit.scope %}*({{ commit.scope }})* {% endif -%}
         {{ self::unquote(input=commit.message) | upper_first | trim }}
         {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
-        {%- if commit.author %} - [{{ self::user_url(name=commit.author.name) }}]{% endif -%}
+        {%- if commit.remote.username %} - [{{ self::user_url(name=commit.remote.username) }}]{% endif -%}
         {%- if commit.breaking_description -%}{{ self::alert(message=commit.breaking_description, type="caution") }}{%- endif -%}
     {%- endfor -%}\n\n
 {%- endfor %}
@@ -274,7 +274,7 @@ commit_preprocessors = [
   #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))"},
   # Check spelling of the commit message using https://github.com/crate-ci/typos.
   # If the spelling is incorrect, it will be fixed automatically.
-  { pattern = '.*', replace_command = 'typos --write-changes -' },
+  # { pattern = '.*', replace_command = 'typos --write-changes -' },
 ]
 # Prevent commits that are breaking from being excluded by commit parsers.
 protect_breaking_commits = false
@@ -294,6 +294,7 @@ commit_parsers = [
   { message = "(?i)^(chore|build)\\(deps.*\\)", skip = true },
   { message = "(?i)^chore\\(pr\\)", skip = true },
   { message = "(?i)^chore\\(pull\\)", skip = true },
+  { message = '(?i)^chore\(ignore\)', skip = true },
   { message = "(?i)^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
   { message = "(?i)^.*revert", group = "<!-- 9 -->◀️ Revert" },
   { body = "(?i).*security", group = "<!-- 8 -->🛡️ Security" },
