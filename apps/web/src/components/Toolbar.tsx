@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/site-config";
 import { ShareModal } from "./ShareModal";
 import { LoadPlaygroundModal } from "./LoadPlaygroundModal";
 import { ProjectName } from "./ProjectName";
+import { ConfirmResetModal, getSkipResetConfirm } from "./ConfirmResetModal";
 import { IntegrityError } from "@/lib/integrity";
 import type { PersistedState } from "@/lib/storage";
 import type { RenderOptionsState } from "./OptionsPane";
@@ -35,6 +36,15 @@ export function Toolbar({
 }: Props) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const handleResetClick = () => {
+    if (getSkipResetConfirm()) {
+      void onReset();
+    } else {
+      setShowResetModal(true);
+    }
+  };
 
   const handleSave = async () => {
     await downloadPlayground({ cliffToml, commits, tags, options, name });
@@ -124,30 +134,39 @@ export function Toolbar({
 
         <div className="flex items-center gap-1 justify-self-end">
           <IconButton
-            icon="arrow-clockwise"
+            icon="vsc:discard"
             label="Reset to defaults"
-            onClick={onReset}
+            onClick={handleResetClick}
+            className="text-danger/70 hover:text-danger hover:bg-danger/10"
           />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
-            icon="file-earmark-arrow-up-fill"
+            icon="bi:file-earmark-arrow-up"
             label="Load Playground"
             onClick={() => setShowLoadModal(true)}
           />
           <IconButton
-            icon="download"
+            icon="bi:download"
             label="Save Playground"
             onClick={() => void handleSave()}
           />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
-            icon="share-fill"
+            icon="bi:share-fill"
             label="Share Cliff Notes"
             onClick={() => setShowShareModal(true)}
           />
         </div>
       </header>
 
+      {showResetModal && (
+        <ConfirmResetModal
+          title="Reset all to defaults"
+          description="This will reset your cliff.toml, commits, tags, and options to their default values. This cannot be undone."
+          onConfirm={() => { setShowResetModal(false); void onReset(); }}
+          onCancel={() => setShowResetModal(false)}
+        />
+      )}
       {showLoadModal && (
         <LoadPlaygroundModal
           onClose={() => setShowLoadModal(false)}

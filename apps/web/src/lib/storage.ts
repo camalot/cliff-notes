@@ -126,5 +126,7 @@ export async function buildShareUrl(
 ): Promise<string> {
   const payload = encodeStateToPayload(state);
   const hash = await computeIntegrityHash(SCHEMA_VERSION, payload);
-  return `${origin}${pathname}#s=${payload}&h=${hash}&v=${SCHEMA_VERSION}`;
+  // LZ-string output contains '+' characters. Percent-encode so URLSearchParams
+  // doesn't silently convert them to spaces on the receiving end.
+  return `${origin}${pathname}#s=${encodeURIComponent(payload)}&h=${hash}&v=${SCHEMA_VERSION}`;
 }

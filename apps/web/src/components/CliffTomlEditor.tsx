@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
 import { Card, CardHeader } from "./ui/card";
 import { IconButton } from "./ui/IconButton";
+import { ConfirmResetModal, getSkipResetConfirm } from "./ConfirmResetModal";
 import { toast } from "@/lib/toast";
 import { api, type TomlEntry } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -21,6 +22,15 @@ interface Props {
 export function CliffTomlEditor({ value, onChange, onReset }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [justCopied, setJustCopied] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const handleResetClick = () => {
+    if (getSkipResetConfirm()) {
+      void onReset();
+    } else {
+      setShowResetModal(true);
+    }
+  };
 
   // Template picker
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -116,6 +126,15 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
   };
 
   return (
+    <>
+    {showResetModal && (
+      <ConfirmResetModal
+        title="Reset cliff.toml"
+        description="This will reset your cliff.toml to the default configuration. Any changes you've made will be lost."
+        onConfirm={() => { setShowResetModal(false); void onReset(); }}
+        onCancel={() => setShowResetModal(false)}
+      />
+    )}
     <Card className="flex flex-col min-h-0">
       <CardHeader className="p-0 gap-0">
         {/* Template picker — flush to top-left, rounded-tl-lg matching config tabs */}
@@ -137,9 +156,17 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
               )}
             >
               {/* <img src="/icons/toml.svg" alt="" aria-hidden="true" className="w-4 h-4" /> */}
-              <Icon name="/icons/toml.svg" aria-hidden="true" className="w-4 h-4" />
+              <Icon
+                name="/icons/toml.svg"
+                aria-hidden="true"
+                className="w-4 h-4"
+              />
               <span>cliff.toml</span>
-              <Icon name={`vsc:chevron-${dropdownOpen ? "up" : "down"}`} className="text-[10px]" aria-hidden="true" />
+              <Icon
+                name={`vsc:chevron-${dropdownOpen ? "up" : "down"}`}
+                className="text-[10px]"
+                aria-hidden="true"
+              />
             </button>
           </div>
 
@@ -165,7 +192,9 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
                   >
                     <span className="font-bold uppercase">{entry.label}</span>
                     {entry.description && (
-                      <span className="text-muted-fg font-normal normal-case">{entry.description}</span>
+                      <span className="text-muted-fg font-normal normal-case">
+                        {entry.description}
+                      </span>
                     )}
                   </button>
                 ))
@@ -185,15 +214,32 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
             onChange={handleFileChange}
             className="hidden"
           />
-          <IconButton icon="folder2-open" label="Open cliff.toml" onClick={handleOpenClick} />
-          <IconButton icon="download" label="Save cliff.toml" onClick={handleSave} />
+          <IconButton
+            icon="folder2-open"
+            label="Open cliff.toml"
+            onClick={handleOpenClick}
+          />
+          <IconButton
+            icon="download"
+            label="Save cliff.toml"
+            onClick={handleSave}
+          />
           <IconButton
             icon={justCopied ? "check" : "copy"}
             label={justCopied ? "Copied!" : "Copy cliff.toml"}
             onClick={handleCopy}
           />
-          <div role="separator" aria-orientation="vertical" className="w-px h-5 bg-border mx-1" />
-          <IconButton icon="arrow-clockwise" label="Reset to default" onClick={onReset} />
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="w-px h-5 bg-border mx-1"
+          />
+          <IconButton
+            icon="vsc:discard"
+            label="Reset to default"
+            onClick={handleResetClick}
+            className="text-danger/70 hover:text-danger hover:bg-danger/10"
+          />
         </div>
       </CardHeader>
       <div className="flex-1 min-h-0">
@@ -236,5 +282,6 @@ export function CliffTomlEditor({ value, onChange, onReset }: Props) {
         />
       </div>
     </Card>
+    </>
   );
 }

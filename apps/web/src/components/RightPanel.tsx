@@ -5,6 +5,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { Card, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { IconButton } from "./ui/IconButton";
+import { ConfirmResetModal, getSkipResetConfirm } from "./ConfirmResetModal";
 import { ProgressBar } from "./ui/ProgressBar";
 import { RepoLoader } from "./RepoLoader";
 import { OptionsPane, type RenderOptionsState } from "./OptionsPane";
@@ -68,6 +69,15 @@ interface Props {
 export function RightPanel(props: Props) {
   const [tab, setTab] = useState<Tab>("config");
   const [justCopied, setJustCopied] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const handleResetClick = () => {
+    if (getSkipResetConfirm()) {
+      props.onResetConfig();
+    } else {
+      setShowResetModal(true);
+    }
+  };
   const hasOutput = !!props.markdown;
   const wasRendering = useRef(props.isRendering);
 
@@ -102,6 +112,15 @@ export function RightPanel(props: Props) {
   const isDirty = props.configDirty && hasOutput;
 
   return (
+    <>
+    {showResetModal && (
+      <ConfirmResetModal
+        title="Reset config"
+        description="This will reset commits, tags, and options to sample data. Any changes you've made will be lost."
+        onConfirm={() => { setShowResetModal(false); props.onResetConfig(); }}
+        onCancel={() => setShowResetModal(false)}
+      />
+    )}
     <Card className="flex flex-col min-h-0">
       <CardHeader className="p-0 gap-0">
         <Tabs tab={tab} setTab={setTab} hasOutput={hasOutput} isDirty={isDirty} />
@@ -118,7 +137,8 @@ export function RightPanel(props: Props) {
           <IconButton
             icon="vsc:discard"
             label="Reset Config"
-            onClick={props.onResetConfig}
+            onClick={handleResetClick}
+            className="text-danger/70 hover:text-danger hover:bg-danger/10"
           />
           {tab !== "config" && (
             <>
@@ -148,6 +168,7 @@ export function RightPanel(props: Props) {
         {tab === "raw" && <RawTab markdown={props.markdown} />}
       </div>
     </Card>
+    </>
   );
 }
 

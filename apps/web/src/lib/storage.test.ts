@@ -64,6 +64,27 @@ describe("storage: URL hash decoding", () => {
     const url = await buildShareUrl(sample, "https://example.com", "/");
     expect(url).toMatch(/^https:\/\/example\.com\/#s=.+&h=.+&v=1$/);
   });
+
+  it("round-trips correctly when LZ payload contains + characters", async () => {
+    // A larger state whose LZ encoding produces '+' characters, which
+    // URLSearchParams must not corrupt into spaces.
+    const largeState: PersistedState = {
+      cliffToml: "[git]\nconventional_commits = true\nbody = \"{{ message }}\"\n",
+      commits: Array.from({ length: 20 }, (_, i) => ({ message: `feat(scope): commit number ${i}` })),
+      tags: [{ name: "v1.0.0", afterIndex: 10 }],
+      options: { unreleased: false, bumpedVersion: false },
+      name: "Cliff-Notes Remote - Really Long Name That Goes On And On And On",
+    };
+    const url = await buildShareUrl(largeState, "https://example.com", "/");
+    const hashPart = url.replace("https://example.com/", "");
+    const decoded = decodeFromUrlHash(hashPart);
+    expect(decoded).not.toBeNull();
+    expect(decoded!.state).toEqual(largeState);
+    // Integrity verification must also pass
+    const { decodeAndVerify } = await import("./storage");
+    const verified = await decodeAndVerify(hashPart);
+    expect(verified).toEqual(largeState);
+  });
 });
 
 // ── localStorage ──────────────────────────────────────────────────────────────
