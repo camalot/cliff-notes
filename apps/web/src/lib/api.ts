@@ -93,3 +93,36 @@ export const api = {
   getTomls: () => get<TomlEntry[]>("/tomls"),
   getToml: (id: string) => getText(`/tomls/${encodeURIComponent(id)}`),
 };
+
+// ── Auth helpers ─────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  login: string;
+  avatarUrl: string;
+}
+
+/** Thrown when the server has AUTH_ENABLED=false. */
+export class AuthDisabledError extends Error {
+  constructor() {
+    super("Authentication is not enabled on this server");
+    this.name = "AuthDisabledError";
+  }
+}
+
+/**
+ * Returns the currently authenticated user, or null if not logged in.
+ * Throws AuthDisabledError when the server has auth disabled (501).
+ * Throws ApiError for other non-OK responses.
+ */
+export async function fetchCurrentUser(): Promise<AuthUser | null> {
+  const res = await fetch(`${API_BASE}/auth/me`);
+  if (res.status === 401) return null;
+  if (res.status === 501) throw new AuthDisabledError();
+  if (!res.ok) throw new ApiError(`Auth check failed: ${res.status}`, res.status);
+  return (await res.json()) as AuthUser;
+}
+
+/** POST /api/auth/logout — best-effort, does not throw. */
+export async function logoutUser(): Promise<void> {
+  await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
+}

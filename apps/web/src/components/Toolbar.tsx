@@ -10,6 +10,9 @@ import { IntegrityError } from "@/lib/integrity";
 import type { PersistedState } from "@/lib/storage";
 import type { RenderOptionsState } from "./OptionsPane";
 import { Icon } from "./ui/Icon";
+import { UserMenu } from "./UserMenu";
+import { LoginModal } from "./LoginModal";
+import { useAppStore } from "@/store";
 
 interface Props {
   onReset: () => void;
@@ -37,6 +40,8 @@ export function Toolbar({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+
+  const { user, authLoading, authEnabled, loginModalOpen, setLoginModalOpen, logout } = useAppStore();
 
   const handleResetClick = () => {
     if (getSkipResetConfirm()) {
@@ -156,6 +161,22 @@ export function Toolbar({
             label="Share Cliff Notes"
             onClick={() => setShowShareModal(true)}
           />
+          {authEnabled && (
+            <>
+              <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
+              {authLoading ? (
+                <span className="w-7 h-7 inline-block" aria-hidden="true" />
+              ) : user ? (
+                <UserMenu user={user} onLogout={() => void logout()} />
+              ) : (
+                <IconButton
+                  icon="vsc:account"
+                  label="Sign in"
+                  onClick={() => setLoginModalOpen(true)}
+                />
+              )}
+            </>
+          )}
         </div>
       </header>
 
@@ -165,6 +186,7 @@ export function Toolbar({
           description="This will reset your cliff.toml, commits, tags, and options to their default values. This cannot be undone."
           onConfirm={() => { setShowResetModal(false); void onReset(); }}
           onCancel={() => setShowResetModal(false)}
+          onSave={handleSave}
         />
       )}
       {showLoadModal && (
@@ -182,6 +204,7 @@ export function Toolbar({
           onClose={() => setShowShareModal(false)}
         />
       )}
+      {authEnabled && loginModalOpen && <LoginModal />}
     </>
   );
 }

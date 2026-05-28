@@ -18,9 +18,10 @@ interface Props {
   description: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onSave?: () => Promise<void>;
 }
 
-export function ConfirmResetModal({ title, description, onConfirm, onCancel }: Props) {
+export function ConfirmResetModal({ title, description, onConfirm, onCancel, onSave }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [skipNext, setSkipNext] = useState(false);
 
@@ -66,18 +67,30 @@ export function ConfirmResetModal({ title, description, onConfirm, onCancel }: P
             <Icon name="bi:x-lg" aria-hidden="true" />
           </button>
         </div>
-        <p className="text-sm text-muted-fg mb-5">{description}</p>
-        <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-fg mb-4">{description}</p>
+        <div className="mb-4">
           <Toggle
             label="Do not ask again"
             checked={skipNext}
             onChange={(e) => setSkipNext(e.target.checked)}
           />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          {onSave ? (
+            <Button variant="secondary" size="sm" onClick={() => void onSave()}>
+              <Icon name="bi:download" aria-hidden="true" />
+              Save Project
+            </Button>
+          ) : (
+            <span />
+          )}
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={onCancel}>
+              <Icon name="bi:x" aria-hidden="true" />
               Cancel
             </Button>
             <Button variant="danger" size="sm" onClick={handleConfirm}>
+              <Icon name="vsc:discard" aria-hidden="true" />
               Reset
             </Button>
           </div>

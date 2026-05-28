@@ -3,7 +3,7 @@ import { generateRandomCommits, type ConventionalType } from "@cliff-notes/share
 import type { AppOutput, UiCommit, UiTag } from "./types";
 import { loadFromLocalStorage, saveToLocalStorage, type PersistedState } from "./lib/storage";
 import { stateToReleases } from "./lib/state-to-releases";
-import { api, ApiError } from "./lib/api";
+import { api, ApiError, AuthDisabledError, fetchCurrentUser, logoutUser, type AuthUser } from "./lib/api";
 import { toast } from "./lib/toast";
 import type { RenderOptionsState } from "./components/OptionsPane";
 
@@ -74,6 +74,8 @@ interface AppState {
   replaceAll: (input: { commits: UiCommit[]; tags: UiTag[]; cliffToml?: string }) => void;
   resetToDefaults: () => Promise<void>;
   resetConfig: () => void;
+  /** Incremented on every reset so RepoLoader remounts with cleared state. */
+  repoLoaderKey: number;
   resetCliffToml: () => Promise<void>;
   loadDefaultConfig: () => Promise<void>;
 
@@ -82,6 +84,18 @@ interface AppState {
     url: string,
     opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string },
   ) => Promise<void>;
+
+  // ── Auth ────────────────────────────────────────────────────────────────
+  user: AuthUser | null;
+  /** True until the first /auth/me response arrives. Prevents flash of wrong state. */
+  authLoading: boolean;
+  /** False when the server has AUTH_ENABLED=false. All auth UI is hidden when false. */
+  authEnabled: boolean;
+  /** Controls LoginModal visibility. In store (not local state) so it can be triggered programmatically. */
+  loginModalOpen: boolean;
+  fetchUser: () => Promise<void>;
+  logout: () => Promise<void>;
+  setLoginModalOpen: (open: boolean) => void;
 }
 
 function persisted() {
@@ -119,6 +133,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   isRendering: false,
   isLoadingRepo: false,
   configDirty: false,
+
+  repoLoaderKey: 0,
+
+  // Auth initial state: authLoading=true prevents flash of logged-out icon
+  user: null,
+  authLoading: true,
+  authEnabled: true,
+  loginModalOpen: false,
 
   setCliffToml: (v) => set({ cliffToml: v, configDirty: true, untrusted: false }),
   setOptions: (patch) =>
@@ -202,7 +224,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   resetToDefaults: async () => {
-    set({
+    set((s) => ({
       commits: SAMPLE_COMMITS,
       tags: SAMPLE_TAGS,
       options: { ...DEFAULT_OPTIONS },
@@ -210,7 +232,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       untrusted: false,
       output: null,
       configDirty: false,
-    });
+      repoLoaderKey: s.repoLoaderKey + 1,
+    }));
     try {
       const toml = await api.getToml("default.toml");
       set({ cliffToml: toml });
@@ -219,14 +242,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   resetConfig: () =>
-    set({
+    set((s) => ({
       commits: SAMPLE_COMMITS,
       tags: SAMPLE_TAGS,
       options: { ...DEFAULT_OPTIONS },
       output: null,
       configDirty: true,
       untrusted: false,
-    }),
+      repoLoaderKey: s.repoLoaderKey + 1,
+    })),
   resetCliffToml: async () => {
     try {
       const toml = await api.getToml("default.toml");
@@ -314,6 +338,32 @@ export const useAppStore = create<AppState>((set, get) => ({
       toast.error(title, details ? { details } : undefined);
     }
   },
+
+  // ── Auth actions ─────────────────────────────────────────────────────────
+  fetchUser: async () => {
+    try {
+      const user = await fetchCurrentUser();
+      set({ user, authLoading: false });
+    } catch (err) {
+      if (err instanceof AuthDisabledError) {
+        // Server has AUTH_ENABLED=false — hide all auth UI
+        set({ user: null, authLoading: false, authEnabled: false });
+      } else {
+        set({ user: null, authLoading: false });
+      }
+    }
+  },
+
+  logout: async () => {
+    try {
+      await logoutUser();
+    } catch {
+      // Best-effort logout; clear local state regardless
+    }
+    set({ user: null });
+  },
+
+  setLoginModalOpen: (open) => set({ loginModalOpen: open }),
 }));
 
 if (typeof window !== "undefined") {

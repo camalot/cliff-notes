@@ -1,11 +1,15 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
+import fastifyCookie from "@fastify/cookie";
+import fastifyRateLimit from "@fastify/rate-limit";
 import { healthRoutes } from "./routes/health.js";
 import { renderRoutes } from "./routes/render.js";
 import { repoRoutes } from "./routes/repo.js";
 import { randomRoutes } from "./routes/random.js";
 import { tomlsRoutes } from "./routes/tomls.js";
+import { authRoutes } from "./routes/auth.js";
+import { initSessionStore } from "./lib/session-store.js";
 import type { AppConfig } from "./config.js";
 
 export interface BuildOptions {
@@ -24,7 +28,21 @@ export async function buildServer(
   await app.register(cors, {
     origin: config.corsOrigins,
     methods: ["GET", "POST", "OPTIONS"],
+    credentials: true,
   });
+
+  await app.register(fastifyCookie);
+
+  await app.register(fastifyRateLimit, {
+    global: true,
+    max: 200,
+    timeWindow: "1 minute",
+    keyGenerator: (req) => req.ip,
+  });
+
+  if (config.authEnabled) {
+    initSessionStore(undefined, config.sessionTtlSeconds);
+  }
 
   await app.register(
     async (api) => {
@@ -33,6 +51,7 @@ export async function buildServer(
       await api.register(repoRoutes(config));
       await api.register(randomRoutes);
       await api.register(tomlsRoutes(config));
+      await api.register(authRoutes(config));
     },
     { prefix: "/api" },
   );

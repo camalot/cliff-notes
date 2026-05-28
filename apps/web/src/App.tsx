@@ -8,6 +8,7 @@ import { IntegrityErrorModal } from "./components/IntegrityErrorModal";
 import { UntrustedBanner } from "./components/UntrustedBanner";
 import { decodeAndVerify } from "./lib/storage";
 import { IntegrityError } from "./lib/integrity";
+import { downloadPlayground } from "./lib/playground-file";
 import type { PersistedState } from "./lib/storage";
 import type { UiCommit, UiTag } from "./types";
 
@@ -71,6 +72,12 @@ export default function App() {
     if (!s.cliffToml) {
       void s.loadDefaultConfig();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── auth state ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    void s.fetchUser();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -139,6 +146,7 @@ export default function App() {
           isRendering={s.isRendering}
           onGenerate={s.render}
           onResetConfig={s.resetConfig}
+          onSave={() => downloadPlayground({ cliffToml: s.cliffToml, commits: s.commits, tags: s.tags, options: s.options, name: s.name })}
           configDirty={s.configDirty}
           markdown={s.output?.markdown ?? null}
           warnings={s.output?.warnings ?? []}

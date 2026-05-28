@@ -16,6 +16,7 @@ import { CLIFF_TOML_THEME_ID } from "@/lib/monaco-cliff-toml";
 import { toast } from "@/lib/toast";
 import type { UiCommit, UiTag } from "../types";
 import { Icon } from "./ui/Icon";
+import { useAppStore } from "@/store";
 
 type Tab = "config" | "changelog" | "raw";
 
@@ -24,6 +25,7 @@ interface Props {
   isRendering: boolean;
   onGenerate: () => void;
   onResetConfig: () => void;
+  onSave: () => Promise<void>;
   configDirty: boolean;
 
   // Output
@@ -119,6 +121,7 @@ export function RightPanel(props: Props) {
         description="This will reset commits, tags, and options to sample data. Any changes you've made will be lost."
         onConfirm={() => { setShowResetModal(false); props.onResetConfig(); }}
         onCancel={() => setShowResetModal(false)}
+        onSave={props.onSave}
       />
     )}
     <Card className="flex flex-col min-h-0">
@@ -214,11 +217,12 @@ function Tabs({
 }
 
 function ConfigTab(props: Props) {
+  const repoLoaderKey = useAppStore((s) => s.repoLoaderKey);
   return (
     <div className="h-full overflow-auto">
       <div className="p-3 space-y-4 divide-y divide-border [&>section:not(:first-child)]:pt-4 [&>section:not(:last-child)]:pb-4">
         <OptionsPane options={props.options} onChange={props.onChangeOptions} />
-        <RepoLoader isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
+        <RepoLoader key={repoLoaderKey} isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
         <TagsPane
           tags={props.tags}
           commits={props.commits}
