@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - name: Determine next version
         id: get
-        uses: camalot/actions/version/get@v1
+        uses: camalot/actions/version/get@v1.1.1
         with:
           default_version: v1.0.0
           fail_on_default: true
@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Lint Codebase
-        uses: camalot/actions/smells/lint@v1
+        uses: camalot/actions/smells/lint@v1.1.1
         with:
           token: ${{ github.token }}
           default_branch: main
@@ -89,7 +89,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Tag, changelog, and GitHub Release
-        uses: camalot/actions/version/release@v1
+        uses: camalot/actions/version/release@v1.1.1
         with:
           tag_major: ${{ needs.version.outputs.tag_major }}
           tag_major_minor: ${{ needs.version.outputs.tag_major_minor }}
@@ -118,7 +118,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Dr. Jekyll Build
-        uses: camalot/actions/docs/drjekyll@v1
+        uses: camalot/actions/docs/drjekyll@v1.1.1
         with:
           input_dir: ./docs
           output_dir: ./_site
