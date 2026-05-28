@@ -126,3 +126,20 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
 export async function logoutUser(): Promise<void> {
   await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
 }
+
+export interface RepoSuggestion {
+  fullName: string;
+  htmlUrl: string;
+  private: boolean;
+}
+
+/**
+ * Returns the authenticated user's GitHub repos for autocomplete.
+ * Returns an empty array when not logged in or the token lacks repo scope.
+ */
+export async function fetchUserRepos(): Promise<RepoSuggestion[]> {
+  const res = await fetch(`${API_BASE}/auth/repos`);
+  if (!res.ok) return [];
+  const data = (await res.json()) as { repos?: RepoSuggestion[] };
+  return data.repos ?? [];
+}

@@ -198,6 +198,42 @@ export const authRoutes = (config: AppConfig): FastifyPluginAsync => {
       },
     );
 
+    // ── GET /auth/repos ───────────────────────────────────────────────────
+    // Returns the authenticated user's GitHub repositories for autocomplete.
+    app.get("/auth/repos", async (req, reply) => {
+      reply.header("Cache-Control", "private, max-age=60");
+
+      const sid = (req.cookies as Record<string, string>)[SESSION_COOKIE];
+      if (!sid) return reply.code(401).send({ error: "unauthenticated" });
+
+      const session = getSession(sid);
+      if (!session) return reply.code(401).send({ error: "session_evicted" });
+
+      try {
+        const res = await fetch(
+          "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+              Accept: "application/vnd.github.v3+json",
+              "User-Agent": "cliff-notes",
+            },
+          },
+        );
+        if (!res.ok) {
+          // Token may lack repo scope — return empty list rather than an error
+          return reply.send({ repos: [] });
+        }
+        const data = (await res.json()) as Array<{ full_name?: string; html_url?: string; private?: boolean }>;
+        const repos = data
+          .filter((r) => r.full_name && r.html_url)
+          .map((r) => ({ fullName: r.full_name!, htmlUrl: r.html_url!, private: r.private ?? false }));
+        return reply.send({ repos });
+      } catch {
+        return reply.send({ repos: [] });
+      }
+    });
+
     // ── GET /auth/me ──────────────────────────────────────────────────────
     // Returns the currently authenticated user or 401.
     app.get("/auth/me", async (req, reply) => {

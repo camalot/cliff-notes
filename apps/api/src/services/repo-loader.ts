@@ -8,6 +8,29 @@ import { checkRepoUrl } from "../lib/url-allowlist.js";
 const FIELD_SEP = "\x1f";
 const RECORD_SEP = "\x1e";
 
+const COMMIT_FMT =
+  ["%H", "%an", "%ae", "%at", "%cn", "%ce", "%ct", "%s", "%b"].join(FIELD_SEP) + RECORD_SEP;
+
+function parseCommits(stdout: string): Commit[] {
+  return stdout
+    .split(RECORD_SEP)
+    .map((chunk) => chunk.replace(/^\r?\n/, ""))
+    .filter((chunk) => chunk.length > 0)
+    .map((chunk): Commit => {
+      const fields = chunk.split(FIELD_SEP);
+      const [id, an, ae, at, cn, ce, ct, subject, ...rest] = fields;
+      const body = rest.join(FIELD_SEP).replace(/\r?\n$/, "");
+      const message = body ? `${subject}\n\n${body}` : (subject ?? "");
+      return {
+        id: id || undefined,
+        message,
+        body: body || undefined,
+        author: an && ae && at ? { name: an, email: ae, timestamp: Number(at) } : undefined,
+        committer: cn && ce && ct ? { name: cn, email: ce, timestamp: Number(ct) } : undefined,
+      };
+    });
+}
+
 export class RepoLoadError extends Error {
   constructor(message: string, public readonly status: number = 400) {
     super(message);
@@ -24,6 +47,8 @@ export interface InspectRepoOptions {
   branch?: string;
   /** Repo-relative path to the cliff.toml; defaults to "cliff.toml". */
   cliffTomlPath?: string;
+  /** When false, skip fetching the cliff.toml from the repository. Defaults to true. */
+  includeCliffToml?: boolean;
 }
 
 export async function inspectRepo(
@@ -81,10 +106,24 @@ export async function inspectRepo(
 
     const tags = await listTags(dir, MAX_REPO_TAGS, config);
     const commits = await listCommits(dir, opts.range, depth, config);
-    const cliffToml = await readCliffToml(dir, cliffTomlPath, config);
+
+    // Tags may point to commits older than the shallow clone depth. Those commits
+    // are already in the local repo (fetched with depth=1 by fetchRecentTags) but
+    // not reachable from the branch HEAD, so they won't appear in git log. Fetch
+    // them explicitly so every tag can be associated with a commit in the UI.
+    const branchCommitIds = new Set(commits.map((c) => c.id).filter(Boolean));
+    const missingTagCommitIds = tags
+      .map((t) => t.commitId)
+      .filter((id): id is string => !!id && !branchCommitIds.has(id));
+    const extraCommits = await listSpecificCommits(dir, missingTagCommitIds, config);
+
+    const cliffToml =
+      opts.includeCliffToml === false
+        ? undefined
+        : await readCliffToml(dir, cliffTomlPath, config);
     const defaultBranch = await detectDefaultBranch(dir, config);
 
-    return { tags, commits, cliffToml, defaultBranch };
+    return { tags, commits: [...commits, ...extraCommits], cliffToml, defaultBranch };
   });
 }
 
@@ -143,15 +182,18 @@ async function fetchRecentTags(dir: string, limit: number, config: AppConfig): P
 }
 
 async function listTags(dir: string, limit: number, config: AppConfig): Promise<Tag[]> {
-  const fmt = `%(refname:short)${FIELD_SEP}%(objectname)${FIELD_SEP}%(creatordate:unix)${FIELD_SEP}%(contents:subject)`;
+  // Use %(if)%(*objectname)%(then)...%(end) to resolve the actual commit SHA for both
+  // annotated tags (where %(objectname) is the tag object, not the commit) and
+  // lightweight tags (where %(objectname) is already the commit SHA).
+  const commitIdFmt = `%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)`;
+  const fmt = `%(refname:short)${FIELD_SEP}${commitIdFmt}${FIELD_SEP}%(creatordate:unix)${FIELD_SEP}%(contents:subject)`;
   const result = await execProcess(config.gitBin, {
-    args: ["-C", dir, "tag", "--sort=-creatordate", `--format=${fmt}`],
+    args: ["-C", dir, "for-each-ref", "--sort=-creatordate", `--format=${fmt}`, `--count=${limit}`, "refs/tags"],
     timeoutMs: config.cloneTimeoutMs,
   });
   return result.stdout
     .split(/\r?\n/)
     .filter((l) => l.length > 0)
-    .slice(0, limit)
     .map((line): Tag => {
       const [name = "", commitId = "", ts = "", message = ""] = line.split(FIELD_SEP);
       const timestamp = ts ? Number(ts) : undefined;
@@ -170,47 +212,24 @@ async function listCommits(
   maxCount: number,
   config: AppConfig,
 ): Promise<Commit[]> {
-  const fmt = [
-    "%H",
-    "%an",
-    "%ae",
-    "%at",
-    "%cn",
-    "%ce",
-    "%ct",
-    "%s",
-    "%b",
-  ].join(FIELD_SEP) + RECORD_SEP;
-
   const rangeArg = formatRange(range);
-  const args = [
-    "-C",
-    dir,
-    "log",
-    "--no-merges",
-    `--max-count=${maxCount}`,
-    `--format=${fmt}`,
-  ];
+  const args = ["-C", dir, "log", "--no-merges", `--max-count=${maxCount}`, `--format=${COMMIT_FMT}`];
   if (rangeArg) args.push(rangeArg);
-
   const result = await execProcess(config.gitBin, { args, timeoutMs: config.cloneTimeoutMs });
-  return result.stdout
-    .split(RECORD_SEP)
-    .map((chunk) => chunk.replace(/^\r?\n/, ""))
-    .filter((chunk) => chunk.length > 0)
-    .map((chunk): Commit => {
-      const fields = chunk.split(FIELD_SEP);
-      const [id, an, ae, at, cn, ce, ct, subject, ...rest] = fields;
-      const body = rest.join(FIELD_SEP).replace(/\r?\n$/, "");
-      const message = body ? `${subject}\n\n${body}` : (subject ?? "");
-      return {
-        id: id || undefined,
-        message,
-        body: body || undefined,
-        author: an && ae && at ? { name: an, email: ae, timestamp: Number(at) } : undefined,
-        committer: cn && ce && ct ? { name: cn, email: ce, timestamp: Number(ct) } : undefined,
-      };
-    });
+  return parseCommits(result.stdout);
+}
+
+/** Fetch specific commits by SHA that are already in the local repo (e.g. fetched via tag fetch). */
+async function listSpecificCommits(
+  dir: string,
+  ids: string[],
+  config: AppConfig,
+): Promise<Commit[]> {
+  if (ids.length === 0) return [];
+  // These are shallow commits (fetched with depth=1), so git log won't traverse further.
+  const args = ["-C", dir, "log", "--no-merges", `--max-count=${ids.length}`, `--format=${COMMIT_FMT}`, ...ids];
+  const result = await execProcess(config.gitBin, { args, timeoutMs: config.cloneTimeoutMs }).catch(() => undefined);
+  return result ? parseCommits(result.stdout) : [];
 }
 
 function formatRange(range: RepoRange | undefined): string | undefined {

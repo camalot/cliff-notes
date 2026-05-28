@@ -13,9 +13,14 @@ vi.mock("../lib/exec.js", async () => {
       if (args[0] === "clone") {
         return { stdout: "", stderr: "", exitCode: 0 };
       }
-      if (args.includes("tag")) {
-        const line = ["v1.0.0", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "1700000000", "Release 1.0.0"].join(FIELD);
-        return { stdout: line + "\n", stderr: "", exitCode: 0 };
+      if (args.includes("for-each-ref")) {
+        if (args.some((a: string) => a.startsWith("--count="))) {
+          // listTags: return full multi-field format; commitId matches the mocked commit
+          const line = ["v1.0.0", "abc1234abc1234abc1234abc1234abc1234abc12", "1700000000", "Release 1.0.0"].join(FIELD);
+          return { stdout: line + "\n", stderr: "", exitCode: 0 };
+        }
+        // fetchRecentTags pruning pass: return just the tag name
+        return { stdout: "v1.0.0\n", stderr: "", exitCode: 0 };
       }
       if (args.includes("log")) {
         const commit = [

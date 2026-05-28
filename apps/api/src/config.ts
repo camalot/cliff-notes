@@ -75,7 +75,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     githubClientSecret: env.GITHUB_CLIENT_SECRET ?? "",
     githubCallbackUrl:
       env.GITHUB_CALLBACK_URL ??
-      "http://localhost:5173/api/auth/github/callback",
+      "http://localhost:300/api/auth/github/callback",
     appOrigin: env.APP_ORIGIN ?? corsOrigins[0] ?? "http://localhost:5173",
     sessionSecret: env.SESSION_SECRET ?? "",
     sessionTtlSeconds: env.SESSION_TTL_SECONDS

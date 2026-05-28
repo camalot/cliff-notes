@@ -43,7 +43,7 @@ interface Props {
   isLoadingRepo: boolean;
   onLoadRepo: (
     url: string,
-    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string },
+    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string; includeCliffToml?: boolean },
   ) => void;
 
   // Config — tags

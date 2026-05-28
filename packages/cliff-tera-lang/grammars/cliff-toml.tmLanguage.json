@@ -93,34 +93,73 @@
       ]
     },
     "regex-field": {
-      "begin": "\\b(pattern|message|body|footer|tag_pattern)\\b(\\s*)(=)(\\s*)(\")",
-      "beginCaptures": {
-        "1": { "name": "support.type.property-name.regex.cliff-toml" },
-        "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-        "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
-      },
-      "end": "(\")",
-      "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
-      "name": "string.regexp.cliff-toml",
       "patterns": [
-        { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
-        { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+        {
+          "begin": "\\b(pattern|message|body|footer|tag_pattern)\\b(\\s*)(=)(\\s*)(\")",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.regex.cliff-toml" },
+            "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+            "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
+          },
+          "end": "(\")",
+          "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
+          "name": "string.regexp.cliff-toml",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
+            { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+          ]
+        },
+        {
+          "begin": "\\b(pattern|message|body|footer|tag_pattern)\\b(\\s*)(=)(\\s*)(')",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.regex.cliff-toml" },
+            "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+            "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
+          },
+          "end": "(')",
+          "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
+          "name": "string.regexp.cliff-toml",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
+            { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+          ]
+        }
       ]
     },
     "replace-field": {
-      "begin": "\\b(replace|href)\\b(\\s*)(=)(\\s*)(\")",
-      "beginCaptures": {
-        "1": { "name": "support.type.property-name.replace.cliff-toml" },
-        "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-        "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
-      },
-      "end": "(\")",
-      "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
-      "name": "string.template.replace.cliff-toml",
       "patterns": [
-        { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
-        { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
-        { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+        {
+          "begin": "\\b(replace|href)\\b(\\s*)(=)(\\s*)(\")",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.replace.cliff-toml" },
+            "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+            "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
+          },
+          "end": "(\")",
+          "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
+          "name": "string.template.replace.cliff-toml",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
+            { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
+            { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+          ]
+        },
+        {
+          "begin": "\\b(replace|href)\\b(\\s*)(=)(\\s*)(')",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.replace.cliff-toml" },
+            "3": { "name": "punctuation.separator.key-value.cliff-toml" },
+            "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
+          },
+          "end": "(')",
+          "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
+          "name": "string.template.replace.cliff-toml",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
+            { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
+            { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+          ]
+        }
       ]
     },
     "key-value": {

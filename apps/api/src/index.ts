@@ -1,3 +1,4 @@
+import "./lib/env.js"; // Must be first — loads .env / .secrets files before any config reads.
 import { loadConfig } from "./config.js";
 import { buildServer } from "./server.js";
 import { sweepOrphanedTempDirs } from "./lib/temp.js";

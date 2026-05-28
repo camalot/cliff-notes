@@ -82,7 +82,7 @@ interface AppState {
   render: () => Promise<void>;
   loadFromRepo: (
     url: string,
-    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string },
+    opts?: { range?: { from?: string; to?: string }; branch?: string; cliffTomlPath?: string; includeCliffToml?: boolean },
   ) => Promise<void>;
 
   // ── Auth ────────────────────────────────────────────────────────────────
@@ -309,6 +309,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         range: opts?.range,
         branch: opts?.branch,
         cliffTomlPath: opts?.cliffTomlPath,
+        includeCliffToml: opts?.includeCliffToml,
       });
       const commits: UiCommit[] = [...result.commits].reverse();
       const idToIndex = new Map<string, number>();

@@ -14,11 +14,11 @@ export const repoRoutes = (config: AppConfig): FastifyPluginAsync => {
           detail: parsed.error.message,
         });
       }
-      const { url, range, maxCommits = MAX_REPO_COMMITS, branch, cliffTomlPath } = parsed.data;
+      const { url, range, maxCommits = MAX_REPO_COMMITS, branch, cliffTomlPath, includeCliffToml } = parsed.data;
       const projectId = sanitizeProjectId(request.headers["x-project-id"]);
       try {
         const result = await runForProject(projectId, () =>
-          inspectRepo({ url, range, maxCommits, branch, cliffTomlPath }, config, projectId),
+          inspectRepo({ url, range, maxCommits, branch, cliffTomlPath, includeCliffToml }, config, projectId),
         );
         return reply.send(result);
       } catch (err) {

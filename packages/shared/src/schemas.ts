@@ -121,6 +121,8 @@ export const repoInspectRequestSchema = z.object({
   branch: z.string().min(1).max(200).optional(),
   /** Repo-relative path to the cliff.toml. Defaults to "cliff.toml". */
   cliffTomlPath: z.string().min(1).max(200).optional(),
+  /** When false, skip fetching the cliff.toml from the repository. Defaults to true. */
+  includeCliffToml: z.boolean().optional(),
 });
 export type RepoInspectRequest = z.infer<typeof repoInspectRequestSchema>;
 
