@@ -92,6 +92,8 @@ export const renderResponseSchema = z.object({
   nextTagFallback: z.boolean().optional(),
   /** Remote integrations whose data was mocked for this render. */
   mockedRemotes: z.array(z.enum(REMOTE_KINDS)).optional(),
+  /** True when one or more commit_preprocessors had replace_command stripped. */
+  hasDisabledReplaceCommands: z.boolean().optional(),
 });
 export type RenderResponse = z.infer<typeof renderResponseSchema>;
 

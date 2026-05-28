@@ -22,17 +22,17 @@ footer = """
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
 body = """
-{# HEADERS #}
+{#- HEADERS -#}
 {%- set HEADER_NEW_CONTRIBUTORS = "❤️ New Contributors" -%}
 {%- set HEADER_CONTRIBUTORS = "💛 Contributors" -%}
 {%- set HEADER_STATISTICS = "📈 Commit Statistics"-%}
-{# HEADERS END #}
+{#- HEADERS END -#}
 
-{# VARIABLES #}
+{#- VARIABLES -#}
 {%- set CONTRIBUTOR_COUNT = 0 -%}
-{# VARIABLES END #}
+{#- VARIABLES END -#}
 
-{# MACROS #}
+{#- MACROS -#}
 {%- macro unquote(input) -%}
   {{ input | trim_start_matches(pat='"') | trim_end_matches(pat='"') | trim_start_matches(pat="'") | trim_end_matches(pat="'")}}
 {%- endmacro -%}
@@ -80,27 +80,27 @@ body = """
 {%- endmacro -%}
 
 {%- macro full_changelog_url() -%}
-  {% if remote.github.owner and remote.github.repo %}
-    \n\n---\n\n
+  {%- if remote.github.owner and remote.github.repo %}
+    \n---\n
     \n**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{version}}
-  {% elif remote.bitbucket.owner and remote.bitbucket.repo %}
+  {%- elif remote.bitbucket.owner and remote.bitbucket.repo %}
     {{ " " }}
-  {% elif remote.gitlab.owner and remote.gitlab.repo %}
+  {%- elif remote.gitlab.owner and remote.gitlab.repo %}
     {{ " " }}
-  {% elif remote.azure_devops.owner and remote.azure_devops.repo %}
+  {%- elif remote.azure_devops.owner and remote.azure_devops.repo %}
     {{ " " }}
-  {% elif remote.gitea.owner and remote.gitea.repo %}
+  {%- elif remote.gitea.owner and remote.gitea.repo %}
     {{ " " }}
-  {% endif %}
+  {%- endif %}
 {%- endmacro -%}
 
-{%- macro print_remote(new_contrib_header, contrib_header) -%}
+{%- macro print_remote(new_contrib_header, contrib_header) %}
   {{ self::get_remote_header() }}
-  {% if remote.github.repo and remote.github.owner %}{%- set r = github -%}{%- endif -%}
-  {% if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
-  {% if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
-  {% if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
-  {% if remote.gitlab.repo and remote.gitlab.owner %}{%- set r = gitlab -%}{%- endif -%}
+  {%- if remote.github.repo and remote.github.owner %}{%- set r = github -%}{%- endif -%}
+  {%- if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
+  {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
+  {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
+  {%- if remote.gitlab.repo and remote.gitlab.owner %}{%- set r = gitlab -%}{%- endif -%}
   {%- if r -%}
     {%- set new_contributors = r.contributors | filter(attribute="is_first_time", value=true) -%}
     {%- set contributors = r.contributors | filter(attribute="is_first_time", value=false) -%}
@@ -117,21 +117,21 @@ body = """
 
 {%- macro count_contributors() -%}
   {%- set contrib_count = 0 -%}
-  {% if remote.github.repo and remote.github.owner %}{%- set r = github -%}{%- endif -%}
-  {% if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
-  {% if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
-  {% if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
+  {%- if remote.github.repo and remote.github.owner %}{%- set r = github -%}{%- endif -%}
+  {%- if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
+  {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
+  {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
   {%- for c in r.contributors -%}{%- set_global contrib_count = contrib_count + 1 -%}{%- endfor -%}
   {{- contrib_count -}}
 {%- endmacro -%}
 
 {%- macro print_contributors(contributors) -%}
   {%- for contrib in contributors %}
-    \n- {{ self::user_url(name=contrib.username) }}
+    - {{ self::user_url(name=contrib.username) }}
     {%- if contrib.pr_number %} in \
-      {# defined with !#!\\d+ to get processed by the post processor after #\\d+ #}
+      {#- defined with !#!\\d+ to get processed by the post processor after #\\d+ -#}
       [!#!{{ contrib.pr_number }}]({{ self::remote_url() }}/pull/{{ contrib.pr_number }})
-    {%- endif -%}
+    {% endif %}
   {%- endfor -%}
 {%- endmacro -%}
 
@@ -151,22 +151,22 @@ body = """
   {%- endif -%}
 {%- endmacro -%}
 
-{%- macro print_statistics(statistics, header, contributor_count=0) -%}
+{%- macro print_statistics(statistics, header, contributor_count=0) %}
   ## {{ header }}
-  {%- set s_commit_count = statistics.commit_count -%}
+  {% set s_commit_count = statistics.commit_count -%}
   {%- set s_timespan = statistics.commits_timespan | default(value=0) -%}
   {%- set s_conv_count = statistics.conventional_commit_count -%}
   {%- set s_links_count = statistics.links | length -%}
   {%- set s_links = statistics.links -%}
   {%- set s_days_since = statistics.days_passed_since_last_release | default(value=0) -%}
-  {%- set s_contrib_count = contributor_count -%}
-  \n\n{{ "  " }}
+  {%- set s_contrib_count = contributor_count %}
+
   - `{{ s_commit_count }}` {{ self::plural(count=s_commit_count, singular="commit", plural="commits") }} contributed to the release.
   - `{{ s_timespan }}` {{ self::plural(count=s_timespan, singular="day", plural="days")}} {{ self::plural(count=s_timespan, singular="has", plural="have")}} passed between the first and last commit.
   - `{{ s_conv_count }}` {{ self::plural(count=s_commit_count, singular="commit", plural="commits") }} parsed as conventional.
   - `{{ s_links_count }}` linked {{ self::plural(count=s_links_count, singular="issue", plural="issues") }} detected in commits.
 
-  {%- if s_links_count > 0 %}
+  {%- if s_links_count > 0 -%}
 	  {%- for link in statistics.links %}
       {{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} {{ self::plural(count=link.count, singular="time", plural="times") }})
 	  {%- endfor %}
@@ -185,10 +185,9 @@ body = """
     {{ "\n> **" }}{{ type | upper }}{{ "**:\n  > " }}{{ message }}
   {% endif -%}
 {%- endmacro -%}
+{#- MACROS END -#}
 
-{# MACROS END #}
-
-{# VERSION HEADER #}
+{#- VERSION HEADER -#}
 {%- set c_version = self::clean_version(version=version, unreleased="unreleased") -%}
   {%- if github %}
     ## [v{{ c_version }}]({{ self::remote_url()}}/releases/tag/v{{ c_version }})
@@ -197,12 +196,12 @@ body = """
   {%- endif %} \
 
   - {{ timestamp | date(format="%Y-%m-%d") }}
-{# VERSION HEADER END #}
+{#- VERSION HEADER END -#}
 
-{# LOOP GROUPS #}
+{#- LOOP GROUPS -#}
 {%- for group, commits in commits | group_by(attribute="group") %}
     \n### {{ group | striptags | trim | upper_first }}
-    {# LOOP COMMITS #}
+    {# LOOP COMMITS -#}
     {%- for commit in commits %}
       - {% if commit.scope %}*({{ commit.scope }})* {% endif -%}
         {{ self::unquote(input=commit.message) | upper_first | trim }}
@@ -211,20 +210,20 @@ body = """
         {%- if commit.breaking_description -%}{{ self::alert(message=commit.breaking_description, type="caution") }}{%- endif -%}
     {%- endfor -%}\n\n
 {%- endfor %}
-{# LOOP GROUPS END #}
+{#- LOOP GROUPS END -#}
 
-{# REMOTE INFO #}
+{#- REMOTE INFO -#}
 {{ self::print_remote(new_contrib_header=HEADER_NEW_CONTRIBUTORS, contrib_header=HEADER_CONTRIBUTORS) }}
-{# REMOTE INFO END #}
+{#- REMOTE INFO END -#}
 
-{# STATISTICS #}
-{% set CONTRIBUTOR_COUNT = self::count_contributors()%}
+{#- STATISTICS -#}
+{%- set CONTRIBUTOR_COUNT = self::count_contributors() -%}
 {{ self::print_statistics(statistics=statistics, header=HEADER_STATISTICS, contributor_count=CONTRIBUTOR_COUNT)}}
-{# STATISTICS END #}
+{#- STATISTICS END -#}
 
 {%- if version %}
   {{ self::full_changelog_url() }}
-{%- endif %}
+{% endif -%}
 
 """
 
@@ -275,7 +274,7 @@ commit_preprocessors = [
   #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))"},
   # Check spelling of the commit message using https://github.com/crate-ci/typos.
   # If the spelling is incorrect, it will be fixed automatically.
-  #{ pattern = '.*', replace_command = 'typos --write-changes -' },
+  { pattern = '.*', replace_command = 'typos --write-changes -' },
 ]
 # Prevent commits that are breaking from being excluded by commit parsers.
 protect_breaking_commits = false

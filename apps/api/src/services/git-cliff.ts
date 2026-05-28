@@ -23,6 +23,7 @@ export interface RenderOutput {
   nextTag?: string;
   nextTagFallback?: boolean;
   mockedRemotes?: RemoteKind[];
+  hasDisabledReplaceCommands?: boolean;
 }
 
 export class RenderError extends Error {
@@ -147,6 +148,55 @@ function splitStderrLines(stderr: string): string[] {
     .filter((l) => l.length > 0);
 }
 
+/**
+ * Remove every `replace_command = <quoted-value>` key from commit_preprocessors
+ * (and postprocessors) inline tables in a cliff.toml string.
+ *
+ * Returns the cleaned TOML and a flag indicating whether any stripping occurred.
+ * Handles both single-quoted and double-quoted TOML string values.
+ */
+export function stripReplaceCommands(toml: string): {
+  cleanedToml: string;
+  hadReplaceCommands: boolean;
+} {
+  // Regex removes `, replace_command = <value>` (comma before)
+  // or `replace_command = <value>,` (comma after)
+  // or `replace_command = <value>` (standalone, no adjacent comma).
+  // Handles single-quoted TOML literal strings and double-quoted basic strings.
+  const VALUE_PAT = `(?:'[^']*'|"(?:[^"\\\\]|\\\\.)*")`;
+  const patterns = [
+    // comma before, optional trailing whitespace up to closing } or another ,
+    new RegExp(`,\\s*replace_command\\s*=\\s*${VALUE_PAT}`, "g"),
+    // comma after
+    new RegExp(`replace_command\\s*=\\s*${VALUE_PAT}\\s*,\\s*`, "g"),
+    // standalone (no adjacent commas)
+    new RegExp(`replace_command\\s*=\\s*${VALUE_PAT}`, "g"),
+  ];
+
+  let hadReplaceCommands = false;
+  const lines = toml.split(/\r?\n/);
+  const cleaned = lines.map((line) => {
+    // Skip comment lines.
+    if (/^\s*#/.test(line)) return line;
+    let result = line;
+    for (const re of patterns) {
+      const next = result.replace(re, (match) => {
+        // Only count/remove if not inside a comment segment.
+        if (/#.*replace_command/.test(line)) return match;
+        hadReplaceCommands = true;
+        return "";
+      });
+      if (next !== result) {
+        result = next;
+        break;
+      }
+    }
+    return result;
+  });
+
+  return { cleanedToml: cleaned.join("\n"), hadReplaceCommands };
+}
+
 export async function renderChangelog(
   input: RenderInput,
   config: AppConfig,
@@ -154,10 +204,16 @@ export async function renderChangelog(
 ): Promise<RenderOutput> {
   const opts = input.options ?? {};
 
+  // Strip replace_command from commit_preprocessors/postprocessors — those
+  // external commands cannot run in the sandbox.
+  const { cleanedToml: tomlAfterCommandStrip, hadReplaceCommands } =
+    stripReplaceCommands(input.cliffToml);
+  const effectiveToml = tomlAfterCommandStrip;
+
   // Strip BEFORE writing to disk so the user's token never lands in /tmp.
   let stripResult;
   try {
-    stripResult = parseAndStripRemote(input.cliffToml);
+    stripResult = parseAndStripRemote(effectiveToml);
   } catch (err) {
     if (err instanceof InlineRemoteTableError) {
       throw new RenderError(err.message, err.message);
@@ -167,6 +223,7 @@ export async function renderChangelog(
 
   const { detectedKinds, carriedOver, referencedToken } = stripResult;
   const mocks = detectedKinds.length > 0 ? loadRemoteMocks(config.remoteMocksDir) : null;
+  const disabledReplaceCommands = hadReplaceCommands ? true : undefined;
   const tomlForDisk = mocks
     ? injectMockedRemoteBlocks(
         stripResult.cleanedToml,
@@ -210,6 +267,7 @@ export async function renderChangelog(
           warnings: splitStderrLines(result.stderr),
           ...(nextTag !== undefined ? { nextTag } : {}),
           ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
+          ...(disabledReplaceCommands ? { hasDisabledReplaceCommands: true } : {}),
         };
       } catch (err) {
         if (err instanceof ExecError) {
@@ -295,6 +353,7 @@ export async function renderChangelog(
       mockedRemotes: detectedKinds,
       ...(nextTag !== undefined ? { nextTag } : {}),
       ...(nextTagFallback !== undefined ? { nextTagFallback } : {}),
+      ...(disabledReplaceCommands ? { hasDisabledReplaceCommands: true } : {}),
     };
   });
 }

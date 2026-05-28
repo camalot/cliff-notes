@@ -28,4 +28,5 @@ export interface AppOutput {
   markdown: string;
   warnings: string[];
   mockedRemotes: RemoteKind[];
+  hasDisabledReplaceCommands: boolean;
 }

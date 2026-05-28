@@ -30,6 +30,9 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
           ...(result.mockedRemotes && result.mockedRemotes.length > 0
             ? { mockedRemotes: result.mockedRemotes }
             : {}),
+          ...(result.hasDisabledReplaceCommands
+            ? { hasDisabledReplaceCommands: true }
+            : {}),
         });
       } catch (err) {
         if (err instanceof RenderError) {

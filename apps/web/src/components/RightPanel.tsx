@@ -32,6 +32,7 @@ interface Props {
   markdown: string | null;
   warnings: string[];
   mockedRemotes: RemoteKind[];
+  hasDisabledReplaceCommands: boolean;
 
   // Config — options
   options: RenderOptionsState;
@@ -166,6 +167,7 @@ export function RightPanel(props: Props) {
             markdown={props.markdown}
             warnings={props.warnings}
             mockedRemotes={props.mockedRemotes}
+            hasDisabledReplaceCommands={props.hasDisabledReplaceCommands}
           />
         )}
         {tab === "raw" && <RawTab markdown={props.markdown} />}
@@ -248,11 +250,12 @@ function ConfigTab(props: Props) {
 }
 
 function ChangelogTab({
-  markdown, warnings, mockedRemotes,
+  markdown, warnings, mockedRemotes, hasDisabledReplaceCommands,
 }: {
   markdown: string | null;
   warnings: string[];
   mockedRemotes: RemoteKind[];
+  hasDisabledReplaceCommands: boolean;
 }) {
   if (!markdown) {
     return (
@@ -275,6 +278,15 @@ function ChangelogTab({
         >
           <span className="font-semibold">Remote data is mocked:</span>{" "}
           <span className="font-mono">{mockedRemotes.join(", ")}</span>
+        </div>
+      )}
+      {hasDisabledReplaceCommands && (
+        <div
+          className="m-3 rounded-md border border-orange-500/50 bg-orange-500/10 text-orange-200 p-2 text-xs"
+          title="cliff-notes cannot execute shell commands from replace_command. Those preprocessors were ignored for this render."
+        >
+          <span className="font-semibold">replace_command preprocessors are disabled:</span>{" "}
+          <span>Shell commands cannot run in the sandbox. Affected preprocessors were skipped.</span>
         </div>
       )}
       {warnings.length > 0 && (
