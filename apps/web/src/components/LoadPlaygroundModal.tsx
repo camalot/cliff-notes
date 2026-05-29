@@ -347,22 +347,24 @@ export function LoadPlaygroundModal({ onClose, onLoad, onIntegrityError }: Props
               </p>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-fg">Personal Access Token</label>
-              <Input
-                type="password"
-                placeholder="ghp_…"
-                value={patInput}
-                onChange={(e) => setPatInput(e.target.value)}
-                autoComplete="off"
-                className="text-xs"
-              />
-              <Toggle
-                label="Save token in browser"
-                checked={savePatState}
-                onChange={(e) => setSavePatState(e.target.checked)}
-              />
-            </div>
+            {!user && (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-fg">Personal Access Token</label>
+                <Input
+                  type="password"
+                  placeholder="ghp_…"
+                  value={patInput}
+                  onChange={(e) => setPatInput(e.target.value)}
+                  autoComplete="off"
+                  className="text-xs"
+                />
+                <Toggle
+                  label="Save token in browser"
+                  checked={savePatState}
+                  onChange={(e) => setSavePatState(e.target.checked)}
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setView("main")}>

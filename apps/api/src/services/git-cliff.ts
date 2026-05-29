@@ -224,7 +224,7 @@ export async function renderChangelog(
   }
 
   const { detectedKinds, carriedOver, referencedToken } = stripResult;
-  const mocks = detectedKinds.length > 0 ? loadRemoteMocks(config.remoteMocksDir) : null;
+  const mocks = detectedKinds.length > 0 ? loadRemoteMocks() : null;
   const disabledReplaceCommands = hadReplaceCommands ? true : undefined;
   const tomlForDisk = mocks
     ? injectMockedRemoteBlocks(

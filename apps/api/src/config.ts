@@ -8,7 +8,6 @@ const WORKSPACE_ROOT = resolve(
   fileURLToPath(new URL("../../..", import.meta.url)),
 );
 const DEFAULT_CONFIGS_DIR = resolve(WORKSPACE_ROOT, ".cliff/tomls");
-const DEFAULT_REMOTE_MOCKS_DIR = resolve(WORKSPACE_ROOT, ".cliff/context");
 
 export interface AppConfig {
   port: number;
@@ -17,8 +16,6 @@ export interface AppConfig {
   staticDir?: string;
   /** Absolute path to the directory containing cliff.toml configuration presets. */
   configsDir: string;
-  /** Absolute path to the directory containing remote-mock fixture JSON files. */
-  remoteMocksDir: string;
   gitCliffBin: string;
   gitBin: string;
   cloneTimeoutMs: number;
@@ -62,7 +59,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     host: env.HOST ?? "0.0.0.0",
     staticDir: env.STATIC_DIR,
     configsDir: env.CONFIGS_DIR ?? DEFAULT_CONFIGS_DIR,
-    remoteMocksDir: env.REMOTE_MOCKS_DIR ?? DEFAULT_REMOTE_MOCKS_DIR,
     gitCliffBin: env.GIT_CLIFF_BIN ?? "git-cliff",
     gitBin: env.GIT_BIN ?? "git",
     cloneTimeoutMs: env.CLONE_TIMEOUT_MS ? Number(env.CLONE_TIMEOUT_MS) : 30_000,
@@ -75,7 +71,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     githubClientSecret: env.GITHUB_CLIENT_SECRET ?? "",
     githubCallbackUrl:
       env.GITHUB_CALLBACK_URL ??
-      "http://localhost:300/api/auth/github/callback",
+      "http://localhost:5173/api/auth/github/callback",
     appOrigin: env.APP_ORIGIN ?? corsOrigins[0] ?? "http://localhost:5173",
     sessionSecret: env.SESSION_SECRET ?? "",
     sessionTtlSeconds: env.SESSION_TTL_SECONDS

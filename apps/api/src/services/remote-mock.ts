@@ -1,14 +1,5 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
 import { faker } from "@faker-js/faker";
 import type { RemoteKind } from "./cliff-toml-remote.js";
-
-const DEFAULT_FIXTURES_DIR = resolve(
-  fileURLToPath(new URL("../../..", import.meta.url)),
-  "..",
-  ".cliff/context",
-);
 
 const DEFAULT_BOT_USERNAME = "cliff-notes-bot";
 const DEFAULT_AUTHOR_EMAIL = "noreply@cliff-notes.local";
@@ -28,72 +19,47 @@ export interface RemoteMocks {
   labelsByKind: Record<RemoteKind, string[]>;
 }
 
-interface RawRemoteJson {
-  github: { owner: string; repo: string };
-  gitlab: { owner: string; repo: string };
-  gitea: { owner: string; repo: string };
-  bitbucket: { owner: string; repo: string };
-  azure_devops: { owner: string; repo: string };
+const REMOTE_KINDS: readonly RemoteKind[] = [
+  "github",
+  "gitlab",
+  "gitea",
+  "bitbucket",
+  "azure_devops",
+];
+
+function fakedLabels(): string[] {
+  return Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => faker.word.noun());
 }
 
-interface RawKindJson {
-  [key: string]: unknown;
-}
-
-function readJson<T>(path: string): T {
-  return JSON.parse(readFileSync(path, "utf8")) as T;
-}
-
-function extractContributorsFromFixture(
-  raw: RawKindJson,
-  kind: RemoteKind,
-): FixtureContributor[] {
-  const blob = raw[kind] as { contributors?: FixtureContributor[] } | undefined;
-  return blob?.contributors ?? [];
+function fakedOwnerRepo(): { owner: string; repo: string } {
+  return {
+    owner: faker.internet.username(),
+    repo: faker.helpers.slugify(faker.word.words(2)),
+  };
 }
 
 let cachedMocks: RemoteMocks | null = null;
-let cachedDir: string | null = null;
 
-export function loadRemoteMocks(dir: string = DEFAULT_FIXTURES_DIR): RemoteMocks {
-  if (cachedMocks && cachedDir === dir) return cachedMocks;
-  const remote = readJson<RawRemoteJson>(resolve(dir, "remote.json"));
-  const github = readJson<RawKindJson>(resolve(dir, "github.json"));
-  const gitlab = readJson<RawKindJson>(resolve(dir, "gitlab.json"));
-  const gitea = readJson<RawKindJson>(resolve(dir, "gitea.json"));
-  const bitbucket = readJson<RawKindJson>(resolve(dir, "bitbucket.json"));
-  const azure = readJson<RawKindJson>(resolve(dir, "azure_devops.json"));
+export function loadRemoteMocks(): RemoteMocks {
+  if (cachedMocks) return cachedMocks;
 
-  const labelsByKind: Record<RemoteKind, string[]> = {
-    github: extractContributorsFromFixture(github, "github")[0]?.pr_labels ?? ["rust"],
-    gitlab: extractContributorsFromFixture(gitlab, "gitlab")[0]?.pr_labels ?? ["rust"],
-    gitea: extractContributorsFromFixture(gitea, "gitea")[0]?.pr_labels ?? ["rust"],
-    bitbucket: extractContributorsFromFixture(bitbucket, "bitbucket")[0]?.pr_labels ?? ["rust"],
-    azure_devops:
-      extractContributorsFromFixture(azure, "azure_devops")[0]?.pr_labels ?? ["enhancement"],
+  const defaults = Object.fromEntries(
+    REMOTE_KINDS.map((k) => [k, fakedOwnerRepo()]),
+  ) as Record<RemoteKind, { owner: string; repo: string }>;
+
+  const labelsByKind = Object.fromEntries(
+    REMOTE_KINDS.map((k) => [k, fakedLabels()]),
+  ) as Record<RemoteKind, string[]>;
+
+  const synthetic: FixtureContributor = {
+    username: faker.internet.username(),
+    pr_title: faker.lorem.sentence(),
+    pr_number: faker.number.int({ min: 1, max: 9999 }),
+    pr_labels: [faker.word.noun()],
   };
 
-  // Pick a co-contributor from the github fixture (any kind would do — they all
-  // share the same `cliffjumper` mock).
-  const synthetic: FixtureContributor =
-    extractContributorsFromFixture(github, "github").find(
-      (c) => c.username === "cliffjumper",
-    ) ?? {
-      username: faker.internet.username(),
-      pr_title: faker.lorem.sentence(),
-      pr_number: faker.number.int({ min: 1, max: 9999 }),
-      pr_labels: [faker.word.noun()],
-    };
-
-  cachedMocks = { defaults: remote, synthetic, labelsByKind };
-  cachedDir = dir;
+  cachedMocks = { defaults, synthetic, labelsByKind };
   return cachedMocks;
-}
-
-/** Reset cached fixtures — exposed for tests. */
-export function _resetRemoteMocksCache(): void {
-  cachedMocks = null;
-  cachedDir = null;
 }
 
 // ---------- Context decoration --------------------------------------------

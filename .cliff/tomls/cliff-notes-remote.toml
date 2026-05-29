@@ -11,8 +11,8 @@
 #####################################################################
 
 [remote.github]
-owner = "foo"
-repo = "bar"
+owner = "nixalto"
+repo = "corn-kangaroo"
 
 [changelog]
 footer = """
@@ -26,6 +26,7 @@ body = """
 {%- set HEADER_NEW_CONTRIBUTORS = "❤️ New Contributors" -%}
 {%- set HEADER_CONTRIBUTORS = "💛 Contributors" -%}
 {%- set HEADER_STATISTICS = "📈 Commit Statistics"-%}
+{%- set HEADER_NO_SCOPE = "General" -%}
 {#- HEADERS END -#}
 
 {#- VARIABLES -#}
@@ -51,14 +52,6 @@ body = """
   {%- else -%}
     {%- raw -%}<REPO>{%- endraw -%}
   {%- endif -%}
-{%- endmacro -%}
-
-{%- macro callout(message) -%}
-  {% if remote.github.owner and remote.github.repo -%}
-    {{ "\n\n    > [!CAUTION]\n    > " ~ message }}
-  {% else %}
-    {{ "  > " ~ message }}
-  {% endif %}
 {%- endmacro -%}
 
 {%- macro user_url(name) -%}
@@ -121,7 +114,7 @@ body = """
   {%- if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
   {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
   {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
-  {%- set contribs = r.contributors | default([]) -%}
+  {%- set contribs = r.contributors | default(value=[ ])-%}
   {%- for c in contribs -%}{%- set_global contrib_count = contrib_count + 1 -%}{%- endfor -%}
   {{- contrib_count -}}
 {%- endmacro -%}
@@ -186,6 +179,13 @@ body = """
     {{ "\n> **" }}{{ type | upper }}{{ "**:\n  > " }}{{ message }}
   {% endif -%}
 {%- endmacro -%}
+
+{%- macro print_commit(commit) -%}
+  {{ self::unquote(input=commit.message) | upper_first | trim }}
+  {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
+  {%- if commit.remote.username %} - [{{ self::user_url(name=commit.remote.username) }}]{% endif -%}
+  {%- if commit.breaking_description -%}{{ self::alert(message="**BREAKING**\n>" ~ commit.breaking_description, type="caution") }}{%- endif -%}
+{%- endmacro -%}
 {#- MACROS END -#}
 
 {#- VERSION HEADER -#}
@@ -201,15 +201,22 @@ body = """
 
 {#- LOOP GROUPS -#}
 {%- for group, commits in commits | group_by(attribute="group") %}
-    \n### {{ group | striptags | trim | upper_first }}
-    {# LOOP COMMITS -#}
-    {%- for commit in commits %}
-      - {% if commit.scope %}*({{ commit.scope }})* {% endif -%}
-        {{ self::unquote(input=commit.message) | upper_first | trim }}
-        {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
-        {%- if commit.remote.username %} - [{{ self::user_url(name=commit.remote.username) }}]{% endif -%}
-        {%- if commit.breaking_description -%}{{ self::alert(message=commit.breaking_description, type="caution") }}{%- endif -%}
-    {%- endfor -%}\n\n
+  \n### {{ group | striptags | trim | upper }}
+  {# LOOP COMMITS -#}
+  {%- for scope, commits in commits | group_by(attribute="scope") %}
+    \n#### _{{scope | upper }}_
+    {%- for commit in commits | filter(attribute="scope") | sort(attribute="scope") %}
+      - {{ self::print_commit(commit=commit) }}
+    {%- endfor %}
+  {%- endfor %}
+  {#- UNCATEGORIZED #}
+  #### _{{ HEADER_NO_SCOPE | striptags | trim | upper }}_
+  {% for commit in commits %}
+    {%- if commit.scope %}
+    {%- else %}
+      - {{ self::print_commit(commit=commit) }}
+    {%- endif %}
+  {%- endfor -%}\n\n
 {%- endfor %}
 {#- LOOP GROUPS END -#}
 
@@ -236,7 +243,7 @@ render_always = true
 postprocessors = [
   { pattern = '<REMOTE_URL>', replace = "https://github.com" },
   # Replace the placeholder <REPO> with a URL.
-  { pattern = '<REPO>', replace = "https://github.com/camalot/cliff-notes" },
+  { pattern = '<REPO>', replace = "https://github.com/nixalto/corn-kangaroo" },
   { pattern = '#\d+', replace = ''},
   # we take the reformatted issue link and display it correctly
   { pattern = '!#!(\d+)', replace = '#$1'},
