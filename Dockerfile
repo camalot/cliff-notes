@@ -16,6 +16,7 @@ RUN npm install -g corepack@latest --force \
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY packages/cliff-tera-lang/package.json ./packages/cliff-tera-lang/
 COPY packages/shared/package.json ./packages/shared/
 COPY tests/e2e/package.json ./tests/e2e/
 RUN pnpm install --frozen-lockfile=false --ignore-scripts
@@ -33,6 +34,7 @@ COPY packages ./packages
 COPY apps ./apps
 COPY assets ./assets
 RUN pnpm --filter @cliff-notes/shared run build && \
+    pnpm --filter @cliff-notes/tera-lang run build && \
     pnpm --filter @cliff-notes/api run build && \
     pnpm --filter @cliff-notes/web run build
 
@@ -84,12 +86,15 @@ RUN npm install -g corepack@latest --force \
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/cliff-tera-lang/package.json ./packages/cliff-tera-lang/
 # Workspace install with only the api filter (and its transitive shared dep)
 RUN pnpm install --prod --filter @cliff-notes/api... --ignore-scripts
 
 # Copy built artifacts
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=build /app/packages/cliff-tera-lang/dist ./packages/cliff-tera-lang/dist
+COPY --from=build /app/packages/cliff-tera-lang/package.json ./packages/cliff-tera-lang/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/web/dist ./static

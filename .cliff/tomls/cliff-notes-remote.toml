@@ -101,7 +101,7 @@ body = """
   {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
   {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
   {%- if remote.gitlab.repo and remote.gitlab.owner %}{%- set r = gitlab -%}{%- endif -%}
-  {%- if r -%}
+  {%- if r and r.contributors -%}
     {%- set new_contributors = r.contributors | filter(attribute="is_first_time", value=true) -%}
     {%- set contributors = r.contributors | filter(attribute="is_first_time", value=false) -%}
     {%- if new_contributors | length > 0 %}
@@ -121,7 +121,8 @@ body = """
   {%- if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
   {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
   {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
-  {%- for c in r.contributors -%}{%- set_global contrib_count = contrib_count + 1 -%}{%- endfor -%}
+  {%- set contribs = r.contributors | default([]) -%}
+  {%- for c in contribs -%}{%- set_global contrib_count = contrib_count + 1 -%}{%- endfor -%}
   {{- contrib_count -}}
 {%- endmacro -%}
 
