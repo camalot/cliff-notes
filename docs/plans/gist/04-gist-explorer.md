@@ -161,7 +161,7 @@ export function GistExplorer(props: GistExplorerProps) {
             </>
           ) : (
             <IconButton
-              icon="bi:folder-plus"
+              icon="bs:folder-plus"
               label="New project"
               onClick={() => setShowNewProjectInput(true)}
               title="New project"

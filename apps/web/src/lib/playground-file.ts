@@ -9,18 +9,18 @@ import { type PersistedState } from "./storage";
 import { getProjectId } from "./project-id";
 
 const SCHEMA_VERSION = "1";
-const DEFAULT_PROJECT_NAME = "Untitled Project";
-const DEFAULT_PROJECT_SLUG = "untitled-project";
+const DEFAULT_PLAYGROUND_NAME = "Untitled Cliff-Note";
+const DEFAULT_PLAYGROUND_SLUG = "untitled-cliff-note";
 
 function escapeYamlSingleQuoted(s: string): string {
   return s.replace(/'/g, "''");
 }
 
-export function slugifyProjectName(name: string): string {
+export function slugifyPlaygroundName(name: string): string {
   const preprocessed = name.replace(/_/g, " ");
   const slug = slugify(preprocessed, { lower: true, strict: true });
   const collapsed = slug.replace(/-+/g, "-").replace(/^-|-$/g, "");
-  return collapsed || DEFAULT_PROJECT_SLUG;
+  return collapsed || DEFAULT_PLAYGROUND_SLUG;
 }
 
 // ── metadata parser ───────────────────────────────────────────────────────────
@@ -64,8 +64,8 @@ function parseMetadata(content: string): FileMetadata {
 // ── serialize ─────────────────────────────────────────────────────────────────
 
 export async function serializePlayground(state: PersistedState): Promise<string> {
-  const id = getProjectId();
-  const name = (state.name && state.name.trim()) || DEFAULT_PROJECT_NAME;
+  const id = state.playgroundId ?? getProjectId();
+  const name = (state.name && state.name.trim()) || DEFAULT_PLAYGROUND_NAME;
   const source = typeof window !== "undefined" ? window.location.origin : "https://cliff-notes.dev";
   const payload = LZString.compressToEncodedURIComponent(JSON.stringify(state));
   const hash = await computeIntegrityHash(SCHEMA_VERSION, payload);
@@ -201,8 +201,8 @@ export async function downloadPlayground(state: PersistedState): Promise<void> {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const baseName = (state.name && state.name.trim()) || DEFAULT_PROJECT_NAME;
-  a.download = `${slugifyProjectName(baseName)}.cliff-notes`;
+  const baseName = (state.name && state.name.trim()) || DEFAULT_PLAYGROUND_NAME;
+  a.download = `${slugifyPlaygroundName(baseName)}.cliff-notes`;
   a.click();
   URL.revokeObjectURL(url);
 }

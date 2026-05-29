@@ -32,7 +32,7 @@ export function buildAuthorizationUrl(
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: callbackUrl,
-    scope: "read:user repo",
+    scope: "read:user repo gist",
     state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",

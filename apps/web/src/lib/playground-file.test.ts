@@ -3,7 +3,7 @@ import {
   serializePlayground,
   parsePlayground,
   tryRecoverFromFile,
-  slugifyProjectName,
+  slugifyPlaygroundName,
 } from "./playground-file";
 import { IntegrityError } from "./integrity";
 import type { PersistedState } from "./storage";
@@ -120,29 +120,29 @@ describe("playground-file: tryRecoverFromFile", () => {
 
 // ── slugify ───────────────────────────────────────────────────────────────────
 
-describe("slugifyProjectName", () => {
+describe("slugifyPlaygroundName", () => {
   it("handles the canonical example", () => {
-    expect(slugifyProjectName("Cliff-Notes Remote")).toBe("cliff-notes-remote");
+    expect(slugifyPlaygroundName("Cliff-Notes Remote")).toBe("cliff-notes-remote");
   });
 
   it("converts underscores to hyphens", () => {
-    expect(slugifyProjectName("My_Cool_Project")).toBe("my-cool-project");
+    expect(slugifyPlaygroundName("My_Cool_Project")).toBe("my-cool-playground");
   });
 
   it("strips special characters", () => {
-    expect(slugifyProjectName("Hello World!!")).toBe("hello-world");
+    expect(slugifyPlaygroundName("Hello World!!")).toBe("hello-world");
   });
 
   it("transliterates unicode", () => {
-    expect(slugifyProjectName("Café Münch")).toBe("cafe-munch");
+    expect(slugifyPlaygroundName("Café Münch")).toBe("cafe-munch");
   });
 
   it("collapses consecutive hyphens", () => {
-    expect(slugifyProjectName("foo--bar")).toBe("foo-bar");
+    expect(slugifyPlaygroundName("foo--bar")).toBe("foo-bar");
   });
 
   it("falls back for empty / whitespace-only input", () => {
-    expect(slugifyProjectName("")).toBe("untitled-project");
-    expect(slugifyProjectName("   ")).toBe("untitled-project");
+    expect(slugifyPlaygroundName("")).toBe("untitled-playground");
+    expect(slugifyPlaygroundName("   ")).toBe("untitled-playground");
   });
 });

@@ -112,6 +112,7 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
   return (
     <CollapsibleSection
       title="Load from repository"
+      defaultExpanded={false}
       expandedHeaderActions={
         <IconButton
           icon="asterisk"
@@ -161,7 +162,7 @@ export function RepoLoader({ isLoading, onLoad }: Props) {
                   onMouseEnter={() => setActiveIndex(i)}
                 >
                   <Icon
-                    name={repo.private ? "bi:lock" : "octicons:git-branch"}
+                    name={repo.private ? "bs:lock" : "octicons:git-branch"}
                     size={13}
                     className="shrink-0 opacity-70"
                   />

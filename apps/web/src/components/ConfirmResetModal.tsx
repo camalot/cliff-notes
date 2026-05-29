@@ -55,7 +55,7 @@ export function ConfirmResetModal({ title, description, onConfirm, onCancel, onS
       <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Icon name="bi:exclamation-triangle-fill" className="text-danger" aria-hidden="true" />
+            <Icon name="bs:exclamation-triangle-fill" className="text-danger" aria-hidden="true" />
             <h2 className="text-base font-semibold text-fg">{title}</h2>
           </div>
           <button
@@ -64,7 +64,7 @@ export function ConfirmResetModal({ title, description, onConfirm, onCancel, onS
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <Icon name="bi:x-lg" aria-hidden="true" />
+            <Icon name="bs:x-lg" aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-muted-fg mb-4">{description}</p>
@@ -78,7 +78,7 @@ export function ConfirmResetModal({ title, description, onConfirm, onCancel, onS
         <div className="flex items-center justify-between gap-2">
           {onSave ? (
             <Button variant="secondary" size="sm" onClick={() => void onSave()}>
-              <Icon name="bi:download" aria-hidden="true" />
+              <Icon name="bs:download" aria-hidden="true" />
               Save Project
             </Button>
           ) : (
@@ -86,7 +86,7 @@ export function ConfirmResetModal({ title, description, onConfirm, onCancel, onS
           )}
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={onCancel}>
-              <Icon name="bi:x" aria-hidden="true" />
+              <Icon name="bs:x" aria-hidden="true" />
               Cancel
             </Button>
             <Button variant="danger" size="sm" onClick={handleConfirm}>

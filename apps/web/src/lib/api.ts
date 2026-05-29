@@ -19,6 +19,23 @@ export interface TomlEntry {
   description?: string;
 }
 
+export interface GistFileEntry {
+  filename: string;
+  size: number;
+  raw_url: string;
+  truncated: boolean;
+  content?: string;
+}
+
+export interface GistData {
+  id: string;
+  description: string;
+  public: boolean;
+  created_at: string;
+  updated_at: string;
+  files: Record<string, GistFileEntry>;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -30,13 +47,15 @@ export class ApiError extends Error {
   }
 }
 
-async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
+async function post<TReq, TRes>(path: string, body: TReq, extraHeaders?: HeadersInit): Promise<TRes> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       [PROJECT_ID_HEADER]: getProjectId(),
+      ...extraHeaders,
     },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -54,8 +73,11 @@ async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
   return (await res.json()) as TRes;
 }
 
-async function get<TRes>(path: string): Promise<TRes> {
-  const res = await fetch(`${API_BASE}${path}`);
+async function get<TRes>(path: string, extraHeaders?: HeadersInit): Promise<TRes> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+    headers: extraHeaders,
+  });
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
     try {
@@ -84,6 +106,58 @@ async function getText(path: string): Promise<string> {
   return res.text();
 }
 
+async function patch<TReq, TRes>(path: string, body: TReq, extraHeaders?: HeadersInit): Promise<TRes> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail: string | undefined;
+    let message = `Request failed: ${res.status}`;
+    try {
+      const data = (await res.json()) as ErrorResponse;
+      message = data.error ?? message;
+      detail = data.detail;
+    } catch {
+      // body wasn't JSON
+    }
+    throw new ApiError(message, res.status, detail);
+  }
+  return (await res.json()) as TRes;
+}
+
+async function getPlainText(rawUrl: string, extraHeaders?: HeadersInit): Promise<string> {
+  const res = await fetch(`${API_BASE}/gist/raw`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...extraHeaders },
+    credentials: "include",
+    body: JSON.stringify({ rawUrl }),
+  });
+  if (!res.ok) {
+    let message = `Request failed: ${res.status}`;
+    try {
+      const data = (await res.json()) as ErrorResponse;
+      message = data.error ?? message;
+    } catch {
+      // body wasn't JSON
+    }
+    throw new ApiError(message, res.status);
+  }
+  return res.text();
+}
+
+/** Returns headers with an optional PAT added. */
+function gistHeaders(pat: string | null): HeadersInit {
+  const h: Record<string, string> = {};
+  if (pat) h["X-GitHub-Token"] = pat;
+  return h;
+}
+
 export const api = {
   render: (body: RenderRequest) => post<RenderRequest, RenderResponse>("/render", body),
   inspectRepo: (body: RepoInspectRequest) =>
@@ -92,6 +166,35 @@ export const api = {
     post<RandomCommitRequest, RandomCommitResponse>("/commits/random", body),
   getTomls: () => get<TomlEntry[]>("/tomls"),
   getToml: (id: string) => getText(`/tomls/${encodeURIComponent(id)}`),
+
+  getGist: (gistId: string, pat?: string | null): Promise<GistData> =>
+    get<GistData>(`/gist/${encodeURIComponent(gistId)}`, gistHeaders(pat ?? null)),
+
+  createGist: (opts: {
+    description: string;
+    isPublic: boolean;
+    files: Record<string, string>;
+    pat?: string | null;
+  }): Promise<GistData> =>
+    post<{ description: string; public: boolean; files: Record<string, string> }, GistData>(
+      "/gist",
+      { description: opts.description, public: opts.isPublic, files: opts.files },
+      gistHeaders(opts.pat ?? null),
+    ),
+
+  updateGist: (
+    gistId: string,
+    files: Record<string, string | null>,
+    pat?: string | null,
+  ): Promise<GistData> =>
+    patch<{ files: Record<string, string | null> }, GistData>(
+      `/gist/${encodeURIComponent(gistId)}`,
+      { files },
+      gistHeaders(pat ?? null),
+    ),
+
+  getRawGistFile: (rawUrl: string, pat?: string | null): Promise<string> =>
+    getPlainText(rawUrl, gistHeaders(pat ?? null)),
 };
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────

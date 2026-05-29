@@ -226,9 +226,9 @@ function ConfigTab(props: Props) {
   const repoLoaderKey = useAppStore((s) => s.repoLoaderKey);
   return (
     <div className="h-full overflow-auto">
-      <div className="p-3 space-y-4 divide-y divide-border [&>section:not(:first-child)]:pt-4 [&>section:not(:last-child)]:pb-4">
+      <div className="p-3 space-y-2 divide-y divide-border [&>section:not(:first-child)]:pt-2 [&>section:not(:last-child)]:pb-2">
+        <RepoLoader  key={repoLoaderKey} isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
         <OptionsPane options={props.options} onChange={props.onChangeOptions} />
-        <RepoLoader key={repoLoaderKey} isLoading={props.isLoadingRepo} onLoad={props.onLoadRepo} />
         <TagsPane
           tags={props.tags}
           commits={props.commits}

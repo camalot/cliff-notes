@@ -9,6 +9,7 @@ import { repoRoutes } from "./routes/repo.js";
 import { randomRoutes } from "./routes/random.js";
 import { tomlsRoutes } from "./routes/tomls.js";
 import { authRoutes } from "./routes/auth.js";
+import { gistRoutes } from "./routes/gist.js";
 import { initSessionStore } from "./lib/session-store.js";
 import type { AppConfig } from "./config.js";
 
@@ -27,7 +28,7 @@ export async function buildServer(
 
   await app.register(cors, {
     origin: config.corsOrigins,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
     credentials: true,
   });
 
@@ -52,6 +53,7 @@ export async function buildServer(
       await api.register(randomRoutes);
       await api.register(tomlsRoutes(config));
       await api.register(authRoutes(config));
+      await api.register(gistRoutes(config));
     },
     { prefix: "/api" },
   );

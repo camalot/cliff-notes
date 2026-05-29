@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { IconButton } from "./ui/IconButton";
+import { SplitButton } from "./ui/SplitButton";
 import { downloadPlayground } from "@/lib/playground-file";
 import { siteConfig } from "@/lib/site-config";
 import { ShareModal } from "./ShareModal";
 import { LoadPlaygroundModal } from "./LoadPlaygroundModal";
-import { ProjectName } from "./ProjectName";
+import { SaveToGistModal } from "./SaveToGistModal";
+import { PlaygroundName } from "./PlaygroundName";
 import { ConfirmResetModal, getSkipResetConfirm } from "./ConfirmResetModal";
 import { IntegrityError } from "@/lib/integrity";
 import type { PersistedState } from "@/lib/storage";
@@ -13,6 +15,7 @@ import { Icon } from "./ui/Icon";
 import { UserMenu } from "./UserMenu";
 import { LoginModal } from "./LoginModal";
 import { useAppStore } from "@/store";
+import { getLastSaveAction, setLastSaveAction, type SaveAction } from "../lib/gist-config";
 
 interface Props {
   onReset: () => void;
@@ -40,6 +43,8 @@ export function Toolbar({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showSaveToGistModal, setShowSaveToGistModal] = useState(false);
+  const [saveAction, setSaveAction] = useState<SaveAction>(getLastSaveAction);
 
   const { user, authLoading, authEnabled, loginModalOpen, setLoginModalOpen, logout } = useAppStore();
 
@@ -128,36 +133,59 @@ export function Toolbar({
               aria-label="Buy Me a Coffee"
               className={navLinkClass}
             >
-              <Icon name="bi:cup-hot-fill" aria-hidden="true" />
+              <Icon name="bi:coffee-togo" aria-hidden="true" />
             </a>
           </div>
         </div>
 
         <div className="justify-self-center min-w-0">
-          <ProjectName value={name} onChange={onChangeName} />
+          <PlaygroundName value={name} onChange={onChangeName} />
         </div>
 
         <div className="flex items-center gap-1 justify-self-end">
           <IconButton
-            icon="vsc:discard"
-            label="Reset to defaults"
+            icon="vsc:new-file"
+            label="New Cliff-Note"
             onClick={handleResetClick}
-            className="text-danger/70 hover:text-danger hover:bg-danger/10"
           />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
-            icon="bi:file-earmark-arrow-up"
+            icon="bs:file-earmark-arrow-up"
             label="Load Playground"
             onClick={() => setShowLoadModal(true)}
           />
-          <IconButton
-            icon="bi:download"
-            label="Save Playground"
-            onClick={() => void handleSave()}
+          <SplitButton
+            actions={[
+              { key: "local", label: "Save Locally", icon: "bs:download" },
+              {
+                key: "gist",
+                label: "Save to GitHub Gist",
+                icon: "vsc:cloud-download",
+              },
+            ]}
+            activeKey={saveAction}
+            onAction={(key) => {
+              if (key === "local") {
+                void downloadPlayground({
+                  cliffToml,
+                  commits,
+                  tags,
+                  options,
+                  name,
+                });
+              } else {
+                setShowSaveToGistModal(true);
+              }
+            }}
+            onChangeActiveKey={(key) => {
+              const action = key as SaveAction;
+              setSaveAction(action);
+              setLastSaveAction(action);
+            }}
           />
           <span className="w-px h-5 bg-border mx-0.5" aria-hidden="true" />
           <IconButton
-            icon="bi:share-fill"
+            icon="bs:share-fill"
             label="Share Cliff Notes"
             onClick={() => setShowShareModal(true)}
           />
@@ -184,10 +212,16 @@ export function Toolbar({
         <ConfirmResetModal
           title="Reset all to defaults"
           description="This will reset your cliff.toml, commits, tags, and options to their default values. This cannot be undone."
-          onConfirm={() => { setShowResetModal(false); void onReset(); }}
+          onConfirm={() => {
+            setShowResetModal(false);
+            void onReset();
+          }}
           onCancel={() => setShowResetModal(false)}
           onSave={handleSave}
         />
+      )}
+      {showSaveToGistModal && (
+        <SaveToGistModal onClose={() => setShowSaveToGistModal(false)} />
       )}
       {showLoadModal && (
         <LoadPlaygroundModal

@@ -10,7 +10,7 @@ export function UntrustedBanner({ onDismiss }: Props) {
       role="alert"
       className="flex items-center gap-2 px-4 py-2 bg-yellow-500/15 border-b border-yellow-500/30 text-yellow-400 text-xs"
     >
-      <Icon name="bi:exclamation-triangle-fill" className="shrink-0" aria-hidden="true" />
+      <Icon name="bs:exclamation-triangle-fill" className="shrink-0" aria-hidden="true" />
       <span className="flex-1">
         Loaded without integrity check — this playground was not verified. Edit anything to clear
         this warning.
@@ -21,7 +21,7 @@ export function UntrustedBanner({ onDismiss }: Props) {
         className="text-yellow-400/70 hover:text-yellow-400 transition-colors ml-2"
         aria-label="Dismiss warning"
       >
-        <Icon name="bi:x-lg" aria-hidden="true" />
+        <Icon name="bs:x-lg" aria-hidden="true" />
       </button>
     </div>
   );

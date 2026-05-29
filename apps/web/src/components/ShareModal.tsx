@@ -59,7 +59,7 @@ export function ShareModal({ state, cliffToml, onSave, onClose }: Props) {
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <Icon name="bi:x-lg" aria-hidden="true" />
+            <Icon name="bs:x-lg" aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-muted-fg mb-3">
@@ -76,7 +76,7 @@ export function ShareModal({ state, cliffToml, onSave, onClose }: Props) {
             role="alert"
             className="flex items-start gap-2 rounded-md border border-danger bg-danger/10 px-3 py-2 mb-4 text-xs text-danger"
           >
-            <Icon name="bi:exclamation-octagon-fill" className="mt-0.5" aria-hidden="true" />
+            <Icon name="bs:exclamation-octagon-fill" className="mt-0.5" aria-hidden="true" />
             <div>
               <div className="font-semibold uppercase tracking-wide">Danger — secret detected</div>
               <p className="mt-1 text-danger/90">
@@ -102,7 +102,7 @@ export function ShareModal({ state, cliffToml, onSave, onClose }: Props) {
             Cancel
           </Button>
           <Button variant="secondary" size="sm" onClick={onSave}>
-            <Icon name="bi:download" aria-hidden="true" />
+            <Icon name="bs:download" aria-hidden="true" />
             Save
           </Button>
           <Button
@@ -111,7 +111,7 @@ export function ShareModal({ state, cliffToml, onSave, onClose }: Props) {
             onClick={() => void copyAndClose()}
             disabled={url === null}
           >
-            <Icon name={hasSecret ? "bi:exclamation-octagon-fill" : "bi:share"} aria-hidden="true" />
+            <Icon name={hasSecret ? "bs:exclamation-octagon-fill" : "bs:share"} aria-hidden="true" />
             Copy Share Link
           </Button>
         </div>

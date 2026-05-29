@@ -102,7 +102,7 @@ export function Toast({
                 title="Copy error message"
                 className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-muted-fg hover:text-fg hover:bg-muted/60"
               >
-                <Icon name="bi:clipboard" className="text-sm leading-none" />
+                <Icon name="bs:clipboard" className="text-sm leading-none" />
                 Copy
               </button>
             </div>
@@ -120,7 +120,7 @@ export function Toast({
         title="Dismiss"
         className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded text-muted-fg hover:text-fg hover:bg-muted/60"
       >
-        <Icon name="bi:x" className="text-lg leading-none" aria-hidden="true" />
+        <Icon name="bs:x" className="text-lg leading-none" aria-hidden="true" />
       </button>
 
       <div

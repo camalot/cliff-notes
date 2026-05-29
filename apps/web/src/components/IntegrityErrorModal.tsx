@@ -59,7 +59,7 @@ export function IntegrityErrorModal({ error, recoveredState, onClose, onLoadAnyw
       <div className="bg-card border border-border rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Icon name="bi:shield-exclamation" className="text-danger text-lg" aria-hidden="true" />
+            <Icon name="bs:shield-exclamation" className="text-danger text-lg" aria-hidden="true" />
             <h2 className="text-base font-semibold text-fg">
               {TITLES[error.cause] ?? "Integrity error"}
             </h2>
@@ -70,7 +70,7 @@ export function IntegrityErrorModal({ error, recoveredState, onClose, onLoadAnyw
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <Icon name="bi:x-lg" aria-hidden="true" />
+            <Icon name="bs:x-lg" aria-hidden="true" />
           </button>
         </div>
 
@@ -100,7 +100,7 @@ export function IntegrityErrorModal({ error, recoveredState, onClose, onLoadAnyw
             role="alert"
             className="flex items-start gap-2 rounded-md border border-yellow-500/50 bg-yellow-500/10 px-3 py-2 mb-4 text-xs text-yellow-400"
           >
-            <Icon name="bi:exclamation-triangle-fill" className="mt-0.5 shrink-0" aria-hidden="true" />
+            <Icon name="bs:exclamation-triangle-fill" className="mt-0.5 shrink-0" aria-hidden="true" />
             <span>
               Loading this playground will mark it as <strong>untrusted</strong> until you make
               changes. A warning banner will be shown.
@@ -111,7 +111,7 @@ export function IntegrityErrorModal({ error, recoveredState, onClose, onLoadAnyw
         <div className="flex justify-end gap-2">
           {canLoadAnyway && (
             <Button variant="secondary" size="sm" onClick={handleLoadAnyway}>
-              <Icon name="bi:exclamation-triangle-fill" aria-hidden="true" />
+              <Icon name="bs:exclamation-triangle-fill" aria-hidden="true" />
               Load anyway (untrusted)
             </Button>
           )}

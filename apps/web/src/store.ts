@@ -40,6 +40,7 @@ interface AppState {
   options: RenderOptionsState;
   name: string;
   untrusted: boolean;
+  playgroundId: string | null;
   output: AppOutput | null;
   isRendering: boolean;
   isLoadingRepo: boolean;
@@ -49,6 +50,7 @@ interface AppState {
   setOptions: (patch: Partial<RenderOptionsState>) => void;
   setName: (v: string) => void;
   setUntrusted: (v: boolean) => void;
+  setPlaygroundId: (id: string) => void;
 
   /** Single entry point for loading external state (URL hash, file, repo). */
   applyPersistedState: (state: PersistedState) => void;
@@ -105,7 +107,7 @@ function persisted() {
   return loadFromLocalStorage();
 }
 
-function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "options" | "name" | "untrusted"> {
+function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "options" | "name" | "untrusted" | "playgroundId"> {
   const p = persisted();
   if (p) {
     return {
@@ -115,6 +117,7 @@ function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "opti
       options: normalizeOptions(p.options),
       name: typeof p.name === "string" ? p.name : "",
       untrusted: typeof p.untrusted === "boolean" ? p.untrusted : false,
+      playgroundId: typeof p.playgroundId === "string" ? p.playgroundId : null,
     };
   }
   return {
@@ -124,6 +127,7 @@ function initialState(): Pick<AppState, "cliffToml" | "commits" | "tags" | "opti
     options: { ...DEFAULT_OPTIONS },
     name: "",
     untrusted: false,
+    playgroundId: null,
   };
 }
 
@@ -147,6 +151,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ options: { ...s.options, ...patch }, configDirty: true, untrusted: false })),
   setName: (v) => set({ name: v, untrusted: false }),
   setUntrusted: (v) => set({ untrusted: v }),
+  setPlaygroundId: (id) => set({ playgroundId: id }),
 
   applyPersistedState: (state) =>
     set({
@@ -233,6 +238,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       output: null,
       configDirty: false,
       repoLoaderKey: s.repoLoaderKey + 1,
+      playgroundId: null,
     }));
     try {
       const toml = await api.getToml("default.toml");
@@ -378,6 +384,7 @@ if (typeof window !== "undefined") {
       options: s.options,
       name: s.name,
       untrusted: s.untrusted,
+      playgroundId: s.playgroundId ?? undefined,
     });
   });
 }

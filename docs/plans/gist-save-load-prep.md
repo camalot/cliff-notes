@@ -35,7 +35,7 @@ from GitHub Gist
 
 :centered-button:[\<vsc:github-inverted> Open from GitHub Gist]
 
-                     [\<bi:x> Cancel] [\<bi:file-earmark-arrow-up Load Playground]
+                     [\<bs:x> Cancel] [\<bs:file-earmark-arrow-up Load Playground]
 ```
 
 ---
@@ -51,7 +51,7 @@ when open dialog, it should allow the user to select a single "\<playground name
 .cliff-notes file should use the public/images/cliff-notes.svg file
 a closed folder should use `vsc:folder`
 open folder should use `vsc:folder-opened`
-the button to add a new folder should use `bi:folder-plus`.
+the button to add a new folder should use `bs:folder-plus`.
 
 ---
 

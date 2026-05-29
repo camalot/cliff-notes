@@ -97,7 +97,7 @@ export function LoginModal() {
             className="text-muted-fg hover:text-fg transition-colors ml-4"
             aria-label="Close"
           >
-            <Icon name="bi:x-lg" aria-hidden="true" />
+            <Icon name="bs:x-lg" aria-hidden="true" />
           </button>
         </div>
 
@@ -110,7 +110,7 @@ export function LoginModal() {
             role="alert"
             className="flex items-start gap-2 rounded-md border border-danger bg-danger/10 px-3 py-2 mb-4 text-xs text-danger"
           >
-            <Icon name="bi:exclamation-octagon-fill" className="mt-0.5 shrink-0" aria-hidden="true" />
+            <Icon name="bs:exclamation-octagon-fill" className="mt-0.5 shrink-0" aria-hidden="true" />
             <p>
               Popups are blocked by your browser. Please allow popups for this site and try again.
             </p>

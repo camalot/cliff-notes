@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 import { Icon } from "./Icon";
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Icon name: "bi:name" or bare "name" for Bootstrap, "octicon:name" for Octicons, or "/path" for URLs. */
+  /** Icon name: "bs:name" or bare "name" for Bootstrap, "octicon:name" for Octicons, or "/path" for URLs. */
   icon: string;
   /** Accessible label; also used as the tooltip. */
   label: string;

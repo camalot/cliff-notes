@@ -2,11 +2,12 @@ import { forwardRef, type HTMLAttributes, type ComponentType } from "react";
 import * as BsIcons from "react-icons/bs";
 import * as GoIcons from "react-icons/go";
 import * as VscIcons from "react-icons/vsc";
+import * as BoxIcons from "react-icons/bi";
 import * as Octicons from "@primer/octicons-react";
 import { cn } from "@/lib/cn";
 
 export interface IconProps extends HTMLAttributes<HTMLElement> {
-  /** Icon name. Supports: "bi:name" or bare "name" for Bootstrap, "go:name" or "octicons:name" for GitHub Octicons, or "/path" or "https://..." for URLs. */
+  /** Icon name. Supports: "bs:name" or bare "name" for Bootstrap, "go:name" or "octicons:name" for GitHub Octicons, or "/path" or "https://..." for URLs. */
   name: string;
   /** Size in pixels. Used for icons (default 16) and image URLs (sets width/height). */
   size?: number;
@@ -47,26 +48,34 @@ const toReactIconComponentName = (
 };
 
 const iconLibraries = {
+  bi: BoxIcons,
   bs: BsIcons,
   go: GoIcons,
   vsc: VscIcons,
 };
 
+type IconType = keyof typeof iconLibraries | "bootstrap" | "boxicons" | "octicons" | "vscode" | "url";
+
 export const Icon = forwardRef<HTMLElement, IconProps>(
   ({ name, size = 16, className, ...props }, ref) => {
-    let iconType: "octicons" | "bootstrap" | "vscode" | "url" = "bootstrap";
+    let iconType: IconType = "bootstrap";
     let iconName = name;
-    let libraryPrefix = "bi";
+    let libraryPrefix = "bs";
 
     const protocol = name.split(":")[0] || "";
     const iconNamePart = name.split(":")[1];
 
     switch (protocol) {
       case "bi":
+        iconType = "boxicons";
+        iconName = iconNamePart || name;
+        libraryPrefix = "bi";
+        break;
+      case "bs":
       case "bootstrap":
         iconType = "bootstrap";
         iconName = iconNamePart || name;
-        libraryPrefix = "bi";
+        libraryPrefix = "bs";
         break;
       case "go":
       case "octicons":
@@ -156,6 +165,24 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
         }
 
         console.warn(`VSCode icon not found: ${componentName}`);
+        return null;
+      case "boxicons":
+        componentName = toReactIconComponentName(iconName, "Bi");
+        IconComponent = BoxIcons[componentName as keyof typeof BoxIcons];
+
+        if (IconComponent) {
+          return (
+            <IconComponent
+              size={size}
+              className={cn(className)}
+              aria-hidden="true"
+              {...(props as any)}
+              ref={ref as any}
+            />
+          );
+        }
+
+        console.warn(`Boxicons icon not found: ${componentName}`);
         return null;
       case "url":
       default:

@@ -156,7 +156,7 @@ export function CommitsPane({
               onAddRandom(resolved, breaking, effectiveCount, squash, squash ? coAuthors : 0);
             }}
           >
-            <Icon name="bi:arrow-bar-left" aria-hidden="true" />
+            <Icon name="bs:arrow-bar-left" aria-hidden="true" />
             Insert {type === "random" ? "random" : breaking ? `${type}!` : type} × {effectiveCount}
             {squash && " (squash)"}
           </Button>
@@ -191,9 +191,8 @@ export function CommitsPane({
         />
         <div className="px-2 pt-2 pb-2 flex gap-1 justify-end border-t border-border">
           <span className="text-[10px] text-muted-fg italic flex-1">⌘↵ to submit</span>
-          <Button onClick={submitManual} size="sm" disabled={!manual.trim()}>
-            <Icon name="bi:plus-square-fill" aria-hidden="true" />
-            Add
+          <Button onClick={submitManual} size="sm" disabled={!manual.trim()} title="Add" aria-label="Add commit">
+            <Icon name="bs:plus-square-fill" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -218,7 +217,7 @@ export function CommitsPane({
                   key={t.name + i}
                   className="ml-7 text-[11px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40 font-mono inline-flex items-center gap-1"
                 >
-                  <Icon name="bi:tag" aria-hidden="true" />
+                  <Icon name="bs:tag" aria-hidden="true" />
                   {t.name}
                 </div>
               ))}
@@ -246,9 +245,9 @@ export function CommitsPane({
                   rows={Math.max(1, Math.min(numLines, 8))}
                 />
                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 pt-1">
-                  <IconButton icon="bi:arrow-up" label="Move up" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} />
-                  <IconButton icon="bi:arrow-down" label="Move down" onClick={() => onMove(i, i - 1)} disabled={i === 0} />
-                  <IconButton icon="bi:tag" label="Tag a release after this commit" onClick={() => onTagHere(i)} />
+                  <IconButton icon="bs:arrow-up" label="Move up" onClick={() => onMove(i, i + 1)} disabled={i === commits.length - 1} />
+                  <IconButton icon="bs:arrow-down" label="Move down" onClick={() => onMove(i, i - 1)} disabled={i === 0} />
+                  <IconButton icon="bs:tag" label="Tag a release after this commit" onClick={() => onTagHere(i)} />
                   <IconButton
                     icon="vsc:trash"
                     label="Delete commit"

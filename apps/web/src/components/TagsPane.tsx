@@ -20,9 +20,11 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
   const [name, setName] = useState("");
   const [afterIndex, setAfterIndex] = useState(commits.length - 1);
 
+  const isDuplicate = name.trim() !== "" && tags.some((t) => t.name === name.trim());
+
   const submit = () => {
     const n = name.trim();
-    if (!n) return;
+    if (!n || isDuplicate) return;
     const idx = Math.min(Math.max(afterIndex, -1), commits.length - 1);
     onAdd({ name: n, afterIndex: idx });
     setName("");
@@ -49,7 +51,9 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          className="flex-1 min-w-24 text-xs"
+          className={["flex-1 min-w-24 text-xs", isDuplicate ? "border-danger focus:ring-danger" : ""].join(" ")}
+          aria-invalid={isDuplicate}
+          aria-describedby={isDuplicate ? "tag-duplicate-error" : undefined}
         />
         <Select
           value={String(afterIndex)}
@@ -64,11 +68,15 @@ export function TagsPane({ tags, commits, onAdd, onUpdate, onRemove, onClear }: 
             </option>
           ))}
         </Select>
-        <Button onClick={submit} disabled={!name.trim()} size="sm">
-          <Icon name="bi:plus-square-fill" aria-hidden="true" />
-          Add
+        <Button onClick={submit} disabled={!name.trim() || isDuplicate} size="sm" title="Add" aria-label="Add tag">
+          <Icon name="bs:plus-square-fill" aria-hidden="true" />
         </Button>
       </div>
+      {isDuplicate && (
+        <p id="tag-duplicate-error" className="text-xs text-danger mt-1">
+          Tag already exists
+        </p>
+      )}
 
       <ul className="space-y-1" data-testid="tag-list">
         {tags.length === 0 && (

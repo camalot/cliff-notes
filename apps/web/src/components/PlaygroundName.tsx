@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
-export const DEFAULT_PROJECT_NAME = "Untitled Project";
+export const DEFAULT_PLAYGROUND_NAME = "Untitled Cliff-Note";
 
 interface Props {
   value: string;
   onChange: (v: string) => void;
 }
 
-export function ProjectName({ value, onChange }: Props) {
+export function PlaygroundName({ value, onChange }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayValue = value.trim() || DEFAULT_PROJECT_NAME;
+  const displayValue = value.trim() || DEFAULT_PLAYGROUND_NAME;
   const isPlaceholder = !value.trim();
 
   const startEdit = () => {
@@ -34,14 +34,17 @@ export function ProjectName({ value, onChange }: Props) {
   }, [editing]);
 
   const sharedClasses =
-    "text-2xl font-semibold leading-tight tracking-tight text-fg";
+    "text-2xl font-semibold leading-tight tracking-tight text-fg pb-1";
 
   if (editing) {
     return (
       <div className="relative inline-grid items-center">
         <span
           aria-hidden="true"
-          className={cn(sharedClasses, "invisible whitespace-pre px-1 col-start-1 row-start-1")}
+          className={cn(
+            sharedClasses,
+            "invisible whitespace-pre px-1 col-start-1 row-start-1",
+          )}
         >
           {draft || " "}
         </span>

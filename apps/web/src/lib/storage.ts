@@ -12,6 +12,7 @@ export interface PersistedState {
   options?: unknown;
   name?: string;
   untrusted?: boolean;
+  playgroundId?: string;
 }
 
 const LS_KEY = "cliff-notes:state:v1";
@@ -30,6 +31,8 @@ export function loadFromLocalStorage(): PersistedState | null {
 }
 
 export function saveToLocalStorage(state: PersistedState): void {
+  // IMPORTANT: PersistedState must never include authentication tokens.
+  // The PAT is stored separately via gist-config.ts and excluded from exports.
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   } catch {
