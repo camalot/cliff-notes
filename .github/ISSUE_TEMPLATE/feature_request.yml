@@ -1,0 +1,99 @@
+name: "✨ New Feature Request"
+description: "Suggest a new feature for cliff-notes"
+labels: ["enhancement", "feature-request", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! We love hearing ideas that could improve cliff-notes.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: "Component"
+      description: "Which component would this feature relate to?"
+      options:
+        - "Web UX"
+        - "API"
+        - "Cliff Tera Language"
+        - "Shared"
+        - "E2E Tests"
+        - "Documentation"
+        - "Cross-cutting"
+    validations:
+      required: true
+
+  - type: input
+    id: title
+    attributes:
+      label: "Feature Title"
+      description: "Brief title for the feature"
+      placeholder: "e.g., Add keyboard shortcuts for config operations"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem Statement"
+      description: "Describe the problem this feature would solve"
+      placeholder: |
+        I'm currently frustrated with...
+        Users often struggle with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "Proposed Solution"
+      description: "How should this feature work?"
+      placeholder: |
+        The feature should...
+        Users would be able to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternative Approaches"
+      description: "Have you considered other solutions?"
+      placeholder: |
+        Alternative 1:
+        Alternative 2:
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: "Benefits"
+      description: "What are the benefits of implementing this?"
+      placeholder: |
+        - Improves user experience by...
+        - Reduces friction in...
+        - Enables new workflows...
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: "Use Cases / Examples"
+      description: "Real-world examples or mockups"
+      placeholder: "Attach screenshots, mockups, or describe the user flow..."
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional Context"
+      description: "Any other relevant information"
+      placeholder: "Add any other context here..."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "I have searched existing feature requests"
+          required: true
+        - label: "This is a feature request, not a bug report"
+          required: true

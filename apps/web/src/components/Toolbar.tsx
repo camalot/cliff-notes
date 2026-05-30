@@ -135,6 +135,27 @@ export function Toolbar({
             >
               <Icon name="bi:coffee-togo" aria-hidden="true" />
             </a>
+            <a
+              href={siteConfig.discordUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Join our Discord"
+              aria-label="Join our Discord"
+              className={navLinkClass}
+            >
+              <Icon name="bs:discord" aria-hidden="true" />
+            </a>
+            <span className="w-px self-stretch bg-border" aria-hidden="true" />
+            <a
+              href={siteConfig.vscmarketUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Visual Studio Code Marketplace"
+              aria-label="Visual Studio Code Marketplace"
+              className={navLinkClass}
+            >
+              <Icon name="vsc:extensions" aria-hidden="true" />
+            </a>
           </div>
         </div>
 

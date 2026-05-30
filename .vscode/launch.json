@@ -1,21 +1,18 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
-      "name": "pnpm dev",
-      "type": "node",
+      "name": "Run Extension",
+      "type": "extensionHost",
       "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "run",
-        "dev"
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+        "--disable-extensions"
       ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "outFiles": [
+        "${workspaceFolder}/vscode-extension/dist/**/*.js"
+      ],
+      "preLaunchTask": "pnpm: build"
     }
   ]
 }

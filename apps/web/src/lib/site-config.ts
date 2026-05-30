@@ -6,6 +6,8 @@ type PackageWithSite = typeof pkg & {
     issues?: { url?: string };
     sponsor?: { url?: string; color?: string };
     coffee?: { url?: string };
+    discord?: { url?: string };
+    vscmarket?: { url?: string };
   };
 };
 
@@ -17,4 +19,6 @@ export const siteConfig = {
   sponsorUrl: p.site?.sponsor?.url ?? "#",
   sponsorColor: p.site?.sponsor?.color ?? "#c45b95",
   coffeeUrl: p.site?.coffee?.url ?? "#",
+  discordUrl: p.site?.discord?.url ?? "#",
+  vscmarketUrl: p.site?.vscmarket?.url ?? "#",
 } as const;

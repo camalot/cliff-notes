@@ -34,7 +34,7 @@ body = """
 {%- set SHOW_STATISTICS = true -%}
 {%- set SHOW_CHART = true -%}
 {%- set SHOW_CONTRIBUTORS = true -%}
-{%- set GROUP_BY_SCOPE = true -%}
+{%- set GROUP_BY_SCOPE = false -%}
 {#- VARIABLES END -#}
 
 {#- MACROS -#}
@@ -178,6 +178,9 @@ body = """
   {%- endif %}
 {%- endmacro -%}
 
+{%- macro test() -%}
+{%- endmacro -%}
+
 {%- macro alert(message, type="note") -%}
   {%- if remote.github.repo and remote.github.owner %}
     {{ "\n>[!" }}{{ type | upper }}{{ "]\n>" }}{{ message }}
@@ -189,13 +192,7 @@ body = """
 {%- macro print_commit(commit) -%}
   {{ self::unquote(input=commit.message) | upper_first | trim }}
   {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
-  {%- if commit.remote -%}
-    {%- if commit.remote.pr_number %}{{ "[!#!" ~ commit.remote.pr_number ~ "](<REPO>/pull/" ~ commit.remote.pr_number ~ ")"}}{% endif %}
-    {%- if commit.remote.username %} -
-        {%- if commit.remote.is_first_time %} ❤️{%- endif -%}
-        {{ self::user_url(name=commit.remote.username) }}
-    {% endif -%}
-  {%- endif %}
+  {%- if commit.remote.username %} - [{{ self::user_url(name=commit.remote.username) }}]{% endif -%}
   {%- if commit.breaking_description -%}{{ self::alert(message="**BREAKING**\n>" ~ commit.breaking_description, type="caution") }}{%- endif -%}
 {%- endmacro -%}
 {#- MACROS END -#}

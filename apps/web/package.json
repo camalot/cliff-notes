@@ -8,7 +8,7 @@
       "url": "https://github.com/camalot/cliff-notes"
     },
     "issues": {
-      "url": "https://github.com/camalot/cliff-notes/issues"
+      "url": "https://github.com/camalot/cliff-notes/issues/new/choose"
     },
     "sponsor": {
       "url": "https://github.com/sponsors/camalot",
@@ -16,6 +16,12 @@
     },
     "coffee": {
       "url": "https://www.buymeacoffee.com/darthminos"
+    },
+    "discord": {
+      "url": "https://discord.gg/aQ37F2EcjF"
+    },
+    "vscmarket": {
+      "url": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml"
     }
   },
   "markdownSanitizer": {
