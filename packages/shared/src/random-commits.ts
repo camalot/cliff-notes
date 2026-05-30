@@ -45,6 +45,13 @@ function makeScope(type: ConventionalType, opts: RandomCommitOptions, faker: Fak
   return undefined;
 }
 
+function generateValidEmail(faker: Faker): string {
+  const username = faker.internet.username();
+  const domains = ["example.com", "test.dev", "github.com", "company.io", "local.test"];
+  const domain = faker.helpers.arrayElement(domains);
+  return `${username}@${domain}`;
+}
+
 function buildHeader(type: ConventionalType, scope: string | undefined, breaking: boolean, faker: Faker): string {
   const subject =
     type === "revert"
@@ -86,7 +93,7 @@ function buildSquashedCommit(
     parts.push("--------");
     parts.push("");
     for (let i = 0; i < numCoAuthors; i++) {
-      parts.push(`co-authored-by: ${faker.internet.displayName()} <${faker.internet.email()}>`);
+      parts.push(`co-authored-by: ${faker.internet.displayName()} <${generateValidEmail(faker)}>`);
     }
   }
 
@@ -97,12 +104,12 @@ function buildSquashedCommit(
     message,
     author: {
       name: faker.internet.displayName(),
-      email: faker.internet.email(),
+      email: generateValidEmail(faker),
       timestamp: baseTimestamp,
     },
     committer: {
       name: faker.internet.displayName(),
-      email: faker.internet.email(),
+      email: generateValidEmail(faker),
       timestamp: baseTimestamp,
     },
   };
@@ -131,12 +138,12 @@ export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
         body,
         author: {
           name: faker.internet.displayName(),
-          email: faker.internet.email(),
+          email: generateValidEmail(faker),
           timestamp: baseTimestamp - (count - i) * 60,
         },
         committer: {
           name: faker.internet.displayName(),
-          email: faker.internet.email(),
+          email: generateValidEmail(faker),
           timestamp: baseTimestamp - (count - i) * 60,
         },
       });
@@ -157,12 +164,12 @@ export function generateRandomCommits(opts: RandomCommitOptions): Commit[] {
       body,
       author: {
         name: faker.internet.displayName(),
-        email: faker.internet.email(),
+        email: generateValidEmail(faker),
         timestamp: baseTimestamp - (count - i) * 60,
       },
       committer: {
         name: faker.internet.displayName(),
-        email: faker.internet.email(),
+        email: generateValidEmail(faker),
         timestamp: baseTimestamp - (count - i) * 60,
       },
     });

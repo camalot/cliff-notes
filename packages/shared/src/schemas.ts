@@ -28,7 +28,9 @@ export type ConventionalType = (typeof CONVENTIONAL_TYPES)[number];
 
 export const authorSchema = z.object({
   name: z.string().min(1).max(200),
-  email: z.string().email().max(320),
+  // Allow emails with special characters like [bot] used by GitHub Actions
+  // Pattern allows: alphanumeric, dots, hyphens, underscores, plus, quotes, brackets in local part
+  email: z.string().regex(/^[a-zA-Z0-9._+\-\[\]']+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/).max(320),
   timestamp: z.number().int().nonnegative(),
 });
 export type Author = z.infer<typeof authorSchema>;

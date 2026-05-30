@@ -16,7 +16,7 @@ repo = "cliff-notes"
 
 [changelog]
 footer = """
-  <!-- https://cliff-notes.dev#template=cliff-notes-remote.toml -->
+  <!-- https://cliff-notes.dev#new=true&template=cliff-notes-remote.toml -->
   _💙 [cliff.toml](https://git-cliff.org) designed in [cliff-notes](https://cliff-notes.dev)_
 """
 # A Tera template to be rendered for each release in the changelog.
@@ -26,10 +26,15 @@ body = """
 {%- set HEADER_NEW_CONTRIBUTORS = "❤️ New Contributors" -%}
 {%- set HEADER_CONTRIBUTORS = "💛 Contributors" -%}
 {%- set HEADER_STATISTICS = "📈 Commit Statistics"-%}
+{%- set HEADER_NO_SCOPE = "General" -%}
 {#- HEADERS END -#}
 
 {#- VARIABLES -#}
 {%- set CONTRIBUTOR_COUNT = 0 -%}
+{%- set SHOW_STATISTICS = true -%}
+{%- set SHOW_CHART = true -%}
+{%- set SHOW_CONTRIBUTORS = true -%}
+{%- set GROUP_BY_SCOPE = true -%}
 {#- VARIABLES END -#}
 
 {#- MACROS -#}
@@ -51,14 +56,6 @@ body = """
   {%- else -%}
     {%- raw -%}<REPO>{%- endraw -%}
   {%- endif -%}
-{%- endmacro -%}
-
-{%- macro callout(message) -%}
-  {% if remote.github.owner and remote.github.repo -%}
-    {{ "\n\n    > [!CAUTION]\n    > " ~ message }}
-  {% else %}
-    {{ "  > " ~ message }}
-  {% endif %}
 {%- endmacro -%}
 
 {%- macro user_url(name) -%}
@@ -121,7 +118,7 @@ body = """
   {%- if remote.bitbucket.repo and remote.bitbucket.owner %}{%- set r = bitbucket -%}{%- endif -%}
   {%- if remote.gitea.repo and remote.gitea.owner %}{%- set r = gitea -%}{%- endif -%}
   {%- if remote.azure_devops.repo and remote.azure_devops.owner %}{%- set r = azure_devops -%}{%- endif -%}
-  {%- set contribs = r.contributors | default([]) -%}
+  {%- set contribs = r.contributors | default(value=[ ])-%}
   {%- for c in contribs -%}{%- set_global contrib_count = contrib_count + 1 -%}{%- endfor -%}
   {{- contrib_count -}}
 {%- endmacro -%}
@@ -152,7 +149,7 @@ body = """
   {%- endif -%}
 {%- endmacro -%}
 
-{%- macro print_statistics(statistics, header, contributor_count=0) %}
+{%- macro print_statistics(statistics, header, contributor_count=0, show_chart=true) %}
   ## {{ header }}
   {% set s_commit_count = statistics.commit_count -%}
   {%- set s_timespan = statistics.commits_timespan | default(value=0) -%}
@@ -168,15 +165,17 @@ body = """
   - `{{ s_links_count }}` linked {{ self::plural(count=s_links_count, singular="issue", plural="issues") }} detected in commits.
 
   {%- if s_links_count > 0 -%}
-	  {%- for link in statistics.links %}
+    {%- for link in statistics.links %}
       {{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} {{ self::plural(count=link.count, singular="time", plural="times") }})
-	  {%- endfor %}
+    {%- endfor %}
   {%- endif %}
   {%- if s_days_since > 0 %}
     - `{{ s_days_since }}` {{ self::plural(count=s_days_since, singular="day", plural="days") }}  {{ self::plural(count=s_days_since, singular="has", plural="have")}} passed between releases.
-  {%- endif %}\n\n
+  {%- endif %}\n
 
-  ![Statistics](https://quickchart.io/chart?c={type:'bar',data:{labels:['Commits','Contributors','Days%20Between%20Commits','Conventional%20Commits','Referenced%20Links','Days%20Since%20Last%20Release'],datasets:[{label:'Release',data:[{{s_commit_count}},{{s_contrib_count}},{{s_timespan}},{{s_conv_count}},{{s_links_count}},{{s_days_since}}]}]}})
+  {% if show_chart | default(value=true) -%}
+    ![Statistics](https://quickchart.io/chart?c={type:'bar',data:{labels:['Commits','Contributors','Days%20Between%20Commits','Conventional%20Commits','Referenced%20Links','Days%20Since%20Last%20Release'],datasets:[{label:'Release',data:[{{s_commit_count}},{{s_contrib_count}},{{s_timespan}},{{s_conv_count}},{{s_links_count}},{{s_days_since}}]}]}})
+  {%- endif %}
 {%- endmacro -%}
 
 {%- macro alert(message, type="note") -%}
@@ -185,6 +184,19 @@ body = """
   {%- else %}
     {{ "\n> **" }}{{ type | upper }}{{ "**:\n  > " }}{{ message }}
   {% endif -%}
+{%- endmacro -%}
+
+{%- macro print_commit(commit) -%}
+  {{ self::unquote(input=commit.message) | upper_first | trim }}
+  {%- if commit.links -%} {% for link in commit.links %} [{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
+  {%- if commit.remote -%}
+    {%- if commit.remote.pr_number %}{{ " [!#!" ~ commit.remote.pr_number ~ "](<REPO>/issues/" ~ commit.remote.pr_number ~ ") "}}{% endif %}
+    {%- if commit.remote.username %} -
+        {%- if commit.remote.is_first_time %} ❤️{%- endif -%}
+        {{ self::user_url(name=commit.remote.username) }}
+    {% endif -%}
+  {%- endif %}
+  {%- if commit.breaking_description -%}{{ self::alert(message="**BREAKING**\n>" ~ commit.breaking_description, type="caution") }}{%- endif -%}
 {%- endmacro -%}
 {#- MACROS END -#}
 
@@ -201,25 +213,43 @@ body = """
 
 {#- LOOP GROUPS -#}
 {%- for group, commits in commits | group_by(attribute="group") %}
-    \n### {{ group | striptags | trim | upper_first }}
-    {# LOOP COMMITS -#}
-    {%- for commit in commits %}
-      - {% if commit.scope %}*({{ commit.scope }})* {% endif -%}
-        {{ self::unquote(input=commit.message) | upper_first | trim }}
-        {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
-        {%- if commit.remote.username %} - [{{ self::user_url(name=commit.remote.username) }}]{% endif -%}
-        {%- if commit.breaking_description -%}{{ self::alert(message=commit.breaking_description, type="caution") }}{%- endif -%}
+  \n### {{ group | striptags | trim | upper }}
+  {# LOOP COMMITS -#}
+  {%- if GROUP_BY_SCOPE %}
+    {%- for scope, commits in commits | group_by(attribute="scope") %}
+        \n#### _{{scope | upper }}_
+        {%- for commit in commits | filter(attribute="scope") | sort(attribute="scope") %}
+        - {{ self::print_commit(commit=commit) }}
+        {%- endfor %}
+    {%- endfor %}
+    {#- UNCATEGORIZED #}
+    #### _{{ HEADER_NO_SCOPE | striptags | trim | upper }}_
+    {% for commit in commits %}
+        {%- if commit.scope %}
+        {%- else %}
+        - {{ self::print_commit(commit=commit) }}
+        {%- endif %}
     {%- endfor -%}\n\n
+  {%- else %}
+    {%- for commit in commits %}
+    - {% if commit.scope -%}_({{ commit.scope }})_ {% endif -%}
+      {{- self::print_commit(commit=commit) }}
+    {%- endfor %}
+  {% endif -%}
 {%- endfor %}
 {#- LOOP GROUPS END -#}
 
 {#- REMOTE INFO -#}
-{{ self::print_remote(new_contrib_header=HEADER_NEW_CONTRIBUTORS, contrib_header=HEADER_CONTRIBUTORS) }}
+{%- if SHOW_CONTRIBUTORS -%}
+    {{ self::print_remote(new_contrib_header=HEADER_NEW_CONTRIBUTORS, contrib_header=HEADER_CONTRIBUTORS) }}
+{%- endif %}
 {#- REMOTE INFO END -#}
 
 {#- STATISTICS -#}
-{%- set CONTRIBUTOR_COUNT = self::count_contributors() -%}
-{{ self::print_statistics(statistics=statistics, header=HEADER_STATISTICS, contributor_count=CONTRIBUTOR_COUNT)}}
+{%- if SHOW_STATISTICS | default(value=true) -%}
+    {%- set CONTRIBUTOR_COUNT = self::count_contributors() -%}
+    {{ self::print_statistics(statistics=statistics, header=HEADER_STATISTICS, contributor_count=CONTRIBUTOR_COUNT, show_chart=SHOW_CHART)}}
+{% endif -%}
 {#- STATISTICS END -#}
 
 {%- if version %}
@@ -322,3 +352,5 @@ topo_order_commits = true
 sort_commits = "oldest"
 # Process submodules commits
 recurse_submodules = false
+
+tag_pattern = "v[0-9]+\\.[0-9]+\\.[0-9]+$"

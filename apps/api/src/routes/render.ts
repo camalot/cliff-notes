@@ -10,6 +10,10 @@ export const renderRoutes = (config: AppConfig): FastifyPluginAsync => {
     app.post("/render", async (request, reply) => {
       const parsed = renderRequestSchema.safeParse(request.body);
       if (!parsed.success) {
+        console.log("[render route] Validation failed");
+        console.log("[render route] Request body:", JSON.stringify(request.body, null, 2));
+        console.log("[render route] Validation error message:", parsed.error.message);
+        console.log("[render route] Validation error details:", JSON.stringify(parsed.error.flatten(), null, 2));
         return reply.code(400).send({
           error: "Invalid request body",
           detail: parsed.error.message,
