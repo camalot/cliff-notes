@@ -1,0 +1,98 @@
+name: "📝 New Template Submission"
+description: "Submit a new git-cliff configuration template for the community"
+labels: ["template-submission", "community-contribution", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share a new git-cliff configuration template that could be useful for other users! Templates should be well-documented and tested.
+
+  - type: input
+    id: name
+    attributes:
+      label: "Template Name"
+      description: "What should this template be called?"
+      placeholder: "e.g., Conventional Commits with Scopes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "What does this template do? What problem does it solve?"
+      placeholder: |
+        This template is for projects that...
+        It provides...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: "Use Case"
+      description: "Who would benefit from this template?"
+      placeholder: |
+        Ideal for:
+        - Projects using conventional commits
+        - Teams wanting automated changelog generation
+    validations:
+      required: true
+
+  - type: textarea
+    id: template
+    attributes:
+      label: "Template Configuration"
+      description: "Paste the git-cliff configuration (TOML format)"
+      placeholder: |
+        ```toml
+        [changelog]
+        # Your template config here
+        ```
+      value: |
+        ```toml
+
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: example_output
+    validations:
+      required: true
+    attributes:
+      label: "Example Output"
+      description: "Show what changelog output this template produces"
+      placeholder: |
+        ```
+        # Changelog
+
+        ## [1.0.0] - 2024-01-15
+        ### Added
+        - New feature X
+        ```
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: "Testing"
+      description: "How have you tested this template?"
+      placeholder: |
+        - Tested with a real repository with X commits
+        - Tested edge cases like...
+        - Verified output against...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "Template is well-documented"
+          required: true
+        - label: "Template has been tested"
+          required: true
+        - label: "I confirm this is an original template or have proper attribution"
+          required: true
+        - label: "This template would be useful for the community"
+          required: true

@@ -1,0 +1,88 @@
+name: "🚀 Feature Enhancement"
+description: "Enhance or improve an existing feature"
+labels: ["enhancement", "improvement", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest an improvement to an existing feature. This is for enhancing what already exists, not for entirely new features.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: "Component"
+      description: "Which component contains the feature to enhance?"
+      options:
+        - "Web UX"
+        - "API"
+        - "Cliff Tera Language"
+        - "Shared"
+        - "E2E Tests"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: feature
+    attributes:
+      label: "Existing Feature"
+      description: "Which feature would you like to enhance?"
+      placeholder: "e.g., Configuration editor"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Current Behavior"
+      description: "Describe how the feature currently works"
+      placeholder: "Currently, the config editor..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: enhancement
+    attributes:
+      label: "Proposed Enhancement"
+      description: "How should it be improved?"
+      placeholder: |
+        The improvement would...
+        This would enhance the experience by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: "Benefits of Enhancement"
+      description: "What are the benefits?"
+      placeholder: |
+        - Better performance by...
+        - Improved usability because...
+        - Enables advanced workflows...
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Potential Impact"
+      description: "Could this enhancement affect other parts of the system?"
+      placeholder: "This might affect... We should consider..."
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional Context"
+      description: "Screenshots, mockups, or examples"
+      placeholder: "Add mockups or describe the enhanced flow..."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "I have searched existing issues for similar enhancements"
+          required: true
+        - label: "This enhances an existing feature, not a brand new one"
+          required: true

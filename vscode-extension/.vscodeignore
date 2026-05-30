@@ -1,0 +1,10 @@
+.vscode/**
+src/**
+out/**
+node_modules/**
+!node_modules/@cliff-notes/tera-lang/grammars/**
+!node_modules/@cliff-notes/tera-lang/snippets/**
+.gitignore
+tsconfig.json
+webpack.config.js
+**/*.map

@@ -75,7 +75,7 @@
     {
       "prefix": "set",
       "description": "Bind a value to a name",
-      "body": ["{% set ${1:name} = ${2:value} %}$0"]
+      "body": ["{%- set ${1:name} = ${2:value} -%}$0"]
     },
     {
       "prefix": "macro",
@@ -94,7 +94,7 @@
     {
       "prefix": "comment",
       "description": "Tera comment",
-      "body": ["{# ${1:comment} #}$0"]
+      "body": ["{#- ${1:comment} -#}$0"]
     },
     {
       "prefix": "contributors-github",
