@@ -16,6 +16,7 @@
 !.github/linters/super-linter.env
 .devcontainer/mount/.*CommandMarker
 
+tmp/
 
 ### venv ###
 # Virtualenv

@@ -11,6 +11,7 @@ export const randomRoutes: FastifyPluginAsync = async (app) => {
       });
     }
     const commits = generateRandomCommits(parsed.data);
+    console.log("[random route] Generated commits:", JSON.stringify(commits, null, 2));
     return reply.send({ commits });
   });
 };

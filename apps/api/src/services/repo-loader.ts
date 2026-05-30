@@ -99,13 +99,18 @@ export async function inspectRepo(
       timeoutMs: 5_000,
     }).catch(() => undefined);
 
+    // List branch commits BEFORE fetching tags. The tag fetch uses --depth=1
+    // which can update shallow boundaries for commits already in the cloned
+    // history, causing git log to stop at the shallowest tag instead of
+    // returning the full depth we cloned.
+    const commits = await listCommits(dir, opts.range, depth, config);
+
     // Fetch a bounded number of the most recent tags reachable from the cloned
     // history. Limiting on the server keeps tag-heavy repos from blowing up
     // both the clone time and the response size.
     await fetchRecentTags(dir, MAX_REPO_TAGS, config).catch(() => undefined);
 
     const tags = await listTags(dir, MAX_REPO_TAGS, config);
-    const commits = await listCommits(dir, opts.range, depth, config);
 
     // Tags may point to commits older than the shallow clone depth. Those commits
     // are already in the local repo (fetched with depth=1 by fetchRecentTags) but
@@ -213,7 +218,7 @@ async function listCommits(
   config: AppConfig,
 ): Promise<Commit[]> {
   const rangeArg = formatRange(range);
-  const args = ["-C", dir, "log", "--no-merges", `--max-count=${maxCount}`, `--format=${COMMIT_FMT}`];
+  const args = ["-C", dir, "log", `--max-count=${maxCount}`, `--format=${COMMIT_FMT}`];
   if (rangeArg) args.push(rangeArg);
   const result = await execProcess(config.gitBin, { args, timeoutMs: config.cloneTimeoutMs });
   return parseCommits(result.stdout);
