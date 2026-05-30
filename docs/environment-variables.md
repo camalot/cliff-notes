@@ -1,4 +1,10 @@
+---
+title: Environment Variables
+---
+
+<!-- markdownlint-disable MD025 MD022 -->
 # Environment Variables
+{: .no-toc }
 
 All environment variables are consumed by **`apps/api`**. The web, shared, and tera-lang packages have no env var dependencies — the web app communicates with the API via a relative `/api` path.
 
@@ -9,7 +15,7 @@ The API loads `.env` and `.secrets` files from the workspace root automatically 
 ## Server
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `PORT` | `3001` | TCP port the API server listens on. |
 | `HOST` | `0.0.0.0` | Hostname/interface the server binds to. |
 | `LOG_LEVEL` | `info` | Fastify logger level. One of `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. |
@@ -18,13 +24,13 @@ The API loads `.env` and `.secrets` files from the workspace root automatically 
 ## Static / SPA
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `STATIC_DIR` | — | Absolute path to the built web app (`apps/web/dist`). When set, the API serves the SPA at `/`. Omit in dev (Vite handles it). |
 
 ## Paths
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `CONFIGS_DIR` | `<workspace>/.cliff/tomls` | Directory containing bundled `.toml` config presets shown in the UI. |
 | `REMOTE_MOCKS_DIR` | `<workspace>/.cliff/context` | Directory containing fixture JSON files used as remote-context mocks. |
 | `GIT_CLIFF_BIN` | `git-cliff` | Path to the `git-cliff` binary. |
@@ -33,7 +39,7 @@ The API loads `.env` and `.secrets` files from the workspace root automatically 
 ## Limits
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `CLONE_TIMEOUT_MS` | `30000` | Milliseconds before a repository clone is aborted. |
 | `RENDER_TIMEOUT_MS` | `15000` | Milliseconds before a changelog render is aborted. |
 | `MAX_CLONED_COMMITS` | `1000` | Maximum number of commits fetched when cloning a repository. |
@@ -41,7 +47,7 @@ The API loads `.env` and `.secrets` files from the workspace root automatically 
 ## CORS
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list of allowed CORS origins. The first entry is also used as the default `APP_ORIGIN`. |
 | `APP_ORIGIN` | first `CORS_ORIGINS` entry | Origin of the SPA, used as the `postMessage` target and validated against the CORS allowlist. |
 
@@ -50,7 +56,7 @@ The API loads `.env` and `.secrets` files from the workspace root automatically 
 Authentication is disabled by default. Set `AUTH_ENABLED=true` and provide all required variables below to enable GitHub OAuth.
 
 | Variable | Default | Required | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `AUTH_ENABLED` | `false` | No | Set to the string `"true"` to enable GitHub OAuth. All `/api/auth/*` routes return `501` when disabled. |
 | `GITHUB_CLIENT_ID` | — | When `AUTH_ENABLED=true` | GitHub OAuth App client ID. |
 | `GITHUB_CLIENT_SECRET` | — | When `AUTH_ENABLED=true` | GitHub OAuth App client secret. |
@@ -85,4 +91,5 @@ GITHUB_CLIENT_SECRET=your_client_secret_here
 SESSION_SECRET=at_least_32_random_characters_here
 ```
 
+> [!NOTE]
 > The API loads all `.env` and `.secrets` files from the workspace root. Keeping secrets in a separate `.secrets` file makes it easier to exclude them from version control.

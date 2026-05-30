@@ -1,13 +1,12 @@
+<!-- drjekyll
 ---
 title: Cliff-Notes Remote
 parent: Built-in cliff.toml
-nav_order: {{ nav_order }}
----
+description: |
+  A detailed cliff configuration for remote repositories that supports all git-cliff remotes.
+-->
 
-<!-- markdownlint-disable MD025 MD022 -->
-# {{ title }}
-{: .no_toc }
-
+<!-- markdownlint-disable -->
 This toml focuses on remote configuration of [git-cliff](https://github.com/orhun/git-cliff). It works with all remote repositories. But it also falls back to local configuration if no remote repository is detected.
 
 ## Supported Remote Repositories

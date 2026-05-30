@@ -1,0 +1,22 @@
+---
+title: {{ index_name }}
+nav_order: {{ nav_order }}
+{%- if parent %}
+parent: {{ parent }}
+{%- endif %}
+{%- if grand_parent %}
+grand_parent: {{ grand_parent }}
+{%- endif %}
+layout: default
+has_children: {{ has_children }}
+---
+
+<!-- markdownlint-disable MD022 MD025 -->
+# {{ index_name }}
+{% raw %}{: .no_toc }{% endraw %}
+
+---
+
+{%- if page_symlink %}
+{% raw %}{% include {% endraw %}{{ page_symlink }}{% raw %} %}{% endraw %}
+{%- endif %}

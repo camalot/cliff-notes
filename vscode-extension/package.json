@@ -1,21 +1,62 @@
 {
   "name": "cliff-toml",
   "displayName": "Cliff.toml Language",
-  "description": "Syntax highlighting, snippets, completions, hover, and signature help for cliff.toml templates",
+  "description": "Syntax highlighting, snippets, completions, hover, and signature help for git-cliff cliff.toml configuration.",
   "version": "0.1.0",
-  "publisher": "cliff-notes",
-  "engines": {
-    "vscode": "^1.85.0"
+  "publisher": "DarthMinos",
+  "author": {
+    "name": "darthminos",
+    "email": "camalot@gmail.com"
   },
-  "categories": ["Programming Languages"],
+  "homepage": "https://cliff-notes.dev",
+  "documentation": "https://camalot.github.io/cliff-notes/vscode-extension",
+  "engines": {
+    "vscode": "^1.105.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/camalot/cliff-notes",
+    "directory": "vscode-extension/"
+  },
+  "bugs": {
+    "url": "https://github.com/camalot/vscode-workspace-tasks/issues",
+    "new": "https://github.com/camalot/vscode-workspace-tasks/issues/new/choose"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/camalot",
+    "github": "https://github.com/sponsors/camalot",
+    "buymeacoffee": "https://www.buymeacoffee.com/darthminos"
+  },
+  "urls": {
+    "vscmarketplace": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml",
+    "openvsx": "https://open-vsx.org/extension/darthminos/cliff-toml",
+    "changelog": "https://github.com/camalot/cliff-notes/blob/develop/CHANGELOG.md"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "cliff",
+    "toml",
+    "git-cliff",
+    "language"
+  ],
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "cliff-toml",
-        "aliases": ["Cliff TOML", "cliff-toml"],
-        "filenames": ["cliff.toml"],
+        "aliases": [
+          "Cliff TOML",
+          "cliff-toml"
+        ],
+        "filenames": [
+          "cliff.toml",
+          "*.cliff.toml",
+          "cliff.*.toml",
+          "*.cliff.*.toml"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
