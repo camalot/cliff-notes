@@ -168,3 +168,5 @@
 {"id":"1780081848971274","taskName":"pnpm: build","taskSource":"Workspace","scope":"workspace","definitionType":"shell","startTime":1780081848971,"status":"Success","endTime":1780081910166,"exitCode":0,"duration":61195}
 {"id":"1780082115590780","taskName":"pnpm: build","taskSource":"Workspace","scope":"workspace","definitionType":"shell","startTime":1780082115590,"status":"Success","endTime":1780082178055,"exitCode":0,"duration":62465}
 {"id":"1780082520977875","taskName":"pnpm: build","taskSource":"Workspace","scope":"workspace","definitionType":"shell","startTime":1780082520977,"status":"Success","endTime":1780082582733,"exitCode":0,"duration":61756}
+{"id":"1780104965810826","taskName":"dev","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1780104965810,"status":"Success","definitionPath":"/workspace/package.json","endTime":1780105054366,"exitCode":0,"duration":88556}
+{"id":"1780105135035480","taskName":"dev","taskSource":"pnpm","scope":"workspace","definitionType":"pnpm","startTime":1780105135035,"status":"Success","definitionPath":"/workspace/package.json","endTime":1780105212206,"exitCode":0,"duration":77171}

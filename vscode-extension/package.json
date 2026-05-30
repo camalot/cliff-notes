@@ -1,7 +1,7 @@
 {
-  "name": "cliff-notes-tera-lang",
-  "displayName": "Cliff.toml Tera Language",
-  "description": "Syntax highlighting, snippets, completions, hover, and signature help for cliff.toml Tera templates",
+  "name": "cliff-toml",
+  "displayName": "Cliff.toml Language",
+  "description": "Syntax highlighting, snippets, completions, hover, and signature help for cliff.toml templates",
   "version": "0.1.0",
   "publisher": "cliff-notes",
   "engines": {
