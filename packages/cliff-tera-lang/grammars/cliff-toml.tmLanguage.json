@@ -34,7 +34,9 @@
       "beginCaptures": {
         "1": { "name": "support.type.property-name.tera-binding.cliff-toml" },
         "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-        "5": { "name": "punctuation.definition.string.template.begin.cliff-toml" }
+        "5": {
+          "name": "punctuation.definition.string.template.begin.cliff-toml"
+        }
       },
       "end": "(\"\"\")",
       "endCaptures": {
@@ -53,43 +55,93 @@
       "begin": "\\{#-?",
       "end": "-?#\\}",
       "name": "comment.block.tera.cliff-toml",
-      "beginCaptures": { "0": { "name": "punctuation.definition.comment.tera.cliff-toml" } },
-      "endCaptures":   { "0": { "name": "punctuation.definition.comment.tera.cliff-toml" } }
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.comment.tera.cliff-toml" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.comment.tera.cliff-toml" }
+      }
     },
     "tera-statement": {
       "begin": "\\{%-?",
       "end": "-?%\\}",
       "name": "meta.tag.statement.tera.cliff-toml",
-      "beginCaptures": { "0": { "name": "punctuation.definition.template.statement.begin.tera.cliff-toml" } },
-      "endCaptures":   { "0": { "name": "punctuation.definition.template.statement.end.tera.cliff-toml" } },
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.template.statement.begin.tera.cliff-toml"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.template.statement.end.tera.cliff-toml"
+        }
+      },
       "patterns": [{ "include": "#tera-inside" }]
     },
     "tera-expression-block": {
       "begin": "\\{\\{-?",
       "end": "-?\\}\\}",
       "name": "meta.tag.expression.tera.cliff-toml",
-      "beginCaptures": { "0": { "name": "punctuation.definition.template.expression.begin.tera.cliff-toml" } },
-      "endCaptures":   { "0": { "name": "punctuation.definition.template.expression.end.tera.cliff-toml" } },
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.template.expression.begin.tera.cliff-toml"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.template.expression.end.tera.cliff-toml"
+        }
+      },
       "patterns": [{ "include": "#tera-inside" }]
     },
     "tera-inside": {
       "patterns": [
-        { "match": "\\b(if|elif|else|endif|for|endfor|in|break|continue|block|endblock|extends|include|import|macro|endmacro|raw|endraw|set|set_global|filter|endfilter|as|and|or|not|is)\\b",
-          "name": "keyword.control.tera.cliff-toml" },
-        { "match": "\\b(true|false)\\b", "name": "constant.language.boolean.tera.cliff-toml" },
+        {
+          "match": "\\b(if|elif|else|endif|for|endfor|in|break|continue|block|endblock|extends|include|import|macro|endmacro|raw|endraw|set|set_global|filter|endfilter|as|and|or|not|is)\\b",
+          "name": "keyword.control.tera.cliff-toml"
+        },
+        {
+          "match": "\\b(true|false)\\b",
+          "name": "constant.language.boolean.tera.cliff-toml"
+        },
         { "match": "\\bself\\b", "name": "variable.language.tera.cliff-toml" },
-        { "match": "\\b(lower|upper|wordcount|capitalize|title|replace|reverse|length|trim|trim_start|trim_end|trim_start_matches|trim_end_matches|truncate|linebreaksbr|striptags|join|sort|unique|slice|first|last|nth|filter|map|group_by|concat|split|int|float|round|abs|date|get|default|escape|safe|upper_first|lower_first|as_str|json_encode|urlencode|urlencode_strict|filesizeformat|pluralize|indent|spaceless|escape_xml|trim_lines|get_random)\\b",
-          "name": "support.function.filter.tera.cliff-toml" },
-        { "match": "\\b(range|now|throw|get_env)\\b", "name": "support.function.builtin.tera.cliff-toml" },
-        { "match": "\\b(defined|undefined|string|number|iterable|odd|even|divisibleby|matching|containing|starting_with|ending_with)\\b",
-          "name": "support.function.test.tera.cliff-toml" },
-        { "match": "\"([^\"\\\\]|\\\\.)*\"", "name": "string.quoted.double.tera.cliff-toml" },
-        { "match": "'([^'\\\\]|\\\\.)*'", "name": "string.quoted.single.tera.cliff-toml" },
-        { "match": "\\b\\d+(?:\\.\\d+)?\\b", "name": "constant.numeric.tera.cliff-toml" },
+        {
+          "match": "\\b(lower|upper|wordcount|capitalize|title|replace|reverse|length|trim|trim_start|trim_end|trim_start_matches|trim_end_matches|truncate|linebreaksbr|striptags|join|sort|unique|slice|first|last|nth|filter|map|group_by|concat|split|int|float|round|abs|date|get|default|escape|safe|upper_first|lower_first|as_str|json_encode|urlencode|urlencode_strict|filesizeformat|pluralize|indent|spaceless|escape_xml|trim_lines|get_random)\\b",
+          "name": "support.function.filter.tera.cliff-toml"
+        },
+        {
+          "match": "\\b(range|now|throw|get_env)\\b",
+          "name": "support.function.builtin.tera.cliff-toml"
+        },
+        {
+          "match": "\\b(defined|undefined|string|number|iterable|odd|even|divisibleby|matching|containing|starting_with|ending_with)\\b",
+          "name": "support.function.test.tera.cliff-toml"
+        },
+        {
+          "match": "\"([^\"\\\\]|\\\\.)*\"",
+          "name": "string.quoted.double.tera.cliff-toml"
+        },
+        {
+          "match": "'([^'\\\\]|\\\\.)*'",
+          "name": "string.quoted.single.tera.cliff-toml"
+        },
+        {
+          "match": "\\b\\d+(?:\\.\\d+)?\\b",
+          "name": "constant.numeric.tera.cliff-toml"
+        },
         { "match": "\\|", "name": "keyword.operator.pipe.tera.cliff-toml" },
-        { "match": "==|!=|<=|>=|<|>|&&|\\|\\||[+\\-*/%]", "name": "keyword.operator.tera.cliff-toml" },
-        { "match": "[A-Za-z_][A-Za-z0-9_]*", "name": "variable.other.tera.cliff-toml" },
-        { "match": "[(),.:\\[\\]=]", "name": "punctuation.separator.tera.cliff-toml" }
+        {
+          "match": "==|!=|<=|>=|<|>|&&|\\|\\||[+\\-*/%~]",
+          "name": "keyword.operator.tera.cliff-toml"
+        },
+        {
+          "match": "[A-Za-z_][A-Za-z0-9_]*",
+          "name": "variable.other.tera.cliff-toml"
+        },
+        {
+          "match": "[(),.:\\[\\]=]",
+          "name": "punctuation.separator.tera.cliff-toml"
+        }
       ]
     },
     "regex-field": {
@@ -99,14 +151,26 @@
           "beginCaptures": {
             "1": { "name": "support.type.property-name.regex.cliff-toml" },
             "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-            "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
+            "5": {
+              "name": "punctuation.definition.string.regex.begin.cliff-toml"
+            }
           },
           "end": "(\")",
-          "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.regex.end.cliff-toml"
+            }
+          },
           "name": "string.regexp.cliff-toml",
           "patterns": [
-            { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
-            { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.regexp.cliff-toml"
+            },
+            {
+              "match": "[(){}\\[\\]|^$.*+?]",
+              "name": "keyword.other.regexp.meta.cliff-toml"
+            }
           ]
         },
         {
@@ -114,14 +178,26 @@
           "beginCaptures": {
             "1": { "name": "support.type.property-name.regex.cliff-toml" },
             "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-            "5": { "name": "punctuation.definition.string.regex.begin.cliff-toml" }
+            "5": {
+              "name": "punctuation.definition.string.regex.begin.cliff-toml"
+            }
           },
           "end": "(')",
-          "endCaptures": { "1": { "name": "punctuation.definition.string.regex.end.cliff-toml" } },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.regex.end.cliff-toml"
+            }
+          },
           "name": "string.regexp.cliff-toml",
           "patterns": [
-            { "match": "\\\\.", "name": "constant.character.escape.regexp.cliff-toml" },
-            { "match": "[(){}\\[\\]|^$.*+?]", "name": "keyword.other.regexp.meta.cliff-toml" }
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.regexp.cliff-toml"
+            },
+            {
+              "match": "[(){}\\[\\]|^$.*+?]",
+              "name": "keyword.other.regexp.meta.cliff-toml"
+            }
           ]
         }
       ]
@@ -133,15 +209,30 @@
           "beginCaptures": {
             "1": { "name": "support.type.property-name.replace.cliff-toml" },
             "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-            "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
+            "5": {
+              "name": "punctuation.definition.string.replace.begin.cliff-toml"
+            }
           },
           "end": "(\")",
-          "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.replace.end.cliff-toml"
+            }
+          },
           "name": "string.template.replace.cliff-toml",
           "patterns": [
-            { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
-            { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
-            { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.cliff-toml"
+            },
+            {
+              "match": "\\$\\{\\d+\\}",
+              "name": "variable.other.regexp.backreference.cliff-toml"
+            },
+            {
+              "match": "\\$\\d+",
+              "name": "variable.other.regexp.backreference.cliff-toml"
+            }
           ]
         },
         {
@@ -149,15 +240,30 @@
           "beginCaptures": {
             "1": { "name": "support.type.property-name.replace.cliff-toml" },
             "3": { "name": "punctuation.separator.key-value.cliff-toml" },
-            "5": { "name": "punctuation.definition.string.replace.begin.cliff-toml" }
+            "5": {
+              "name": "punctuation.definition.string.replace.begin.cliff-toml"
+            }
           },
           "end": "(')",
-          "endCaptures": { "1": { "name": "punctuation.definition.string.replace.end.cliff-toml" } },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.replace.end.cliff-toml"
+            }
+          },
           "name": "string.template.replace.cliff-toml",
           "patterns": [
-            { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" },
-            { "match": "\\$\\{\\d+\\}", "name": "variable.other.regexp.backreference.cliff-toml" },
-            { "match": "\\$\\d+", "name": "variable.other.regexp.backreference.cliff-toml" }
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.cliff-toml"
+            },
+            {
+              "match": "\\$\\{\\d+\\}",
+              "name": "variable.other.regexp.backreference.cliff-toml"
+            },
+            {
+              "match": "\\$\\d+",
+              "name": "variable.other.regexp.backreference.cliff-toml"
+            }
           ]
         }
       ]
@@ -183,7 +289,9 @@
           "begin": "\"",
           "end": "\"",
           "name": "string.quoted.double.cliff-toml",
-          "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.cliff-toml" }]
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.cliff-toml" }
+          ]
         },
         {
           "begin": "'",
@@ -194,8 +302,14 @@
     },
     "number": {
       "patterns": [
-        { "match": "-?\\d+\\.\\d+(?:[eE][+-]?\\d+)?", "name": "constant.numeric.float.cliff-toml" },
-        { "match": "-?\\d+(?:[eE][+-]?\\d+)?", "name": "constant.numeric.integer.cliff-toml" }
+        {
+          "match": "-?\\d+\\.\\d+(?:[eE][+-]?\\d+)?",
+          "name": "constant.numeric.float.cliff-toml"
+        },
+        {
+          "match": "-?\\d+(?:[eE][+-]?\\d+)?",
+          "name": "constant.numeric.integer.cliff-toml"
+        }
       ]
     },
     "boolean": {

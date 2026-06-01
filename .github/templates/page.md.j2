@@ -1,0 +1,30 @@
+---
+title: {{ page_name }}
+nav_order: {{ nav_order }}
+{%- if parent %}
+parent: {{ parent }}
+{%- endif %}
+{%- if grand_parent %}
+grand_parent: {{ grand_parent }}
+{%- endif %}
+{%- if description %}
+description: {{ description }}
+{%- endif %}
+layout: default
+has_toc: false
+---
+
+<!-- markdownlint-disable MD022 MD025 -->
+# {{ page_name }}
+{% raw %}{: .no_toc }{% endraw %}
+
+{{ description }}
+
+{% raw %}{% include toc.md %}{% endraw %}
+
+---
+
+{%- if page_symlink %}
+
+{% raw %}{% include {% endraw %}{{ page_symlink }}{% raw %} %}{% endraw %}
+{%- endif %}

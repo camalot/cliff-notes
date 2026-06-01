@@ -20,7 +20,7 @@ RUN if id -u "${USERNAME}" >/dev/null 2>&1; then \
 
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends apt-utils xauth apt-transport-https ansible 2>&1 \
+  && apt-get install -y --no-install-recommends apt-utils xauth apt-transport-https 2>&1 \
   && apt-get install -y --no-install-recommends git iproute2 procps lsb-release sudo gnupg 2>&1 \
   && apt-get install -y --no-install-recommends curl wget zip unzip dnsutils jq bat fzf zoxide direnv 2>&1 \
   && apt-get install -y --no-install-recommends nano vim zsh ripgrep eza 2>&1 \
@@ -31,7 +31,6 @@ RUN apt-get update \
     libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
     libasound2 libpango-1.0-0 libpangocairo-1.0-0 libgtk-3-0 \
     libgdk-pixbuf-xlib-2.0-0 libx11-6 libxss1 libxtst6 libdbus-1-3 2>&1\
-  && apt-get install -y --no-install-recommends ansible \
   && YQ_VERSION=$(curl -s "https://api.github.com/repos/mikefarah/yq/releases/latest" | jq -r ".tag_name" | sed 's/v//') \
   && curl -X GET -Ls "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" -o /usr/bin/yq \
   && chmod +x /usr/bin/yq \
