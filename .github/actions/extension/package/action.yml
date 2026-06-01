@@ -1,0 +1,141 @@
+---
+name: Package VSIX
+description: Package the VSIX
+inputs:
+  github-token:
+    description: 'GitHub Token - Defaults to the GITHUB_TOKEN secret'
+    required: false
+    default: ${{ github.token }}
+  version:
+    description: 'Version to publish (e.g., 1.0.0).'
+    required: true
+  package-owner:
+    description: 'Owner of the package.'
+    required: true
+  package-name:
+    description: 'Name of the package.'
+    required: true
+outputs:
+  artifact-id:
+    description: GitHub ID of an Artifact, can be used by the REST API
+    value: ''
+  artifact-url:
+    description: URL to download an Artifact.
+    value: ''
+  artifact-digest:
+    description: 'SHA-256 digest of an Artifact'
+    value: ''
+runs:
+  using: composite
+  steps:
+    - name: Prepare Environment
+      shell: bash
+      run: |
+        echo "::group::Preparing environment for VSIX packaging..."
+        if [[ -z "${IVERSION}" ]]; then
+          echo "Error: Version input is required." 2>&1
+          exit 1
+        fi
+        echo "::endgroup::"
+      env:
+        IVERSION: ${{ inputs.version }}
+
+    - name: Configure git
+      shell: bash
+      run: |
+        echo "::group::Configure git user"
+        git config user.name  "${GIT_USER_NAME}"
+        git config user.email "${GIT_USER_EMAIL}"
+        gh auth setup-git
+        echo "::endgroup::"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Prepare vscode-extension/package.json file
+      # we do not commit here. The release call does a commit.
+      # if it fails, then we don't commit this change
+      run: |
+        echo "::group::Prepare package.json"
+        yq eval --inplace ".version = \"${VERSION}\"" vscode-extension/package.json
+        git add vscode-extension/package.json
+        echo "::endgroup::"
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '25.x'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build
+      shell: bash
+      run: |
+        echo "::group::Build"
+        pnpm run compile
+        echo "::endgroup::"
+
+    - name: Package VSIX
+      shell: bash
+      run: |
+        echo "::group::Packaging VSIX"
+        mkdir -p dist
+        pnpm exec vsce package --no-dependencies --out "dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        echo "::endgroup::"
+      env:
+        VERSION: ${{ inputs.version }}
+        PACKAGE_OWNER: ${{ inputs.package-owner }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix
+        path: dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix
+        if-no-files-found: error
+        overwrite: true
+        archive: false
+      env:
+        VERSION: ${{ inputs.version }}
+        PACKAGE_OWNER: ${{ inputs.package-owner }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+
+    - name: Output Artifact Information
+      shell: bash
+      run: |
+        echo "::group::Output Artifact Information"
+        {
+          echo "artifact-id=${ARTIFACT_ID}"
+          echo "artifact-url=${ARTIFACT_URL}"
+          echo "artifact-digest=${ARTIFACT_DIGEST}"
+          echo "artifact-name=${ARTIFACT_NAME}"
+        } << "$GITHUB_OUTPUT"
+
+        {
+          echo "## Artifact Information"
+          echo ""
+          echo "| NAME | VALUE |"
+          echo "|------|-------|"
+          echo "| \`artifact-id\` | ${ARTIFACT_ID} |"
+          echo "| \`artifact-url\` | ${ARTIFACT_URL} |"
+          echo "| \`artifact-digest\` | ${ARTIFACT_DIGEST} |"
+          echo "| \`artifact-name\` | ${ARTIFACT_NAME} |"
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "::endgroup::"
+      env:
+        ARTIFACT_ID: ${{ steps.upload-artifact.outputs.artifact-id }}
+        ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact-url }}
+        ARTIFACT_DIGEST: ${{ steps.upload-artifact.outputs.artifact-digest }}
+        VERSION: ${{ inputs.version }}
+        PACKAGE_OWNER: ${{ inputs.package-owner }}
+        PACKAGE_NAME: ${{ inputs.package-name }}

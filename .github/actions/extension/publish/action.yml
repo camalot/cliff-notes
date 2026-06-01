@@ -1,0 +1,89 @@
+---
+name: Publish VSIX
+description: Publish the VSIX package to the marketplaces.
+inputs:
+  token:
+    description: "GitHub token for authentication"
+    required: false
+    default: ${{ github.token }}
+  artifact_name:
+    description: "Name of the artifact to download. If unspecified, all artifacts for the run are downloaded."
+    required: false
+    default: ''
+  artifact_pattern:
+    description: A glob pattern to the artifacts that should be downloaded. Ignored if name is specified.
+    required: false
+    default: ''
+  path:
+    description: Destination path. Supports basic tilde expansion.
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    # get the uploaded VSIX
+    - name: Download VSIX Artifact
+      uses: actions/download-artifact@v8
+      id: download_artifact
+      with:
+        name: ${{ inputs.artifact_name }}
+        pattern: ${{ inputs.artifact_pattern }}
+        path: ${{ inputs.path }}
+
+    - name: Verify VSIX file exists
+      shell: bash
+      run: |
+        # are there assets in the path that match *.vsix
+        if compgen -G "${ASSET_PATH}/*.vsix" > /dev/null; then
+        VSIX="dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        echo "::group::VSIX: $VSIX"
+        if [ ! -f "$VSIX" ]; then
+          echo -e "\e[31mVSIX not found: $VSIX\e[0m" >&2
+          echo "Contents of dist/:"
+          ls -la dist/
+          exit 1
+        fi
+        echo -e "\e[32mVSIX generated: $VSIX ($(du -h "$VSIX" | cut -f1))\e[0m"
+        pnpm exec vsce ls --tree --no-dependencies
+        echo "::endgroup::"
+      env:
+        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+        ASSET_PATH: ${{ steps.download_artifact.outputs.download-path }}
+    - name: Setup to Publish
+      shell: bash
+      run: |
+        echo "::group::Setup to Publish"
+        if [[ "${VSIX_PUBLISHZ,,}" != "true" ]]; then
+          echo "VSIX_PUBLISH=false" >> "$GITHUB_ENV"
+        else
+          echo "VSIX_PUBLISH=true" >> "$GITHUB_ENV"
+        fi
+        echo "::endgroup::"
+      env:
+        VSIX_PUBLISHZ: ${{ inputs.vsix_publish }}
+
+    - name: Publish to Open VSX Registry
+      # only publish if everything before (incl. Create Release) succeeded
+      if: ${{ success() && env.OPEN_VSX_TOKEN != '' && env.VSIX_PUBLISH == 'true' }}
+      uses: HaaLeo/publish-vscode-extension@v2
+      with:
+        pat: ${{ env.OPEN_VSX_TOKEN }}
+        registryUrl: https://open-vsx.org
+        skipDuplicate: true
+        extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
+      env:
+        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+        OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+
+    - name: Publish to Visual Studio Marketplace
+      # only publish if everything before (incl. Create Release) succeeded
+      if: ${{ success() && env.VS_MARKETPLACE_TOKEN != '' && inputs.vsix_publish == 'true' }}
+      uses: HaaLeo/publish-vscode-extension@v2
+      with:
+        pat: ${{ env.VS_MARKETPLACE_TOKEN }}
+        registryUrl: https://marketplace.visualstudio.com
+        skipDuplicate: true
+        extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
+      env:
+        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+        VS_MARKETPLACE_TOKEN: ${{ secrets.VS_MARKETPLACE_TOKEN }}

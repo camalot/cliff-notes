@@ -13,6 +13,14 @@ inputs:
     description: 'Whether to publish the VSIX to the marketplaces.'
     required: false
     default: 'true'
+  vsmarket_token:
+    description: 'Visual Studio Marketplace Token'
+    required: false
+    default: ''
+  openvsx_token:
+    description: 'Open VSX Token'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -45,3 +53,78 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+
+    - name: Configure git
+      shell: bash
+      run: |
+        echo "::group::Configure git user"
+        git config user.name  "${GIT_USER_NAME}"
+        git config user.email "${GIT_USER_EMAIL}"
+        gh auth setup-git
+        echo "::endgroup::"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '25.x'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build
+      shell: bash
+      run: |
+        echo "::group::Build"
+        pnpm run compile
+        echo "::endgroup::"
+
+    - name: Prepare package.json file
+      shell: bash
+      # we do not commit here. The release call does a commit.
+      # if it fails, then we don't commit this change
+      run: |
+        echo "::group::Prepare package.json"
+        yq eval --inplace ".version = \"${VERSION}\"" package.json
+        git add package.json
+        echo "::endgroup::"
+      env:
+        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+
+    - name: Package VSIX
+      shell: bash
+      run: |
+        echo "::group::Packaging VSIX"
+        mkdir -p dist
+        pnpm exec vsce package --no-dependencies --out "dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        echo "::endgroup::"
+      env:
+        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+
+    - name: Capture pre-release state
+      shell: bash
+      id: rollback_state
+      # Record HEAD and the floating tags' prior targets BEFORE the release
+      # moves them, so the rollback step can restore them if a later step
+      # (publish/upload) fails after a successful release.
+      run: |
+        set -euo pipefail
+        echo "::group::Capture pre-release state (for rollback)"
+        {
+          echo "head_sha=$(git rev-parse HEAD)"
+          echo "tag_major_sha=$(git ls-remote origin "refs/tags/${TAG_MAJOR}" | awk 'NR==1{print $1}')"
+          echo "tag_major_minor_sha=$(git ls-remote origin "refs/tags/${TAG_MAJOR_MINOR}" | awk 'NR==1{print $1}')"
+        } >> "${GITHUB_OUTPUT}"
+        echo "::endgroup::"
+      env:
+        TAG_MAJOR: ${{ needs.version.outputs.tag_major }}
+        TAG_MAJOR_MINOR: ${{ needs.version.outputs.tag_major_minor }}
+

@@ -3,9 +3,14 @@ set -e
 
 echo "::group::PREPARE: Setting up environment variables for Docker build"
 
+######
+# OUTPUTS:
+#   pr_comment_marker: text to identify the PR comment
+#   docker_tags_comment: file path to comment content
+######
+
 # if has --release flag, then set the image tag to latest, otherwise set it to beta
 PREP_RELEASE_FLAG=false
-PREP_VERSION="1.0.0"
 PREP_TAGS=()
 PR_COMMENT_MARKER="<!-- docker-build-tags -->"
 # SHIFT the --release flag out of the way for future arg parsing
@@ -19,16 +24,14 @@ while [[ "$1" == --* ]]; do
       PREP_RELEASE_FLAG=false
       shift
       ;;
-    --version)
-      PREP_VERSION="$2"
-      shift 2
-      ;;
     --tags=*)
-      IFS=',' read -ra PREP_TAGS <<< "${1#--tags=}"
+      IFS=',' read -ra temp_tags <<< "${1#--tags=}"
+      PREP_TAGS+=("${temp_tags[@]}")
       shift
       ;;
     --tags)
-      IFS=',' read -ra PREP_TAGS <<< "$2"
+      IFS=',' read -ra temp_tags <<< "$2"
+      PREP_TAGS+=("${temp_tags[@]}")
       shift 2
       ;;
     --pr-comment-marker=*)
@@ -83,7 +86,7 @@ IMAGE_NAME="${IMAGE_NAME,,}"
 if [[ "${PREP_RELEASE_FLAG}" == true ]]; then
   GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${GH_ORG}/${IMAGE_ORG}/${IMAGE_NAME}"
 else
-  GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${GH_ORG}/${IMAGE_ORG}-snapshots/${GH_ACTOR}/${IMAGE_NAME}"
+  GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${GH_ORG}/${IMAGE_ORG}/${GH_ACTOR}/${IMAGE_NAME}"
 fi
 
 BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)"
@@ -130,6 +133,8 @@ echo "pr_comment_marker=${PR_COMMENT_MARKER}" >> "$GITHUB_OUTPUT"
   echo ""
 } > /tmp/docker-tags-comment.md
 
+echo "docker_tags_comment=/tmp/docker-tags-comment.md" >> "$GITHUB_OUTPUT"
+
 # summary output
 {
   echo "## Docker Build Preparation Summary"
@@ -137,7 +142,6 @@ echo "pr_comment_marker=${PR_COMMENT_MARKER}" >> "$GITHUB_OUTPUT"
   echo "| --- | --- |"
   echo "| GHCR_IMAGE | \`${GHCR_IMAGE}\` |"
   echo "| PREP_RELEASE_FLAG | \`${PREP_RELEASE_FLAG}\` |"
-  echo "| PREP_VERSION | \`${PREP_VERSION}\` |"
   echo "| PREP_TAGS | \`${PREP_TAGS[*]}\` |"
   echo ""
 
