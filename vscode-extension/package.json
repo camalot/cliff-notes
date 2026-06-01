@@ -37,7 +37,7 @@
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",
     "compile": "tsc -p tsconfig.json --noEmit",
-    "package": "vsce package"
+    "package": "vsce package --no-dependencies --out dist/cliff-toml.vsix"
   },
   "dependencies": {
     "@cliff-notes/tera-lang": "workspace:*"

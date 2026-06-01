@@ -11,12 +11,14 @@ permissions: {}
 jobs:
   version:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
       statuses: write
-      pull-requests: write
       issues: write
+      pull-requests: write
     outputs:
+      current_version: ${{ steps.get.outputs.current_version }}
       ver_major_minor_patch: ${{ steps.get.outputs.major_minor_patch }}
       ver_major_minor: ${{ steps.get.outputs.major_minor }}
       ver_major: ${{ steps.get.outputs.major }}
@@ -31,7 +33,49 @@ jobs:
           persist-credentials: false
       - name: Determine next version
         id: get
-        uses: camalot/version/get@v1
+        uses: camalot/actions/version/get@v1
         with:
           default_version: v1.0.0
-          enable_pr_comment: 'true'
+          fail_on_default: true
+          enable_pr_comment: true
+          token: ${{ github.token }}
+  lint:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - verify
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - uses: ./.github/actions/lint
+        with:
+          github-token: ${{ github.token }}
+
+  test:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - verify
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - uses: ./.github/actions/test
+        with:
+          github-token: ${{ github.token }}
+          codecov-token: ''

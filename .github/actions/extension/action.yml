@@ -1,0 +1,47 @@
+---
+name: Package and Publish VSIX
+description: Package the VSIX and optionally publish to the marketplaces
+inputs:
+  github-token:
+    description: 'GitHub Token'
+    required: false
+    default: ${{ github.token }}
+  version:
+    description: 'Version to publish (e.g., 1.0.0).'
+    required: true
+  vsix_publish:
+    description: 'Whether to publish the VSIX to the marketplaces.'
+    required: false
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Prepare Environment
+      shell: bash
+      run: |
+        echo "::group::Preparing environment for VSIX packaging and publishing..."
+        if [[ -z "${IVERSION}" ]]; then
+          echo "Error: Version input is required." 2>&1
+          exit 1
+        fi
+        if [[ "${IVSIX_PUBLISH,,}" != "true" ]]; then
+          echo "VERSION=false" >> $GITHUB_ENV
+        else
+          echo "VERSION=true" >> $GITHUB_ENV
+        fi
+        echo "::endgroup::"
+      env:
+        IVERSION: ${{ inputs.version }}
+        IVSIX_PUBLISH: ${{ inputs.vsix_publish }}
+
+    - name: Prepare vscode-extension/package.json file
+      # we do not commit here. The release call does a commit.
+      # if it fails, then we don't commit this change
+      run: |
+        echo "::group::Prepare package.json"
+        yq eval --inplace ".version = \"${VERSION}\"" vscode-extension/package.json
+        git add vscode-extension/package.json
+        echo "::endgroup::"
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
