@@ -6,11 +6,11 @@ inputs:
     description: "GitHub token for authentication"
     required: false
     default: ${{ github.token }}
-  artifact_name:
+  artifact-name:
     description: "Name of the artifact to download. If unspecified, all artifacts for the run are downloaded."
     required: false
     default: ''
-  artifact_pattern:
+  artifact-pattern:
     description: A glob pattern to the artifacts that should be downloaded. Ignored if name is specified.
     required: false
     default: ''
@@ -18,6 +18,19 @@ inputs:
     description: Destination path. Supports basic tilde expansion.
     required: false
     default: ${{ github.workspace }}
+  vsix-publish:
+    description: "Whether to publish the VSIX package. Set to 'true' to publish."
+    required: false
+    default: 'true'
+  openvsx-token:
+    description: "Token for publishing to Open VSX Registry"
+    required: false
+    default: ''
+  vs-marketplace-token:
+    description: "Token for publishing to Visual Studio Marketplace"
+    required: false
+    default: ''
+
 runs:
   using: composite
   steps:
@@ -26,8 +39,8 @@ runs:
       uses: actions/download-artifact@v8
       id: download_artifact
       with:
-        name: ${{ inputs.artifact_name }}
-        pattern: ${{ inputs.artifact_pattern }}
+        name: ${{ inputs.artifact-name }}
+        pattern: ${{ inputs.artifact-pattern }}
         path: ${{ inputs.path }}
 
     - name: Verify VSIX file exists
@@ -60,7 +73,7 @@ runs:
         fi
         echo "::endgroup::"
       env:
-        VSIX_PUBLISHZ: ${{ inputs.vsix_publish }}
+        VSIX_PUBLISHZ: ${{ inputs.vsix-publish }}
 
     - name: Publish to Open VSX Registry
       # only publish if everything before (incl. Create Release) succeeded
@@ -73,11 +86,11 @@ runs:
         extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
       env:
         VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
-        OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+        OPEN_VSX_TOKEN: ${{ inputs.openvsx-token }}
 
     - name: Publish to Visual Studio Marketplace
       # only publish if everything before (incl. Create Release) succeeded
-      if: ${{ success() && env.VS_MARKETPLACE_TOKEN != '' && inputs.vsix_publish == 'true' }}
+      if: ${{ success() && env.VS_MARKETPLACE_TOKEN != '' && env.VSIX_PUBLISH == 'true' }}
       uses: HaaLeo/publish-vscode-extension@v2
       with:
         pat: ${{ env.VS_MARKETPLACE_TOKEN }}
@@ -86,4 +99,4 @@ runs:
         extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
       env:
         VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
-        VS_MARKETPLACE_TOKEN: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+        VS_MARKETPLACE_TOKEN: ${{ inputs.vs-marketplace-token }}
