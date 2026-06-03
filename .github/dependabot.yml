@@ -8,6 +8,10 @@ updates:
       interval: 'daily'
     cooldown:
       default-days: 7
+    ignore:
+      # v4 is intentionally pinned for act compatibility; block major bumps on both references
+      - dependency-name: 'actions/upload-artifact'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:

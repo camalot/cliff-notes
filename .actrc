@@ -1,2 +1,4 @@
 --container-architecture linux/amd64
--P ubuntu-latest=catthehacker/ubuntu:act-latest
+-P ubuntu-latest=catthehacker/ubuntu:full-latest
+-P ubuntu-full=catthehacker/ubuntu:gh-latest
+--artifact-server-path .act/artifact-uploads

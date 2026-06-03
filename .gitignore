@@ -13,6 +13,8 @@
 .secrets.*
 *.secrets
 
+.act/
+
 !.github/linters/super-linter.env
 .devcontainer/mount/.*CommandMarker
 

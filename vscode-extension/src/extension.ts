@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import {
+  CompletionItem,
   completionsAt,
   hoverAt,
   signatureHelpAt,
+  TeraParam,
   type CompletionItemKind,
 } from '@cliff-notes/tera-lang';
 
@@ -17,6 +19,7 @@ function mapKind(k: CompletionItemKind): vscode.CompletionItemKind {
     case 'test':     return vscode.CompletionItemKind.Function;
     case 'keyword':  return vscode.CompletionItemKind.Keyword;
     case 'snippet':  return vscode.CompletionItemKind.Snippet;
+    default:         return vscode.CompletionItemKind.Text;
   }
 }
 
@@ -28,7 +31,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
         provideCompletionItems(document, position) {
           const text = document.getText();
           const offset = document.offsetAt(position);
-          return completionsAt(text, offset).map((item) => {
+          return completionsAt(text, offset).map((item: CompletionItem) => {
             const ci = new vscode.CompletionItem(item.label, mapKind(item.kind));
             const detail = item.source
               ? `${item.detail ?? ''} (${item.source})`.trim()
@@ -72,7 +75,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
             info.signature,
             new vscode.MarkdownString(info.description),
           );
-          sig.parameters = info.params.map((p) => {
+          sig.parameters = info.params.map((p: TeraParam) => {
             const label = p.default !== undefined ? `${p.name}=${p.default}` : p.name;
             return new vscode.ParameterInformation(label, p.type ?? '');
           });

@@ -23,7 +23,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends apt-utils xauth apt-transport-https 2>&1 \
   && apt-get install -y --no-install-recommends git iproute2 procps lsb-release sudo gnupg 2>&1 \
   && apt-get install -y --no-install-recommends curl wget zip unzip dnsutils jq bat fzf zoxide direnv 2>&1 \
-  && apt-get install -y --no-install-recommends nano vim zsh ripgrep eza 2>&1 \
+  && apt-get install -y --no-install-recommends nano vim zsh ripgrep eza imagemagick 2>&1 \
   && apt-get install -y --no-install-recommends python3-full python3-pip python3-venv golang-go python3-virtualenv 2>&1 \
   && pip3 install --no-cache-dir Pygments 2>&1 \
   && apt-get install -y --no-install-recommends \

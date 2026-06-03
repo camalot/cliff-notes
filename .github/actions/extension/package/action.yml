@@ -25,6 +25,9 @@ outputs:
   artifact-digest:
     description: 'SHA-256 digest of an Artifact'
     value: ''
+  artifact-name:
+    description: Name of the uploaded artifact.
+    value: ${{ inputs.package-owner }}-${{ inputs.package-name }}-${{ inputs.version }}.vsix
 runs:
   using: composite
   steps:
@@ -46,10 +49,10 @@ runs:
         echo "::group::Configure git user"
         git config user.name  "${GIT_USER_NAME}"
         git config user.email "${GIT_USER_EMAIL}"
-        gh auth setup-git
+        # gh auth setup-git
         echo "::endgroup::"
       env:
-        GH_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ inputs.github-token }}
 
     - name: Prepare vscode-extension/package.json file
       # we do not commit here. The release call does a commit.
@@ -82,26 +85,51 @@ runs:
       shell: bash
       run: |
         echo "::group::Build"
-        pnpm run compile
+        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml run clean
+        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml run build
+        echo "::endgroup::"
+
+    - name: VSIX Information
+      shell: bash
+      run: |
+        echo "::group::VSIX Information"
+        pnpm --filter cliff-toml exec -- vsce ls --no-dependencies
         echo "::endgroup::"
 
     - name: Package VSIX
       shell: bash
       run: |
         echo "::group::Packaging VSIX"
-        mkdir -p dist
-        pnpm exec vsce package --no-dependencies --out "dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        mkdir -p "${GITHUB_WORKSPACE}/dist"
+        echo "Packaging VSIX to dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        pnpm --filter cliff-toml exec vsce package --no-dependencies --out "${GITHUB_WORKSPACE}/dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
         echo "::endgroup::"
       env:
         VERSION: ${{ inputs.version }}
         PACKAGE_OWNER: ${{ inputs.package-owner }}
         PACKAGE_NAME: ${{ inputs.package-name }}
 
+    - name: Upload Artifact (act)
+      id: upload-artifact-act
+      if: ${{ env.ACT != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.PACKAGE_OWNER}}-${{env.PACKAGE_NAME}}-${{env.VERSION}}.vsix
+        path: dist/${{env.PACKAGE_OWNER}}-${{env.PACKAGE_NAME}}-${{env.VERSION}}.vsix
+        if-no-files-found: error
+        overwrite: true
+      env:
+        VERSION: ${{ inputs.version }}
+        PACKAGE_OWNER: ${{ inputs.package-owner }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+
     - name: Upload Artifact
+      id: upload-artifact
+      if: ${{ env.ACT == '' }}
       uses: actions/upload-artifact@v7
       with:
-        name: ${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix
-        path: dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix
+        name: ${{env.PACKAGE_OWNER}}-${{env.PACKAGE_NAME}}-${{env.VERSION}}.vsix
+        path: dist/${{env.PACKAGE_OWNER}}-${{env.PACKAGE_NAME}}-${{env.VERSION}}.vsix
         if-no-files-found: error
         overwrite: true
         archive: false
@@ -119,7 +147,7 @@ runs:
           echo "artifact-url=${ARTIFACT_URL}"
           echo "artifact-digest=${ARTIFACT_DIGEST}"
           echo "artifact-name=${ARTIFACT_NAME}"
-        } << "$GITHUB_OUTPUT"
+        } >> "$GITHUB_OUTPUT"
 
         {
           echo "## Artifact Information"
@@ -133,9 +161,10 @@ runs:
         } >> "$GITHUB_STEP_SUMMARY"
         echo "::endgroup::"
       env:
-        ARTIFACT_ID: ${{ steps.upload-artifact.outputs.artifact-id }}
-        ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact-url }}
-        ARTIFACT_DIGEST: ${{ steps.upload-artifact.outputs.artifact-digest }}
+        ARTIFACT_ID: ${{ steps.upload-artifact.outputs.artifact-id || steps.upload-artifact-act.outputs.artifact-id }}
+        ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact-url || steps.upload-artifact-act.outputs.artifact-url }}
+        ARTIFACT_DIGEST: ${{ steps.upload-artifact.outputs.artifact-digest || steps.upload-artifact-act.outputs.artifact-digest }}
+        ARTIFACT_NAME: ${{ steps.upload-artifact.outputs.artifact-name || steps.upload-artifact-act.outputs.artifact-name }}
         VERSION: ${{ inputs.version }}
         PACKAGE_OWNER: ${{ inputs.package-owner }}
         PACKAGE_NAME: ${{ inputs.package-name }}

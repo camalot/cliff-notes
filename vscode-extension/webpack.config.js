@@ -2,6 +2,22 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
+
+class CopyAssetsPlugin {
+  /**
+   * @param {{ hooks: { afterEmit: { tap: (arg0: string, arg1: () => void) => void; }; }; }} compiler
+   */
+  apply(compiler) {
+    compiler.hooks.afterEmit.tap('CopyAssetsPlugin', () => {
+      const srcBase = path.resolve(__dirname, 'node_modules/@cliff-notes/tera-lang');
+      const dstBase = path.resolve(__dirname, 'dist');
+      for (const dir of ['grammars', 'snippets']) {
+        fs.cpSync(path.join(srcBase, dir), path.join(dstBase, dir), { recursive: true });
+      }
+    });
+  }
+}
 
 /** @type {import('webpack').Configuration} */
 module.exports = {
@@ -36,4 +52,5 @@ module.exports = {
   },
   devtool: 'nosources-source-map',
   infrastructureLogging: { level: 'log' },
+  plugins: [new CopyAssetsPlugin()],
 };

@@ -30,12 +30,25 @@ inputs:
     description: "Token for publishing to Visual Studio Marketplace"
     required: false
     default: ''
-
+  dry-run:
+    description: "If set to 'true', the action will go through all steps except the actual publish step. Useful for testing."
+    required: false
+    default: 'true'
+  version:
+    description: 'Version to publish (e.g., 1.0.0).'
+    required: true
+  package-owner:
+    description: 'Owner of the package.'
+    required: true
+  package-name:
+    description: 'Name of the package.'
+    required: true
 runs:
   using: composite
   steps:
     # get the uploaded VSIX
     - name: Download VSIX Artifact
+      if: ${{ env.ACT == '' }}
       uses: actions/download-artifact@v8
       id: download_artifact
       with:
@@ -43,37 +56,50 @@ runs:
         pattern: ${{ inputs.artifact-pattern }}
         path: ${{ inputs.path }}
 
+    - name: Download VSIX Artifact (act)
+      if: ${{ env.ACT != '' }}
+      uses: actions/download-artifact@v4
+      id: download_artifact_act
+      with:
+        name: ${{ inputs.artifact-name }}
+        pattern: ${{ inputs.artifact-pattern }}
+        path: ${{ inputs.path }}
+
+    - name: Set Environment Variables
+      shell: bash
+      run: |
+        {
+          echo "VERSION=${VERSION,,}"
+          echo "PACKAGE_OWNER=${PACKAGE_OWNER,,}"
+          echo "PACKAGE_NAME=${PACKAGE_NAME,,}"
+          echo "ASSET_PATH=${ASSET_PATH}"
+          if [[ "${VSIX_PUBLISHZ,,}" != "true" ]]; then
+            echo "VSIX_PUBLISH=false"
+          else
+            echo "VSIX_PUBLISH=true"
+          fi
+        } >> "$GITHUB_ENV"
+      env:
+        VERSION: ${{ inputs.version }}
+        PACKAGE_OWNER: ${{ inputs.package-owner }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        ASSET_PATH: ${{ steps.download_artifact.outputs.download-path || steps.download_artifact_act.outputs.download-path }}
+        VSIX_PUBLISHZ: ${{ inputs.vsix-publish }}
+
     - name: Verify VSIX file exists
       shell: bash
       run: |
-        # are there assets in the path that match *.vsix
-        if compgen -G "${ASSET_PATH}/*.vsix" > /dev/null; then
-        VSIX="dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        VSIX=$(find "${ASSET_PATH}" -name "*.vsix" -type f | head -1)
         echo "::group::VSIX: $VSIX"
-        if [ ! -f "$VSIX" ]; then
-          echo -e "\e[31mVSIX not found: $VSIX\e[0m" >&2
-          echo "Contents of dist/:"
-          ls -la dist/
+        if [ -z "$VSIX" ] || [ ! -f "$VSIX" ]; then
+          echo -e "\e[31mVSIX not found under: ${ASSET_PATH}\e[0m" >&2
+          echo "Contents of ${ASSET_PATH}:"
+          ls -la "${ASSET_PATH}"
           exit 1
         fi
-        echo -e "\e[32mVSIX generated: $VSIX ($(du -h "$VSIX" | cut -f1))\e[0m"
-        pnpm exec vsce ls --tree --no-dependencies
+        echo "VSIX_FILE=${VSIX}" >> "$GITHUB_ENV"
+        echo -e "\e[32mVSIX found: $VSIX ($(du -h "$VSIX" | cut -f1))\e[0m"
         echo "::endgroup::"
-      env:
-        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
-        ASSET_PATH: ${{ steps.download_artifact.outputs.download-path }}
-    - name: Setup to Publish
-      shell: bash
-      run: |
-        echo "::group::Setup to Publish"
-        if [[ "${VSIX_PUBLISHZ,,}" != "true" ]]; then
-          echo "VSIX_PUBLISH=false" >> "$GITHUB_ENV"
-        else
-          echo "VSIX_PUBLISH=true" >> "$GITHUB_ENV"
-        fi
-        echo "::endgroup::"
-      env:
-        VSIX_PUBLISHZ: ${{ inputs.vsix-publish }}
 
     - name: Publish to Open VSX Registry
       # only publish if everything before (incl. Create Release) succeeded
@@ -83,9 +109,10 @@ runs:
         pat: ${{ env.OPEN_VSX_TOKEN }}
         registryUrl: https://open-vsx.org
         skipDuplicate: true
-        extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
+        extensionFile: ${{ env.VSIX_FILE }}
+        dryRun: ${{ inputs.dry-run }}
+
       env:
-        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
         OPEN_VSX_TOKEN: ${{ inputs.openvsx-token }}
 
     - name: Publish to Visual Studio Marketplace
@@ -96,7 +123,7 @@ runs:
         pat: ${{ env.VS_MARKETPLACE_TOKEN }}
         registryUrl: https://marketplace.visualstudio.com
         skipDuplicate: true
-        extensionFile: dist/${{ env.PACKAGE_OWNER }}-${{ env.PACKAGE_NAME }}-${{ env.VERSION }}.vsix
+        extensionFile: ${{ env.VSIX_FILE }}
       env:
-        VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
         VS_MARKETPLACE_TOKEN: ${{ inputs.vs-marketplace-token }}
+        dryRun: ${{ inputs.dry-run }}
