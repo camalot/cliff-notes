@@ -49,6 +49,19 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | /bin/b
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
 
+# Install PowerShell
+RUN PWSH_TAG=$(curl -s "https://api.github.com/repos/PowerShell/PowerShell/releases/latest" | jq -r ".tag_name") \
+  && PWSH_VERSION=${PWSH_TAG#v} \
+  && curl -fsSL "https://github.com/PowerShell/PowerShell/releases/download/${PWSH_TAG}/powershell-${PWSH_VERSION}-linux-x64.tar.gz" -o /tmp/powershell.tar.gz \
+  && mkdir -p /opt/microsoft/powershell/7 \
+  && tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7 \
+  && chmod +x /opt/microsoft/powershell/7/pwsh \
+  && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh \
+  && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/powershell \
+  && rm /tmp/powershell.tar.gz \
+  && curl -fsSL https://gh.io/copilot-install | bash
+
+
 RUN curl -fsSL "https://deb.nodesource.com/setup_25.x" | bash - \
   && apt-get install -y nodejs \
   && node -v \
@@ -82,7 +95,8 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
   && curl -fsSL "https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz" | tar -xz -C "/home/${USERNAME}/bin" \
   && chmod +x "/home/${USERNAME}/bin/act" \
   && ln -s "/home/${USERNAME}/bin/act" "/home/${USERNAME}/.act/act" \
-  && curl -sSL https://install.python-poetry.org | python3 -
+  && curl -sSL https://install.python-poetry.org | python3 - \
+  && curl -s https://ohmyposh.dev/install.sh | bash -s -- -d /home/${USERNAME}/bin
 
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
 RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH" \

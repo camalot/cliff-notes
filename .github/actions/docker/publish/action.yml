@@ -1,0 +1,49 @@
+---
+name: "Publish Docker Image"
+description: "Publish the Docker image to Docker Registry."
+inputs:
+  github-token:
+    description: "GitHub token for authentication."
+    required: false
+    default: "${{ github.token }}"
+  context:
+    description: >
+      The build context for the Docker image.
+    required: false
+    default: '.'
+  dockerfile:
+    description: >
+      The Dockerfile to use for the build.
+    required: false
+    default: 'Dockerfile'
+  tags:
+    description: >
+      Comma-separated list of tags to apply to the built Docker image.
+    required: false
+    default: ''
+  prerelease:
+    description: >
+      Whether to mark the Docker image as prerelease.
+    required: false
+    default: 'false'
+  prerelease-tag:
+    description: >
+      The tag to use for the prerelease Docker image. Only used if `prerelease` is `true`.
+    required: false
+    default: 'prerelease'
+outputs:
+  image-id:
+    description: The ID of the built Docker image.
+    value: ''
+  digest:
+    description: The digest of the built Docker image.
+    value: ''
+  metadata:
+    description: The metadata of the built Docker image.
+    value: ''
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        chmod +x $GITHUB_ACTION_PATH/prepare-docker-build.sh
+      shell: bash

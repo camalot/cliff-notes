@@ -3,16 +3,16 @@ set -e
 
 echo "::group::PREPARE: Setting up environment variables for Docker build"
 
-######
-# OUTPUTS:
-#   pr_comment_marker: text to identify the PR comment
-#   docker_tags_comment: file path to comment content
-######
-
 # if has --release flag, then set the image tag to latest, otherwise set it to beta
 PREP_RELEASE_FLAG=false
+PREP_VERSION="1.0.0"
 PREP_TAGS=()
+RELEASE_TAG="latest"
+PRERELEASE_TAG="prerelease"
+PREP_REGISTRIES=()
 PR_COMMENT_MARKER="<!-- docker-build-tags -->"
+IMAGE_ORG="${IMAGE_ORG:-}"
+IMAGE_NAME="${IMAGE_NAME:-}"
 # SHIFT the --release flag out of the way for future arg parsing
 while [[ "$1" == --* ]]; do
   case "$1" in
@@ -20,18 +20,81 @@ while [[ "$1" == --* ]]; do
       PREP_RELEASE_FLAG=true
       shift
       ;;
-    --beta)
+    --prerelease)
       PREP_RELEASE_FLAG=false
       shift
       ;;
+    --version)
+      PREP_VERSION="$2"
+      shift 2
+      ;;
+    --image-org)
+      IMAGE_ORG="$2"
+      shift 2
+      ;;
+    --image-org=*)
+      IMAGE_ORG="${1#--image-org=}"
+      shift
+      ;;
+    --image-name)
+      IMAGE_NAME="$2"
+      shift 2
+      ;;
+    --image-name=*)
+      IMAGE_NAME="${1#--image-name=}"
+      shift
+      ;;
+    --tag=*)
+      # add individual tag
+      PREP_TAGS+=("${1#--tag=}")
+      shift
+      ;;
+    --tag)
+      PREP_TAGS+=("$2")
+      shift 2
+      ;;
     --tags=*)
-      IFS=',' read -ra temp_tags <<< "${1#--tags=}"
-      PREP_TAGS+=("${temp_tags[@]}")
+      IFS=',' read -ra TMP_TAGS <<< "${1#--tags=}"
+      PREP_TAGS+=("${TMP_TAGS[@]}")
       shift
       ;;
     --tags)
-      IFS=',' read -ra temp_tags <<< "$2"
-      PREP_TAGS+=("${temp_tags[@]}")
+      IFS=',' read -ra TMP_TAGS <<< "$2"
+      PREP_TAGS+=("${TMP_TAGS[@]}")
+      shift 2
+      ;;
+    --prerelease-tag)
+      PRERELEASE_TAG="${1#--prerelease-tag=}"
+      shift
+      ;;
+    --prerelease-tag=*)
+      PRERELEASE_TAG="$2"
+      shift 2
+      ;;
+    --release-tag)
+      RELEASE_TAG="${1#--release-tag=}"
+      shift
+      ;;
+    --release-tag=*)
+      RELEASE_TAG="$2"
+      shift 2
+      ;;
+    --registries=*)
+      IFS=',' read -ra TMP_REGISTRIES <<< "${1#--registries=}"
+      PREP_REGISTRIES+=("${TMP_REGISTRIES[@]}")
+      shift
+      ;;
+    --registries)
+      IFS=',' read -ra TMP_REGISTRIES <<< "$2"
+      PREP_REGISTRIES+=("${TMP_REGISTRIES[@]}")
+      shift 2
+      ;;
+    --registry=*)
+      PREP_REGISTRIES+=("${1#--registry=}")
+      shift
+      ;;
+    --registry)
+      PREP_REGISTRIES+=("$2")
       shift 2
       ;;
     --pr-comment-marker=*)
@@ -59,11 +122,6 @@ if [[ -z "${IMAGE_NAME}" ]]; then
   exit 1
 fi
 
-if [[ -z "${GH_IMAGE_REGISTRY}" ]]; then
-  echo "GH_IMAGE_REGISTRY is not set. Please set it to the GitHub image registry."
-  exit 1
-fi
-
 T_GH_ACTOR="${GH_ACTOR:-${GITHUB_ACTOR}}"
 if [[ -z "${T_GH_ACTOR}" ]]; then
   echo "GITHUB_ACTOR is not set. Please set it to the GitHub actor."
@@ -84,9 +142,9 @@ IMAGE_ORG="${IMAGE_ORG,,}"
 IMAGE_NAME="${IMAGE_NAME,,}"
 
 if [[ "${PREP_RELEASE_FLAG}" == true ]]; then
-  GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${GH_ORG}/${IMAGE_ORG}/${IMAGE_NAME}"
+  REGISTRY_PATH="${IMAGE_ORG}/${IMAGE_NAME}"
 else
-  GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${GH_ORG}/${IMAGE_ORG}/${GH_ACTOR}/${IMAGE_NAME}"
+  REGISTRY_PATH="${IMAGE_ORG}/${GH_ACTOR}/${IMAGE_NAME}"
 fi
 
 BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)"
@@ -95,19 +153,23 @@ GH_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
 
 TAGZ=""
 # loop PREP_TAGS and add them to the tag string
-# if --release flag is set, then ensure 'latest' tag is included, otherwise ensure 'beta' tag is included
+# if --release flag is set, then ensure '$RELEASE_TAG' tag is included, otherwise ensure '$PRERELEASE_TAG' tag is included
 if [[ "${PREP_RELEASE_FLAG}" == true ]]; then
-  if [[ ! " ${PREP_TAGS[*]} " =~ " latest " ]]; then
-    PREP_TAGS+=("latest")
+  release_pattern=" ${RELEASE_TAG} "
+  if [[ ! " ${PREP_TAGS[*]} " =~ $release_pattern ]]; then
+    PREP_TAGS+=("${RELEASE_TAG}")
   fi
 else
-  if [[ ! " ${PREP_TAGS[*]} " =~ " beta " ]]; then
-    PREP_TAGS+=("beta" "beta-${GH_SHA}")
+  prerelease_pattern=" ${PRERELEASE_TAG} "
+  if [[ ! " ${PREP_TAGS[*]} " =~ $prerelease_pattern ]]; then
+    PREP_TAGS+=("${PRERELEASE_TAG}" "${PRERELEASE_TAG}-${GH_SHA}")
   fi
 fi
-for tag in "${PREP_TAGS[@]}"; do
-  entry="${GHCR_IMAGE}:${tag}"
-  TAGZ="${TAGZ:+${TAGZ},}${entry}"
+for registry in "${PREP_REGISTRIES[@]}"; do
+  for tag in "${PREP_TAGS[@]}"; do
+    entry="${registry}/${REGISTRY_PATH}:${tag}"
+    TAGZ="${TAGZ:+${TAGZ},}${entry}"
+  done
 done
 
 {
@@ -133,15 +195,16 @@ echo "pr_comment_marker=${PR_COMMENT_MARKER}" >> "$GITHUB_OUTPUT"
   echo ""
 } > /tmp/docker-tags-comment.md
 
-echo "docker_tags_comment=/tmp/docker-tags-comment.md" >> "$GITHUB_OUTPUT"
-
 # summary output
 {
   echo "## Docker Build Preparation Summary"
   echo "| Variable | Value |"
   echo "| --- | --- |"
-  echo "| GHCR_IMAGE | \`${GHCR_IMAGE}\` |"
+  for registry in "${PREP_REGISTRIES[@]}"; do
+    echo "| REGISTRY | \`${registry}\` |"
+  done
   echo "| PREP_RELEASE_FLAG | \`${PREP_RELEASE_FLAG}\` |"
+  echo "| PREP_VERSION | \`${PREP_VERSION}\` |"
   echo "| PREP_TAGS | \`${PREP_TAGS[*]}\` |"
   echo ""
 
