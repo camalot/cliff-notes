@@ -28,7 +28,7 @@ body = """
 {%- set HEADER_STATISTICS = "📈 Commit Statistics"-%}
 {%- set HEADER_NO_SCOPE = "General" -%}
 {#- HEADERS END -#}
-
+s
 {#- VARIABLES -#}
 {%- set CONTRIBUTOR_COUNT = 0 -%}
 {%- set SHOW_STATISTICS = true -%}

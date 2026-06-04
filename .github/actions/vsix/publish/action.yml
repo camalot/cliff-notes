@@ -124,6 +124,6 @@ runs:
         registryUrl: https://marketplace.visualstudio.com
         skipDuplicate: true
         extensionFile: ${{ env.VSIX_FILE }}
+        dryRun: ${{ inputs.dry-run }}
       env:
         VS_MARKETPLACE_TOKEN: ${{ inputs.vs-marketplace-token }}
-        dryRun: ${{ inputs.dry-run }}

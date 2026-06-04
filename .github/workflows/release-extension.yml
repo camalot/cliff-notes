@@ -1,0 +1,338 @@
+---
+name: Release Extension
+# Lean workflow: build + release the VSCode extension only.
+# version (camalot/actions/version/get) -> verify -> lint -> test
+#   -> package VSIX + bump package.json versions
+#   -> release (camalot/actions/version/release: changelog, GitHub release, upload VSIX)
+#   -> optional marketplace publish (vsix-publish input)
+on: # yamllint disable-line rule:truthy
+  workflow_dispatch:
+    inputs:
+      force-next-version:
+        description: 'Force the next version. Must be in the format vX.Y.Z. Tag must not exist.'
+        required: false
+        default: ''
+      vsix-publish:
+        description: 'Whether to publish the VSIX to the marketplaces.'
+        required: false
+        default: 'true'
+permissions: {}
+env:
+  ACT: ""
+  NODE_VERSION: '25'
+  PACKAGE_OWNER: 'darthminos'
+  PACKAGE_NAME: 'cliff-toml'
+  GIT_USER_NAME: 'github-actions[bot]'
+  GIT_USER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+    outputs:
+      current_version: ${{ steps.get.outputs.current_version }}
+      ver_major_minor_patch: ${{ steps.get.outputs.major_minor_patch }}
+      tag_major: ${{ steps.get.outputs.tag_major }}
+      tag_major_minor: ${{ steps.get.outputs.tag_major_minor }}
+      tag_major_minor_patch: ${{ steps.get.outputs.tag_major_minor_patch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine next version
+        id: get
+        uses: camalot/actions/version/get@v1
+        with:
+          default_version: v1.0.0
+          fail_on_default: true
+          enable_pr_comment: true
+          token: ${{ github.token }}
+        env:
+          FORCE_NEXT_VERSION: ${{ github.event.inputs.force-next-version || '' }}
+      - run: |
+          echo "next version: ${TAG}"
+        env:
+          TAG: ${{ steps.get.outputs.tag_major_minor_patch }}
+
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - version
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: |
+          {
+            echo "## Verify Release Initialization"
+            echo ""
+            echo "**ACTOR**: \`$ACTOR\`"
+            echo "**BRANCH**: \`$BRANCH\`"
+            echo "**OWNER**: \`$REPO_OWNER\`"
+            echo "**REPO_NAME**: \`$REPO_NAME\`"
+            echo "**PACKAGE_OWNER**: \`$PACKAGE_OWNER\`"
+            echo "**PACKAGE_NAME**: \`$PACKAGE_NAME\`"
+            echo "**ACT**: \`$ACT\`"
+            echo ""
+            echo "---"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          fail() {
+            {
+              echo "❌ $1"
+              echo "❌ Release Will **NOT** Proceed"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+          pass() { echo "✅ $1" >> "$GITHUB_STEP_SUMMARY"; }
+
+          [ -z "$ACT" ] && pass "**ACT** Passes Check" || fail "**ACT** is set to $ACT"
+
+          [ "$REPO_NAME" = "cliff-notes" ] \
+            && pass "**REPO_NAME** Passes Check" \
+            || fail "**REPO_NAME** is not cliff-notes"
+
+          # release should only proceed if ACTOR is REPOSITORY Owner
+          [ "$ACTOR" = "$REPO_OWNER" ] \
+            && pass "**ACTOR** Passes Check" \
+            || fail "**ACTOR** is not the repository owner"
+
+          # release should only proceed if BRANCH is main
+          [ "$BRANCH" = "refs/heads/main" ] \
+            && pass "**BRANCH** Passes Check" \
+            || fail "**BRANCH** is not main"
+
+          [ "$PACKAGE_OWNER" = "darthminos" ] \
+            && pass "**PACKAGE_OWNER** Passes Check" \
+            || fail "**PACKAGE_OWNER** is not darthminos"
+
+          [ "$PACKAGE_NAME" = "cliff-toml" ] \
+            && pass "**PACKAGE_NAME** Passes Check" \
+            || fail "**PACKAGE_NAME** is not cliff-toml"
+
+          # verify against the extension package.json
+          PACKAGE_NAME_JSON=$(jq -r '.name' vscode-extension/package.json)
+          PACKAGE_PUBLISHER_JSON=$(jq -r '.publisher' vscode-extension/package.json)
+          PACKAGE_VERSION_JSON=$(jq -r '.version' vscode-extension/package.json)
+
+          [ "$PACKAGE_NAME_JSON" = "$PACKAGE_NAME" ] \
+            && pass "**PACKAGE_NAME** in package.json Passes Check" \
+            || fail "**PACKAGE_NAME** in package.json is not $PACKAGE_NAME"
+
+          [ "$PACKAGE_PUBLISHER_JSON" = "$PACKAGE_OWNER" ] \
+            && pass "**PACKAGE_PUBLISHER** in package.json Passes Check" \
+            || fail "**PACKAGE_PUBLISHER** in package.json is not $PACKAGE_OWNER"
+
+          [ "$PACKAGE_VERSION_JSON" = "$EXPECTED_VERSION" ] \
+            && pass "**PACKAGE_VERSION** in package.json Passes Check" \
+            || fail "**PACKAGE_VERSION** in package.json is not \`$EXPECTED_VERSION\`"
+
+          if [ -n "$FORCE_NEXT_VERSION" ]; then
+            echo "ℹ️ **FORCE_NEXT_VERSION** is set to $FORCE_NEXT_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "✅ All Initial Checks Passed" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          ACTOR: ${{ github.actor }}
+          BRANCH: ${{ github.ref }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          EXPECTED_VERSION: ${{ needs.version.outputs.current_version }}
+          FORCE_NEXT_VERSION: ${{ github.event.inputs.force-next-version }}
+
+  lint:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - verify
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: ./.github/actions/lint
+        with:
+          github-token: ${{ github.token }}
+
+  test:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - verify
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: ./.github/actions/test
+        with:
+          github-token: ${{ github.token }}
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+
+  vsix-package:
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - version
+      - verify
+      - lint
+      - test
+    permissions:
+      deployments: write
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.package-vsix.outputs.artifact-name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: "Package VSIX"
+        id: package-vsix
+        uses: ./.github/actions/vsix/package
+        with:
+          github-token: ${{ github.token }}
+          version: ${{ needs.version.outputs.ver_major_minor_patch }}
+          package-owner: ${{ env.PACKAGE_OWNER }}
+          package-name: ${{ env.PACKAGE_NAME }}
+
+  packagejson-update:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - verify
+      - lint
+      - test
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Git
+        run: |
+          git config user.name "${GIT_USER_NAME}"
+          git config user.email "${GIT_USER_EMAIL}"
+          gh auth setup-git --git-protocol https
+
+      - name: Bump package.json versions
+        run: |
+          echo "::group::Bump package.json versions"
+          # Resolve every workspace package.json from pnpm-workspace.yaml plus the
+          # root package.json, set the new version, and commit + push so the
+          # release job (separate runner) checks out the bumped tree.
+          projects=$(yq eval '.packages[]' pnpm-workspace.yaml)
+          for project in $projects; do
+            files=$(find . -path "./$project/package.json" -type f)
+            for file in $files; do
+              echo "Updating version in $file"
+              yq eval --inplace ".version = \"${VERSION}\"" "$file"
+              git add "$file"
+            done
+          done
+          yq eval --inplace ".version = \"${VERSION}\"" package.json
+          git add package.json
+
+          if git diff --cached --quiet; then
+            echo "No package.json changes to commit."
+          else
+            git commit -m "chore(release): set package.json version to ${VERSION}"
+            git push origin HEAD:main
+          fi
+          echo "::endgroup::"
+        env:
+          VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - packagejson-update
+      - vsix-package
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download VSIX Artifact
+        uses: actions/download-artifact@v8
+        with:
+          github-token: ${{ github.token }}
+          name: ${{ needs.vsix-package.outputs.artifact-name }}
+          path: ${{ github.workspace }}/vsix
+
+      - name: Generate Release & Changelog
+        uses: camalot/actions/version/release@v1
+        with:
+          token: ${{ github.token }}
+          tag_major: ${{ needs.version.outputs.tag_major }}
+          tag_major_minor: ${{ needs.version.outputs.tag_major_minor }}
+          tag_major_minor_patch: ${{ needs.version.outputs.tag_major_minor_patch }}
+          changelog_file: CHANGELOG.md
+          prerelease: 'false'
+          git_user_name: ${{ env.GIT_USER_NAME }}
+          git_user_email: ${{ env.GIT_USER_EMAIL }}
+        env:
+          # package.json versions are already committed by packagejson-update.
+          UPDATE_FILE_PACKAGE_JSON: 'no-update'
+          RELEASE_FILES_GLOB: '${{ github.workspace }}/vsix/**/*.vsix'
+
+  vsix-publish:
+    if: ${{ github.event.inputs.vsix-publish == 'true' }}
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - vsix-package
+      - release
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: "Publish VSIX"
+        uses: ./.github/actions/vsix/publish
+        with:
+          token: ${{ github.token }}
+          artifact-name: ${{ needs.vsix-package.outputs.artifact-name }}
+          artifact-pattern: '*.vsix'
+          vsix-publish: ${{ github.event.inputs.vsix-publish }}
+          dry-run: ${{ env.ACT != '' && 'true' || 'false' }}
+          vs-marketplace-token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          openvsx-token: ${{ secrets.OPEN_VSX_TOKEN }}
+          version: ${{ needs.version.outputs.ver_major_minor_patch }}
+          package-owner: ${{ env.PACKAGE_OWNER }}
+          package-name: ${{ env.PACKAGE_NAME }}

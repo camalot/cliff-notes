@@ -114,9 +114,9 @@ jobs:
             echo "✅ **ACT** Passes Check" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          if [ "$REPO_NAME" != "vscode-workspace-tasks" ]; then
+          if [ "$REPO_NAME" != "cliff-notes" ]; then
             {
-              echo "❌ **REPO_NAME** is not vscode-workspace-tasks"
+              echo "❌ **REPO_NAME** is not cliff-notes"
               echo "❌ Release Will **NOT** Proceed"
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
@@ -135,10 +135,10 @@ jobs:
             echo "✅ **ACTOR** Passes Check" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # release should only proceed if BRANCH is develop
-          if [ "$BRANCH" != "refs/heads/develop" ]; then
+          # release should only proceed if BRANCH is main
+          if [ "$BRANCH" != "refs/heads/main" ]; then
               {
-                echo "❌ **BRANCH** is not develop"
+                echo "❌ **BRANCH** is not main"
                 echo "❌ Release Will **NOT** Proceed"
               } >> "$GITHUB_STEP_SUMMARY"
             exit 1
@@ -157,10 +157,10 @@ jobs:
             echo "✅ **PACKAGE_OWNER** Passes Check" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # release should only proceed if PACKAGE_NAME is workspace-tasks
-          if [ "$PACKAGE_NAME" != "workspace-tasks" ]; then
+          # release should only proceed if PACKAGE_NAME is cliff-toml
+          if [ "$PACKAGE_NAME" != "cliff-toml" ]; then
             {
-              echo "❌ **PACKAGE_NAME** is not workspace-tasks"
+              echo "❌ **PACKAGE_NAME** is not cliff-toml"
               echo "❌ Release Will **NOT** Proceed"
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
@@ -168,10 +168,10 @@ jobs:
             echo "✅ **PACKAGE_NAME** Passes Check" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # verify against package.json
-          PACKAGE_NAME_JSON=$(jq -r '.name' package.json)
-          PACKAGE_PUBLISHER_JSON=$(jq -r '.publisher' package.json)
-          PACKAGE_VERSION_JSON=$(jq -r '.version' package.json)
+          # verify against the extension package.json
+          PACKAGE_NAME_JSON=$(jq -r '.name' vscode-extension/package.json)
+          PACKAGE_PUBLISHER_JSON=$(jq -r '.publisher' vscode-extension/package.json)
+          PACKAGE_VERSION_JSON=$(jq -r '.version' vscode-extension/package.json)
           if [ "$PACKAGE_NAME_JSON" != "$PACKAGE_NAME" ]; then
             {
               echo "❌ **PACKAGE_NAME** in package.json is not $PACKAGE_NAME"
@@ -274,6 +274,7 @@ jobs:
       artifact-id: ${{ steps.package-vsix.outputs.artifact-id }}
       artifact-url: ${{ steps.package-vsix.outputs.artifact-url }}
       artifact-digest: ${{ steps.package-vsix.outputs.artifact-digest }}
+      artifact-name: ${{ steps.package-vsix.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -285,7 +286,7 @@ jobs:
         id: package-vsix
         with:
           github-token: ${{ github.token }}
-          version: ${{ env.VERSION }}
+          version: ${{ needs.version.outputs.ver_major_minor_patch }}
           package-owner: ${{ env.PACKAGE_OWNER }}
           package-name: ${{ env.PACKAGE_NAME }}
 
@@ -353,6 +354,7 @@ jobs:
           yq eval --inplace ".version = \"${VERSION}\"" package.json
           git add package.json
           git commit -m "chore(release): update package.json version to ${VERSION}"
+          git push origin HEAD:main
           echo "::endgroup::"
         env:
           VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
@@ -375,9 +377,8 @@ jobs:
         id: download-vsix
         with:
           github-token: ${{ github.token }}
-          artifact-ids: ${{ needs.vsix-package.outputs.artifact-id }}
+          name: ${{ needs.vsix-package.outputs.artifact-name }}
           path: ${{ github.workspace }}/vsix
-          pattern: '*.vsix'
 
       - name: Generate Changelog
         uses: camalot/actions/version/release@v1
@@ -398,8 +399,12 @@ jobs:
           RELEASE_FILES_GLOB: '${{ github.workspace }}/vsix/**/*.vsix'
 
   vsix-publish:
+    if: ${{ github.event.inputs.vsix-publish == 'true' }}
     runs-on: ubuntu-latest
-    needs: vsix-package
+    needs:
+      - version
+      - vsix-package
+      - changelog
     permissions:
       deployments: write
       contents: read
@@ -412,10 +417,10 @@ jobs:
       - name: "Publish VSIX"
         uses: ./.github/actions/vsix/publish
         with:
-          github-token: ${{ github.token }}
+          token: ${{ github.token }}
           artifact-name: ${{ needs.vsix-package.outputs.artifact-name }}
           artifact-pattern: '*.vsix'
-          dry-run: ${{ env.ACT != '' || env.vsix-publish == 'true' }}
+          dry-run: ${{ env.ACT != '' && 'true' || 'false' }}
           vsix-publish: ${{ github.event.inputs.vsix-publish }}
           vs-marketplace-token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           openvsx-token: ${{ secrets.OPEN_VSX_TOKEN }}
@@ -460,16 +465,16 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: ${{ env.PRERELEASE }}
           prerelease-tag: ${{ env.PRERELEASE_TAG }}
-          version: ${{ steps.get.outputs.major_minor_patch }}
-          tags: ${{ steps.get.outputs.tag_major_minor_patch }},${{ steps.get.outputs.tag_major_minor }},${{ steps.get.outputs.tag_major }}
-          publish: ${{ env.docker-publish == 'true' && 'true' || 'false' }}
+          version: ${{ needs.version.outputs.ver_major_minor_patch }}
+          tags: ${{ needs.version.outputs.tag_major_minor_patch }},${{ needs.version.outputs.tag_major_minor }},${{ needs.version.outputs.tag_major }}
+          publish: ${{ github.event.inputs.docker-publish == 'true' && 'true' || 'false' }}
           dockerfile: './Dockerfile'
           context: '.'
         env:
-          BUILD_ARGS_VERSION: ${{ steps.get.outputs.major_minor_patch }}
+          BUILD_ARGS_VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
           BUILD_ARGS_NODE_VERSION: ${{ env.NODE_VERSION }}
           BUILD_ARGS_GIT_CLIFF_VERSION: ${{ steps.git-cliff.outputs.version }}
-          LABELS_VERSION: ${{ steps.get.outputs.major_minor_patch }}
+          LABELS_VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
           DBPA_REGISTRY_GHCR: ghcr.io
           DBPA_REGISTRY_GHCR_USERNAME: ${{ github.actor }}
           DBPA_REGISTRY_GHCR_PASSWORD: ${{ github.token }}
@@ -508,4 +513,4 @@ jobs:
         with:
           hook-id: ${{ secrets.RENDER_DEPLOY_HOOK_ID }}
           hook-key: ${{ secrets.RENDER_DEPLOY_HOOK_KEY }}
-          deploy: ${{ env.ACT != '' && github.event.inputs.docker-publish == 'true' }}
+          deploy: ${{ env.ACT == '' && github.event.inputs.docker-publish == 'true' }}

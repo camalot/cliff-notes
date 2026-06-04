@@ -4,7 +4,8 @@
       "WebFetch(domain:git-cliff.org)",
       "Bash(pnpm build *)",
       "Bash(pnpm typecheck *)",
-      "Bash(pnpm test *)"
+      "Bash(pnpm test *)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

@@ -18,13 +18,13 @@ inputs:
 outputs:
   artifact-id:
     description: GitHub ID of an Artifact, can be used by the REST API
-    value: ''
+    value: ${{ steps.upload-artifact.outputs.artifact-id || steps.upload-artifact-act.outputs.artifact-id }}
   artifact-url:
     description: URL to download an Artifact.
-    value: ''
+    value: ${{ steps.upload-artifact.outputs.artifact-url || steps.upload-artifact-act.outputs.artifact-url }}
   artifact-digest:
     description: 'SHA-256 digest of an Artifact'
-    value: ''
+    value: ${{ steps.upload-artifact.outputs.artifact-digest || steps.upload-artifact-act.outputs.artifact-digest }}
   artifact-name:
     description: Name of the uploaded artifact.
     value: ${{ inputs.package-owner }}-${{ inputs.package-name }}-${{ inputs.version }}.vsix

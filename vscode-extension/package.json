@@ -19,8 +19,8 @@
     "directory": "vscode-extension/"
   },
   "bugs": {
-    "url": "https://github.com/camalot/vscode-workspace-tasks/issues",
-    "new": "https://github.com/camalot/vscode-workspace-tasks/issues/new/choose"
+    "url": "https://github.com/camalot/cliff-notes/issues",
+    "new": "https://github.com/camalot/cliff-notess/issues/new/choose"
   },
   "sponsor": {
     "url": "https://github.com/sponsors/camalot",
@@ -30,7 +30,7 @@
   "urls": {
     "vscmarketplace": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml",
     "openvsx": "https://open-vsx.org/extension/darthminos/cliff-toml",
-    "changelog": "https://github.com/camalot/cliff-notes/blob/develop/CHANGELOG.md"
+    "changelog": "https://github.com/camalot/cliff-notes/blob/main/CHANGELOG.md"
   },
   "categories": [
     "Programming Languages"
