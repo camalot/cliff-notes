@@ -134,7 +134,16 @@ async function computeBumpedVersion(
 
   const normalized = bumped ? normalizeVersion(bumped) : "";
   if (normalized && normalized !== "v") {
-    return { nextTag: normalized, fallback: false };
+    // Validate that git-cliff's result is at least the next patch after our known current.
+    // When multiple tags exist on the same commit, git-cliff may pick the wrong one,
+    // resulting in an incorrect bump. Discard the result if it's <= our highest known version.
+    const parsedBumped = parseSemver(normalized);
+    if (parsedBumped && current && compareSemver(parsedBumped, current) <= 0) {
+      // git-cliff returned a version that's not higher than what we know;
+      // fall back to our own calculation.
+    } else {
+      return { nextTag: normalized, fallback: false };
+    }
   }
 
   if (hasTags) {
@@ -143,10 +152,19 @@ async function computeBumpedVersion(
   return { nextTag: defaultWithV, fallback: true };
 }
 
+function sanitizeLine(line: string): string {
+  // Remove ANSI escape codes (color, formatting, etc)
+  let sanitized = line.replace(/\x1b\[[0-9;]*m/g, "");
+  // Remove git-cliff log headers like "WARN git_cliff >" or "ERROR some_module >"
+  sanitized = sanitized.replace(/^(WARN|ERROR|INFO|DEBUG)\s+\[[0-9;]*m[^\]]*\]\s*>\s*/i, "");
+  sanitized = sanitized.replace(/^(WARN|ERROR|INFO|DEBUG)\s+\w+\s*>\s*/i, "");
+  return sanitized.trim();
+}
+
 function splitStderrLines(stderr: string): string[] {
   return stderr
     .split(/\r?\n/)
-    .map((l) => l.trim())
+    .map((l) => sanitizeLine(l))
     .filter((l) => l.length > 0);
 }
 

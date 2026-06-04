@@ -40,6 +40,21 @@ export default function App() {
       // Strip the hash regardless of outcome so it doesn't persist on reload.
       window.history.replaceState(null, "", window.location.pathname);
 
+      // Check for "new cliff-note with template" pattern: #new=true&template=<id>
+      if (hash.startsWith("#new=true")) {
+        const params = new URLSearchParams(hash.substring(1));
+        const templateId = params.get("template");
+        if (templateId) {
+          try {
+            await s.resetWithTemplate(templateId);
+            setPhase("ready");
+            return;
+          } catch (err) {
+            // Fall through to integrity check if template loading fails
+          }
+        }
+      }
+
       try {
         const state = await decodeAndVerify(hash);
         s.applyPersistedState(state);
@@ -136,6 +151,7 @@ export default function App() {
         options={s.options}
         name={s.name}
         onChangeName={s.setName}
+        onResetWithTemplate={s.resetWithTemplate}
       />
       {s.untrusted && (
         <UntrustedBanner onDismiss={() => s.setUntrusted(false)} />

@@ -18,7 +18,7 @@ import { useAppStore } from "@/store";
 import { getLastSaveAction, setLastSaveAction, type SaveAction } from "../lib/gist-config";
 
 interface Props {
-  onReset: () => void;
+  onReset: () => void | Promise<void>;
   onLoad: (state: PersistedState) => void;
   onIntegrityError: (error: IntegrityError, recoveredState?: PersistedState) => void;
   cliffToml: string;
@@ -27,6 +27,7 @@ interface Props {
   options: RenderOptionsState;
   name: string;
   onChangeName: (v: string) => void;
+  onResetWithTemplate?: (templateId: string) => Promise<void>;
 }
 
 export function Toolbar({
@@ -39,6 +40,7 @@ export function Toolbar({
   options,
   name,
   onChangeName,
+  onResetWithTemplate,
 }: Props) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);

@@ -75,6 +75,7 @@ interface AppState {
 
   replaceAll: (input: { commits: UiCommit[]; tags: UiTag[]; cliffToml?: string }) => void;
   resetToDefaults: () => Promise<void>;
+  resetWithTemplate: (templateId?: string) => Promise<void>;
   resetConfig: () => void;
   /** Incremented on every reset so RepoLoader remounts with cleared state. */
   repoLoaderKey: number;
@@ -200,7 +201,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }),
   clearCommits: () => set({ commits: [], tags: [], configDirty: true, untrusted: false }),
 
-  addTag: (t) => set((s) => ({ tags: [...s.tags, t], configDirty: true, untrusted: false })),
+  addTag: (t) => set((s) => ({ tags: [t, ...s.tags], configDirty: true, untrusted: false })),
   updateTag: (idx, patch) =>
     set((s) => ({
       tags: s.tags.map((t, i) => (i === idx ? { ...t, ...patch } : t)),
@@ -245,6 +246,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ cliffToml: toml });
     } catch (err) {
       toast.error("Failed to load default config", { message: String(err) });
+    }
+  },
+  resetWithTemplate: async (templateId: string = "default.toml") => {
+    set((s) => ({
+      commits: SAMPLE_COMMITS,
+      tags: SAMPLE_TAGS,
+      options: { ...DEFAULT_OPTIONS },
+      name: "",
+      untrusted: false,
+      output: null,
+      configDirty: false,
+      repoLoaderKey: s.repoLoaderKey + 1,
+      playgroundId: null,
+    }));
+    try {
+      const toml = await api.getToml(templateId);
+      set({ cliffToml: toml });
+    } catch (err) {
+      toast.error("Failed to load template", { message: String(err) });
     }
   },
   resetConfig: () =>
