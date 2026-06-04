@@ -133,11 +133,15 @@ body = """
   {%- endfor -%}
 {%- endmacro -%}
 
-{%- macro clean_version(version, unreleased="unreleased") -%}
+{%- macro clean_version(version, unreleased="unreleased", prefix="v", include_prefix=false) -%}
   {%- if version -%}
-    {{ version | trim_start_matches(pat="v") }}
+    {%- if include_prefix -%}
+      {{ prefix }}{{ version | trim_start_matches(pat=prefix) }}
+    {%- else -%}
+      {{ version | trim_start_matches(pat=prefix) }}
+    {%- endif -%}
   {%- else -%}
-    {{ HEADER_UNRELEASED | upper }}
+    {{ unreleased | upper }}
   {%- endif -%}
 {%- endmacro -%}
 
@@ -201,14 +205,14 @@ body = """
 {#- MACROS END -#}
 
 {#- VERSION HEADER -#}
-{%- set c_version = self::clean_version(version=version, unreleased="unreleased") -%}
+{%- set c_version = self::clean_version(version=version, unreleased="unreleased", prefix="v", include_prefix=true) -%}
   {%- if github %}
-    ## [v{{ c_version }}]({{ self::remote_url()}}/releases/tag/v{{ c_version }})
+    ## [{{ c_version }}]({{ self::remote_url()}}/releases/tag/v{{ c_version }})
   {%- else %}
-    ## v{{ c_version }}
-  {%- endif %} \
+    ## {{ c_version }}
+  {%- endif -%}
 
-  - {{ timestamp | date(format="%Y-%m-%d") }}
+  {%- if timestamp %}{% raw %} - {% endraw %}{{- timestamp | date(format="%Y-%m-%d") }}{% endif %}
 {#- VERSION HEADER END -#}
 
 {#- LOOP GROUPS -#}
