@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Interactive playground for git-cliff configurations.",
-  "packageManager": "pnpm@11.5.0",
+  "packageManager": "pnpm@11.5.1",
   "engines": {
     "node": ">=25.0.0"
   },
