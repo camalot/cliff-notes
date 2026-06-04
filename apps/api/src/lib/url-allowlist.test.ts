@@ -27,7 +27,7 @@ describe("checkRepoUrl", () => {
     expect(checkRepoUrl("https://github.com/single").ok).toBe(false);
     expect(checkRepoUrl("https://github.com/a/b/c").ok).toBe(false);
   });
-  it("rejects unparseable input", () => {
+  it("rejects unparsable input", () => {
     expect(checkRepoUrl("not a url").ok).toBe(false);
   });
   it("strips trailing slashes from the normalized form", () => {

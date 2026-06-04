@@ -82,7 +82,7 @@ interface ScanState {
 
 /**
  * Quick scan that tracks triple-quoted-string state so that we don't
- * mis-detect section headers appearing inside template bodies.
+ * miss-detect section headers appearing inside template bodies.
  *
  * Important caveat: this does *not* implement TOML grammar. It only knows
  * about triple-quoted string boundaries and bare section headers at the

@@ -96,7 +96,9 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
   && chmod +x "/home/${USERNAME}/bin/act" \
   && ln -s "/home/${USERNAME}/bin/act" "/home/${USERNAME}/.act/act" \
   && curl -sSL https://install.python-poetry.org | python3 - \
-  && curl -s https://ohmyposh.dev/install.sh | bash -s -- -d /home/${USERNAME}/bin
+  && curl -s https://ohmyposh.dev/install.sh | bash -s -- -d /home/${USERNAME}/bin \
+  && TYPOS_VERSION=$(curl -s "https://api.github.com/repos/crate-ci/typos/releases/latest" | jq -r ".tag_name") \
+  && curl -fsSL "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "/home/${USERNAME}/bin"
 
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
 RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH" \
