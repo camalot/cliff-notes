@@ -127,7 +127,7 @@ body = """
   {%- for contrib in contributors %}
     - {{ self::user_url(name=contrib.username) }}
     {%- if contrib.pr_number %} in \
-      {#- defined with !#!\\d+ to get processed by the post processor after #\\d+ -#}
+      {#- defined with !#!\\d+ to get processed by the post processor after #\\d+ #}
       [!#!{{ contrib.pr_number }}]({{ self::remote_url() }}/pull/{{ contrib.pr_number }})
     {% endif %}
   {%- endfor -%}
@@ -194,7 +194,7 @@ body = """
   {{ self::unquote(input=commit.message) | upper_first | trim }}
   {%- if commit.links -%} {% for link in commit.links %}[{{ link.text }}]({{ link.href }}) {% endfor -%}{%- endif -%}
   {%- if commit.remote -%}
-    {%- if commit.remote.pr_number %}{{ "[!#!" ~ commit.remote.pr_number ~ "](<REPO>/pull/" ~ commit.remote.pr_number ~ ")"}}{% endif %}
+    {%- if commit.remote.pr_number %}{{ " [!#!" ~ commit.remote.pr_number ~ "](<REPO>/pull/" ~ commit.remote.pr_number ~ ")"}}{% endif %}
     {%- if commit.remote.username %} -
         {%- if commit.remote.is_first_time %} ❤️{%- endif -%}
         {{ self::user_url(name=commit.remote.username) }}

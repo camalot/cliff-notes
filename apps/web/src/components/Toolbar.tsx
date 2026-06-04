@@ -95,66 +95,76 @@ export function Toolbar({
           <span className="w-px self-stretch bg-border" aria-hidden="true" />
           <div className="flex items-center gap-0.5">
             <a
-              href={siteConfig.repositoryUrl}
+              href={siteConfig.repository.url}
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub Repository"
               aria-label="GitHub Repository"
               className={navLinkClass}
             >
-              <Icon name="go:mark-github" aria-hidden="true" />
+              <Icon name={siteConfig.repository.icon} aria-hidden="true" />
             </a>
             <a
-              href={siteConfig.issuesUrl}
+              href={siteConfig.issues.url}
               target="_blank"
               rel="noopener noreferrer"
               title="Report an Issue"
               aria-label="Report an Issue"
               className={navLinkClass}
             >
-              <Icon name="go:bug" aria-hidden="true" />
+              <Icon name={siteConfig.issues.icon} aria-hidden="true" />
             </a>
             <a
-              href={siteConfig.sponsorUrl}
+              href={siteConfig.sponsor.url}
               target="_blank"
               rel="noopener noreferrer"
               title="GitHub Sponsor"
               aria-label="GitHub Sponsor"
               className="inline-flex items-center justify-center w-7 h-7 rounded transition-colors hover:opacity-80"
-              style={{ color: siteConfig.sponsorColor }}
+              style={{ color: siteConfig.sponsor.color }}
             >
-              <Icon name="go:heart-fill" aria-hidden="true" />
+              <Icon name={siteConfig.sponsor.icon} aria-hidden="true" />
             </a>
             <a
-              href={siteConfig.coffeeUrl}
+              href={siteConfig.coffee.url}
               target="_blank"
               rel="noopener noreferrer"
               title="Buy Me a Coffee"
               aria-label="Buy Me a Coffee"
               className={navLinkClass}
             >
-              <Icon name="bi:coffee-togo" aria-hidden="true" />
+              <Icon name={siteConfig.coffee.icon} aria-hidden="true" />
             </a>
             <a
-              href={siteConfig.discordUrl}
+              href={siteConfig.discord.url}
               target="_blank"
               rel="noopener noreferrer"
               title="Join our Discord"
               aria-label="Join our Discord"
               className={navLinkClass}
             >
-              <Icon name="bs:discord" aria-hidden="true" />
+              <Icon name={siteConfig.discord.icon} aria-hidden="true" />
             </a>
             <span className="w-px self-stretch bg-border" aria-hidden="true" />
             <a
-              href={siteConfig.vscmarketUrl}
+              href={siteConfig.vscmarket.url}
               target="_blank"
               rel="noopener noreferrer"
               title="Visual Studio Code Marketplace"
               aria-label="Visual Studio Code Marketplace"
               className={navLinkClass}
             >
-              <Icon name="vsc:extensions" aria-hidden="true" />
+              <Icon name={siteConfig.vscmarket.icon} aria-hidden="true" />
+            </a>
+            <a
+              href={siteConfig.openvsx.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open VSX Marketplace"
+              aria-label="Open VSX Marketplace"
+              className={navLinkClass}
+            >
+              <Icon name={siteConfig.openvsx.icon} aria-hidden="true" />
             </a>
           </div>
         </div>

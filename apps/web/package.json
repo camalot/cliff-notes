@@ -5,23 +5,33 @@
   "type": "module",
   "site": {
     "repository": {
-      "url": "https://github.com/camalot/cliff-notes"
+      "url": "https://github.com/camalot/cliff-notes",
+      "icon": "go:mark-github"
     },
     "issues": {
-      "url": "https://github.com/camalot/cliff-notes/issues/new/choose"
+      "url": "https://github.com/camalot/cliff-notes/issues/new/choose",
+      "icon": "go:bug"
     },
     "sponsor": {
       "url": "https://github.com/sponsors/camalot",
-      "color": "#c45b95"
+      "color": "#c45b95",
+      "icon": "go:heart-fill"
     },
     "coffee": {
-      "url": "https://www.buymeacoffee.com/darthminos"
+      "url": "https://www.buymeacoffee.com/darthminos",
+      "icon": "bi:coffee-togo"
     },
     "discord": {
-      "url": "https://discord.gg/aQ37F2EcjF"
+      "url": "https://discord.gg/aQ37F2EcjF",
+      "icon": "bi:logo-discord-alt"
     },
     "vscmarket": {
-      "url": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml"
+      "url": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml",
+      "icon": "vsc:extensions"
+    },
+    "openvsx": {
+      "url": "https://open-vsx.org/extension/darthminos/cliff-toml",
+      "icon": "bi:solid-extension"
     }
   },
   "markdownSanitizer": {
