@@ -4,8 +4,8 @@ Thanks for your interest in contributing! cliff-notes is an interactive playgrou
 
 ## Prerequisites
 
-- Node 20+ (the repo's `.nvmrc` pins `25.x`)
-- pnpm 9+ (`corepack enable && corepack prepare pnpm@9.15.0 --activate`)
+- Node 25+ (the repo's `.nvmrc` pins `25.x`)
+- pnpm 11+ (`corepack enable && corepack prepare pnpm@11.5.0 --activate`)
 - `git` and [`git-cliff`](https://git-cliff.org/docs/installation) binaries on `PATH` — required for the API to render end-to-end
 - (Optional) [Docker](https://www.docker.com/) for the production container target
 - (Optional) [Task](https://taskfile.dev/) for the convenience tasks defined in `Taskfile.yml`
@@ -40,14 +40,15 @@ The included [devcontainer](.devcontainer/devcontainer.json) ships Node, pnpm, `
 
 ```tree
 apps/
-  api/        Fastify backend — shells out to `git-cliff` and `git`
-  web/        Vite + React + Tailwind + shadcn/ui frontend with Monaco editor
+  api/              Fastify backend — shells out to `git-cliff` and `git`
+  web/              Vite + React + Tailwind + shadcn/ui frontend with Monaco editor
 packages/
-  shared/     Zod schemas, shared types, conventional-commit generator
+  shared/           Zod schemas, shared types, conventional-commit generator
 tests/
-  e2e/        Playwright suite
-docs/         Jekyll site sources
-.github/      Workflows, linter configs, dependabot
+  e2e/              Playwright suite
+docs/               Jekyll site sources
+vscode-extension/   VS Code extension sources
+.github/            Workflows, linter configs, dependabot
 ```
 
 The shared package is built before any other workspace runs (`pnpm build:shared`), so its TypeScript output is what `apps/api` and `apps/web` consume — not its source.

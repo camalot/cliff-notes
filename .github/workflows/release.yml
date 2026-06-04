@@ -11,15 +11,21 @@ on: # yamllint disable-line rule:truthy
         description: 'Whether to publish the VSIX to the marketplaces.'
         required: false
         default: 'true'
+      docker-publish:
+        description: 'Whether to publish the Docker image to the registry.'
+        required: false
+        default: 'true'
 permissions: {}
 env:
   PACKAGE_OWNER: 'darthminos'
   PACKAGE_NAME: 'cliff-toml'
   ACT: ""
+  NODE_VERSION: '25'
   VS_MARKETPLACE_TOKEN: ""
   OPEN_VSX_TOKEN: ""
   GIT_USER_NAME: 'github-actions[bot]'
   GIT_USER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+  GH_TOKEN: ${{ github.token }}
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -255,6 +261,7 @@ jobs:
 
   vsix-package:
     runs-on: ubuntu-latest
+    environment: production
     needs:
       - version
       - verify
@@ -298,6 +305,98 @@ jobs:
           ARTIFACT_URL: ${{ steps.package-vsix.outputs.artifact-url }}
           ARTIFACT_DIGEST: ${{ steps.package-vsix.outputs.artifact-digest }}
 
+  packagejson-update:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - verify
+      - test
+      - lint
+      - vsix-package
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Git
+        run: |
+          git config user.name "${GIT_USER_NAME}"
+          git config user.email "${GIT_USER_EMAIL}"
+          gh auth setup-git --git-protocol https
+        env:
+          GIT_USER_NAME: ${{ env.GIT_USER_NAME }}
+          GIT_USER_EMAIL: ${{ env.GIT_USER_EMAIL }}
+
+      - name: Prepare package.json file
+        # we do not commit here. The release call does a commit.
+        # if it fails, then we don't commit this change
+        run: |
+          echo "::group::Prepare package.json"
+          # need to find all package.json files that we need to update that are managed by pnpm workspaces
+          # get the projects from pnpm-workspace.yaml and update the package.json files in those projects
+          # the values in pnpm-workspace.yaml can be globs, so we need to resolve those globs to find the package.json files
+          # we also need to update the version in the root package.json file
+
+          projects=$(yq eval '.packages[]' pnpm-workspace.yaml)
+          for project in $projects; do
+            # resolve the glob to find the package.json files
+            files=$(find . -path "./$project/package.json" -type f)
+            for file in $files; do
+              echo "Updating version in $file"
+              yq eval --inplace ".version = \"${VERSION}\"" "$file"
+              git add "$file"
+            done
+          done
+          yq eval --inplace ".version = \"${VERSION}\"" package.json
+          git add package.json
+          git commit -m "chore(release): update package.json version to ${VERSION}"
+          echo "::endgroup::"
+        env:
+          VERSION: ${{ needs.version.outputs.ver_major_minor_patch }}
+
+  changelog:
+    runs-on: ubuntu-latest
+    needs:
+      - packagejson-update
+      - vsix-package
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download VSIX Artifact
+        uses: actions/download-artifact@v8
+        id: download-vsix
+        with:
+          github-token: ${{ github.token }}
+          artifact-ids: ${{ needs.vsix-package.outputs.artifact-id }}
+          path: ${{ github.workspace }}/vsix
+          pattern: '*.vsix'
+
+      - name: Generate Changelog
+        uses: camalot/actions/version/release@v1
+        with:
+          token: ${{ github.token }}
+          tag_major: ${{ needs.version.outputs.tag_major }}
+          tag_major_minor: ${{ needs.version.outputs.tag_major_minor }}
+          tag_major_minor_patch: ${{ needs.version.outputs.tag_major_minor_patch }}
+          changelog_file: CHANGELOG.md
+          prerelease: 'false'
+          git_user_name: ${{ env.GIT_USER_NAME }}
+          git_user_email: ${{ env.GIT_USER_EMAIL }}
+        env:
+          UPDATE_FILE_CHART_VERSION: 'charts/cliff-notes/Chart.yaml'
+          UPDATE_FILE_CHART_APP_VERSION: 'charts/cliff-notes/Chart.yaml'
+          UPDATE_FILE_JEKYLL_CONFIG: 'docs/_config.yml'
+          UPDATE_FILE_PACKAGE_JSON: 'no-update' # already updated in packagejson-update step
+          RELEASE_FILES_GLOB: '${{ github.workspace }}/vsix/**/*.vsix'
+
   vsix-publish:
     runs-on: ubuntu-latest
     needs: vsix-package
@@ -316,11 +415,11 @@ jobs:
           github-token: ${{ github.token }}
           artifact-name: ${{ needs.vsix-package.outputs.artifact-name }}
           artifact-pattern: '*.vsix'
-          dry-run: ${{ env.ACT != '' || env.DRY_RUN == 'true' }}
+          dry-run: ${{ env.ACT != '' || env.vsix-publish == 'true' }}
           vsix-publish: ${{ github.event.inputs.vsix-publish }}
           vs-marketplace-token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           openvsx-token: ${{ secrets.OPEN_VSX_TOKEN }}
-          version: ${{ steps.get.outputs.major_minor_patch }}
+          version: ${{ needs.version.outputs.ver_major_minor_patch }}
           package-owner: ${{ env.PACKAGE_OWNER }}
           package-name: ${{ env.PACKAGE_NAME }}
 
@@ -354,12 +453,26 @@ jobs:
             exit 1
           fi
 
-      - name: "Publish Docker Image"
+      - name: Docker Processing
+        id: docker-processing
         uses: ./.github/actions/docker/publish
         with:
-          github-token: ${{ github.token }}
-
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: ${{ env.PRERELEASE }}
+          prerelease-tag: ${{ env.PRERELEASE_TAG }}
+          version: ${{ steps.get.outputs.major_minor_patch }}
+          tags: ${{ steps.get.outputs.tag_major_minor_patch }},${{ steps.get.outputs.tag_major_minor }},${{ steps.get.outputs.tag_major }}
+          publish: ${{ env.docker-publish == 'true' && 'true' || 'false' }}
+          dockerfile: './Dockerfile'
+          context: '.'
         env:
+          BUILD_ARGS_VERSION: ${{ steps.get.outputs.major_minor_patch }}
+          BUILD_ARGS_NODE_VERSION: ${{ env.NODE_VERSION }}
+          BUILD_ARGS_GIT_CLIFF_VERSION: ${{ steps.git-cliff.outputs.version }}
+          LABELS_VERSION: ${{ steps.get.outputs.major_minor_patch }}
+          DBPA_REGISTRY_GHCR: ghcr.io
+          DBPA_REGISTRY_GHCR_USERNAME: ${{ github.actor }}
+          DBPA_REGISTRY_GHCR_PASSWORD: ${{ github.token }}
           # Environment Variables
           #   Support for multiple registries to push via Environment Variables
           #   IDENTIFIER is a unique identifier for the variable group
@@ -376,10 +489,23 @@ jobs:
           #   IDENTIFIER is the key of the label
           #   - LABELS_IDENTIFIER=mylabel
 
-          DBPA_USERNAME_GHCR: ${{ github.actor }}
-          DBPA_PASSWORD_GHCR: ${{ secrets.GITHUB_TOKEN }}
-          DBPA_REGISTRY_GHCR: ghcr.io
+  render-deploy:
+    if: ${{ github.event.inputs.docker-publish == 'true' }}
+    runs-on: ubuntu-latest
+    needs:
+      - docker-publish
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-          BUILD_ARGS_VERSION: ${{ steps.get.outputs.major_minor_patch }}
-          BUILD_ARGS_NODE_VERSION: '25'
-          BUILD_ARGS_GIT_CLIFF_VERSION: ${{ steps.git-cliff.outputs.version }}
+      - name: "Trigger Render Deploy"
+        uses: ./.github/actions/render/deploy
+        with:
+          hook-id: ${{ secrets.RENDER_DEPLOY_HOOK_ID }}
+          hook-key: ${{ secrets.RENDER_DEPLOY_HOOK_KEY }}
+          deploy: ${{ env.ACT != '' && github.event.inputs.docker-publish == 'true' }}

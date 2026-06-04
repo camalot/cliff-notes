@@ -64,20 +64,20 @@ while [[ "$1" == --* ]]; do
       shift 2
       ;;
     --prerelease-tag)
-      PRERELEASE_TAG="${1#--prerelease-tag=}"
-      shift
-      ;;
-    --prerelease-tag=*)
       PRERELEASE_TAG="$2"
       shift 2
       ;;
-    --release-tag)
-      RELEASE_TAG="${1#--release-tag=}"
+    --prerelease-tag=*)
+      PRERELEASE_TAG="${1#--prerelease-tag=}"
       shift
       ;;
-    --release-tag=*)
+    --release-tag)
       RELEASE_TAG="$2"
       shift 2
+      ;;
+    --release-tag=*)
+      RELEASE_TAG="${1#--release-tag=}"
+      shift
       ;;
     --registries=*)
       IFS=',' read -ra TMP_REGISTRIES <<< "${1#--registries=}"
@@ -194,6 +194,8 @@ echo "pr_comment_marker=${PR_COMMENT_MARKER}" >> "$GITHUB_OUTPUT"
   done
   echo ""
 } > /tmp/docker-tags-comment.md
+
+echo "comment_file=/tmp/docker-tags-comment.md" >> "$GITHUB_OUTPUT"
 
 # summary output
 {

@@ -1,0 +1,2 @@
+# ignore all tasks in the submodules directory, as they are not relevant to the main repository
+submodules/**

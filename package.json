@@ -5,7 +5,7 @@
   "description": "Interactive playground for git-cliff configurations.",
   "packageManager": "pnpm@11.5.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=25.0.0"
   },
   "scripts": {
     "postinstall": "pnpm --filter @cliff-notes/shared run build",

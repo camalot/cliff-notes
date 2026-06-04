@@ -7,6 +7,7 @@ Interactive playground for [git-cliff](https://git-cliff.org) configurations. Ed
 - **Web:** Vite + React + TypeScript + Tailwind + shadcn/ui + Monaco
 - **API:** Node 20+ + TypeScript + Fastify, shells out to `git-cliff` and `git`
 - **Shared:** Zod schemas reused by both sides
+- **Language:** Language definition
 - **Tests:** Vitest (web + api) with lcov + JUnit XML reporters; Playwright for E2E
 - **Container:** single multi-stage Dockerfile, API serves the SPA from one port
 

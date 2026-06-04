@@ -17,6 +17,7 @@
 
 ignores:
   - "CHANGELOG.md"
+  - "LICENSE"
   - "docs/**/*.md"
   - SUPPORT.md
 

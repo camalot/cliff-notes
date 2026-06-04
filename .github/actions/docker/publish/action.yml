@@ -21,6 +21,11 @@ inputs:
       Comma-separated list of tags to apply to the built Docker image.
     required: false
     default: ''
+  publish:
+    description: >
+      Whether to push the built Docker image to the registry.
+    required: false
+    default: 'true'
   prerelease:
     description: >
       Whether to mark the Docker image as prerelease.
@@ -31,6 +36,11 @@ inputs:
       The tag to use for the prerelease Docker image. Only used if `prerelease` is `true`.
     required: false
     default: 'prerelease'
+  version:
+    description: >
+      The version of the image being built.
+    required: false
+    default: ''
 outputs:
   image-id:
     description: The ID of the built Docker image.
@@ -44,6 +54,219 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: |
-        chmod +x $GITHUB_ACTION_PATH/prepare-docker-build.sh
+    - name: Prepare Build Environment
+      id: prepare
       shell: bash
+      run: |
+        echo "::group::Prepare Build Environment"
+
+        {
+          echo "IMAGE_ORG=${IMAGE_ORG,,}"
+          echo "IMAGE_REPO=${IMAGE_REPO,,}"
+        } >> "$GITHUB_ENV"
+
+        # loop over environment variables that match: BUILD_ARGS_* and store in output variable for use in later steps
+        {
+          echo "build-args<<EOF"
+          for var in ${!BUILD_ARGS_*}; do
+            echo "$var=${!var}"
+          done
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        # loop over environment variables that match: LABELS_* and store in output variable for use in later steps
+        {
+          echo "labels<<EOF"
+          for var in ${!LABELS_*}; do
+            echo "$var=${!var}"
+          done
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        echo "::endgroup::"
+      env:
+        IMAGE_ORG: ${{ github.repository }}
+        IMAGE_REPO: ${{ github.event.repository.name }}
+
+    - name: Collect Registries
+      id: collect-registries
+      shell: bash
+      run: |
+        echo "::group::Collect Registries"
+        REGISTRIES=()
+        for var in ${!DBPA_REGISTRY_*}; do
+          [[ "$var" == *_USERNAME || "$var" == *_PASSWORD ]] && continue
+          REGISTRIES+=("${!var}")
+        done
+        echo "registries=$(IFS=,; echo "${REGISTRIES[*]}")"
+        echo "registries=$(IFS=,; echo "${REGISTRIES[*]}")" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
+
+    - name: Set up QEMU
+      if: ${{ inputs.publish == 'true' }}
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      if: ${{ inputs.publish == 'true' }}
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Registries
+      if: ${{ inputs.publish == 'true' }}
+      id: docker-login
+      shell: bash
+      run: |
+        echo "::group::Log in to Docker Registries"
+        # loop over environment variables that match: DBPA_REGISTRY_* and log in to each registry
+        registry_count=0
+        REGISTRIES=()
+        for var in ${!DBPA_REGISTRY_*}; do
+          registry="${!var}"
+          REGISTRIES+=("$registry")
+          identifier="${var#DBPA_REGISTRY_}"
+          identifier="${identifier%%_*}"
+          username_var="DBPA_REGISTRY_${identifier}_USERNAME"
+          password_var="DBPA_REGISTRY_${identifier}_PASSWORD"
+          # if the username or password variable is not set, skip this registry
+          if [ -z "${!username_var}" ] || [ -z "${!password_var}" ]; then
+            echo "Skipping registry $registry because username or password variable is not set" 2>&1
+            continue
+          fi
+          # mask the username and password in the logs
+          echo "::add-mask::$password_var"
+          echo "::add-mask::${!password_var}"
+          echo "::add-mask::$username_var"
+          echo "::add-mask::${!username_var}"
+          username="${!username_var}"
+          password="${!password_var}"
+          echo "Logging in to $registry with username $username"
+          docker login "$registry" -u "$username" --password-stdin <<< "$password"
+          registry_count=$((registry_count + 1))
+        done
+
+        if [ "$registry_count" -eq 0 ]; then
+          echo "No registries found to log in to. Please set environment variables that match: DBPA_REGISTRY_*"
+          exit 1
+        fi
+
+        # comma separate the registries and set as output for use in later steps
+        echo "registries=$(IFS=,; echo "${REGISTRIES[*]}")" >> "$GITHUB_OUTPUT"
+
+        echo "::endgroup::"
+
+    - name: Docker Environment Prepare
+      id: docker-env-prepare
+      # outputs:
+      #   pr_comment_marker
+      #   comment_file
+      shell: bash
+      run: |
+        echo "::group::Docker Environment Prepare"
+        chmod +x .github/scripts/prepare-docker-build.sh
+        RELEASE_FLAGS="--release --release-tag latest"
+        if [ "${PRERELEASE}" == "true" ]; then
+          RELEASE_FLAGS="--prerelease --prerelease-tag ${PRERELEASE_TAG}"
+        fi
+        REGISTRIES_ARGS=""
+        IFS=',' read -ra REGISTRIES <<< "${REGISTRIES_LIST}"
+        for registry in "${REGISTRIES[@]}"; do
+          REGISTRIES_ARGS+="--registry $registry "
+        done
+        .github/scripts/prepare-docker-build.sh $RELEASE_FLAGS $REGISTRIES_ARGS --version="$VERSION" --tags="$IMAGE_TAGS"
+        echo "::endgroup::"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PRERELEASE: ${{ inputs.prerelease }}
+        PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
+        REGISTRIES_LIST: ${{ steps.collect-registries.outputs.registries }}
+        IMAGE_TAGS: ${{ inputs.tags }}
+        VERSION: ${{ inputs.version }}
+        GH_ACTOR: ${{ github.repository_owner }}
+
+    - name: Build and Push Docker Image
+      if: ${{ inputs.publish == 'true' }}
+      uses: docker/build-push-action@v4
+      id: docker-build-push
+      with:
+        context: ${{ env.CONTEXT }}
+        file: ${{ env.DOCKERFILE }}
+        tags: ${{ env.BUILD_TAGS }}
+        build-args: ${{ steps.prepare.outputs.build-args }}
+        labels: ${{ steps.prepare.outputs.labels }}
+        push: ${{ env.PUBLISH }}
+      env:
+        PUBLISH: ${{ inputs.publish == 'true' }}
+        DOCKERFILE: ${{ inputs.dockerfile }}
+        CONTEXT: ${{ inputs.context }}
+
+    - name: Docker Logout
+      if: ${{ always() && inputs.publish == 'true' }}
+      shell: bash
+      run: |
+        echo "::group::Docker Logout"
+        # loop over environment variables that match: DBPA_REGISTRY_* and log out of each registry
+        for var in ${!DBPA_REGISTRY_*}; do
+          registry="${!var}"
+          echo "Logging out of $registry"
+          docker logout "$registry"
+        done
+        echo "::endgroup::"
+
+    - name: Find PR for this branch
+      id: find_pr
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+      run: |
+        PR_NUMBER=$(gh pr list \
+          --head "${GITHUB_REF_NAME}" \
+          --state open \
+          --json number \
+          --jq '.[0].number // ""')
+        echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+        if [[ -n "${PR_NUMBER}" ]]; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Outout Comment to Summary (act)
+      if: env.ACT != ''
+      shell: bash
+      run: |
+        echo "::group::Docker Tags Comment"
+        cat "${{ steps.docker-env-prepare.outputs.comment_file }}" >> "$GITHUB_STEP_SUMMARY"
+        echo "::endgroup::"
+
+    - name: Find existing Docker tags comment
+      if: steps.find_pr.outputs.found == 'true'
+      uses: peter-evans/find-comment@v4
+      id: find_comment
+      with:
+        issue-number: ${{ steps.find_pr.outputs.number }}
+        body-includes: ${{ steps.docker-env-prepare.outputs.pr_comment_marker }}
+        token: ${{ github.token }}
+
+    - name: Output Docker image metadata
+      id: output_metadata
+      shell: bash
+      run: |
+        {
+          echo "image-id=${META_IMAGE_ID}"
+          echo "digest=${META_DIGEST}"
+          echo "metadata=${META_METADATA}"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        META_IMAGE_ID: ${{ steps.docker-build-push.outputs.image-id }}
+        META_DIGEST: ${{ steps.docker-build-push.outputs.digest }}
+        META_METADATA: ${{ steps.docker-build-push.outputs.metadata }}
+
+    - name: Post or update Docker tags comment
+      if: steps.find_pr.outputs.found == 'true'
+      uses: peter-evans/create-or-update-comment@v5
+      with:
+        comment-id: ${{ steps.find_comment.outputs.comment-id }}
+        issue-number: ${{ steps.find_pr.outputs.number }}
+        body-path: ${{ steps.docker-env-prepare.outputs.comment_file }}
+        edit-mode: replace
+        token: ${{ github.token }}

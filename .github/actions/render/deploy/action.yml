@@ -1,0 +1,43 @@
+---
+name: Render Deploy
+description: Deploy the application to Render using a webhook.
+author: darthminos
+inputs:
+  hook-id:
+    description: "The Render deploy hook id to trigger the deployment."
+    required: true
+  hook-key:
+    description: "The Render deploy hook key for authentication."
+    required: true
+
+  deploy:
+    description: >
+      Whether to trigger the Render deploy. Set to `false` to skip triggering the deploy.
+    required: false
+    default: 'true'
+outputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Trigger Render Deploy
+      shell: bash
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        echo "::group::Trigger Render Deploy"
+        if [[ -z "${{ inputs.hook-id }}" || -z "${{ inputs.hook-key }}" ]]; then
+          echo "Render deploy hook ID and key must be provided."
+          exit 1
+        fi
+        response=$(curl -s -X POST "https://api.render.com/deploy/${RENDER_DEPLOY_HOOK_ID}?key=${RENDER_DEPLOY_HOOK_KEY}" -w "%{http_code}")
+        http_code="${response: -3}"
+        body="${response::-3}"
+        echo "HTTP Status Code: $http_code"
+        if [[ "$http_code" -ne 200 ]]; then
+          echo "Failed to trigger Render deploy. Response: $body"
+          exit 1
+        fi
+        echo "Successfully triggered Render deploy. Response: $body"
+        echo "::endgroup::"
+      env:
+        RENDER_DEPLOY_HOOK_ID: ${{ inputs.hook-id }}
+        RENDER_DEPLOY_HOOK_KEY: ${{ inputs.hook-key }}
