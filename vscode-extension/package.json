@@ -2,7 +2,7 @@
   "name": "cliff-toml",
   "displayName": "Cliff.toml Language",
   "description": "Syntax highlighting, snippets, completions, hover, and signature help for git-cliff cliff.toml configuration.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "darthminos",
   "author": {
     "name": "darthminos",
@@ -96,6 +96,6 @@
     "typescript": "^6.0.3",
     "webpack": "^5.107.2",
     "webpack-cli": "^7.0.3",
-    "@vscode/vsce": "^3.9.1"
+    "@vscode/vsce": "^3.9.2"
   }
 }
