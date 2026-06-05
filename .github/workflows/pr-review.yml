@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     needs:
-      - verify
+      - version
     permissions:
       contents: read
       statuses: write
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     needs:
-      - verify
+      - version
     permissions:
       contents: read
       statuses: write
