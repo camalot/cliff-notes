@@ -1,6 +1,6 @@
 {
   "name": "cliff-notes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Interactive playground for git-cliff configurations.",
   "packageManager": "pnpm@11.5.1",
@@ -18,7 +18,8 @@
     "test:coverage": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test:coverage",
     "test:junit": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test:junit",
     "test:e2e": "pnpm --filter @cliff-notes/e2e run test",
-    "clean": "pnpm -r run clean && rimraf coverage reports"
+    "clean": "pnpm -r run clean && rimraf coverage reports",
+    "package:vsix": "pnpm --filter=@cliff-notes/tera-lang --filter=cliff-toml run clean && pnpm --filter=@cliff-notes/tera-lang --filter=cliff-toml run build && pnpm --filter=cliff-toml run package"
   },
   "cliffNotes": {
     "hashSeed": "cliff-notes-v1-9f2a7e4b1c8d3f6a0e5b2d9c4f7a1e8b"
