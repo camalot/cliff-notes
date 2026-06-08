@@ -101,8 +101,7 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
   && curl -fsSL "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "/home/${USERNAME}/bin"
 
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
-RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH" \
-  && pnpm self-update
+RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH"
 
 # Reset SHELL to prevent pipefail from breaking devcontainer features installation
 SHELL ["/bin/sh", "-c"]

@@ -238,3 +238,4 @@
 {"id":"1780629556751361","taskName":"package:vsix","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1780629556751,"status":"Failed","definitionPath":"/workspace/package.json","endTime":1780629610679,"exitCode":1,"duration":53928}
 {"id":"1780629638215260","taskName":"package:vsix","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1780629638215,"status":"Failed","definitionPath":"/workspace/package.json","endTime":1780629678133,"exitCode":1,"duration":39918}
 {"id":"1780630421478086","taskName":"pnpm: build","taskSource":"Workspace","scope":"workspace","definitionType":"shell","startTime":1780630421478,"status":"Success","endTime":1780630464453,"exitCode":0,"duration":42975}
+{"id":"1780950044056468","taskName":"dev","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1780950044056,"status":"Success","definitionPath":"/workspace/package.json","endTime":1780952452391,"exitCode":0,"duration":2408335}

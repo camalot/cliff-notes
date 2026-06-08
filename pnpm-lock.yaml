@@ -76,8 +76,8 @@ importers:
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@primer/octicons-react':
-        specifier: ^19.27.0
-        version: 19.27.0(react@19.2.7)
+        specifier: ^19.28.1
+        version: 19.28.1(react@19.2.7)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -733,8 +733,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@primer/octicons-react@19.27.0':
-    resolution: {integrity: sha512-9bm6DPfMlRMPnAfbqKhRIk9aaYbEw89DHqE9L0k2Xph0AjR+OxCy59of5X0G0epuplMBGFCnkaNhR2HmeJnNJw==}
+  '@primer/octicons-react@19.28.1':
+    resolution: {integrity: sha512-ZADBMOPk6qoXXH3GEQuf3fYdhr9wCShgeJRGXsr5liaZG8P+hXGEQAy/eg7/FZjFIu8aRCmx+UBKmHvNTp7zpw==}
     engines: {node: '>=8'}
     peerDependencies:
       react: '>=16.3'
@@ -3605,7 +3605,7 @@ snapshots:
     dependencies:
       playwright: 1.60.0
 
-  '@primer/octicons-react@19.27.0(react@19.2.7)':
+  '@primer/octicons-react@19.28.1(react@19.2.7)':
     dependencies:
       react: 19.2.7
 
