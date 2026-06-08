@@ -26,11 +26,11 @@
       "icon": "bi:logo-discord-alt"
     },
     "vscmarket": {
-      "url": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml",
+      "url": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml-language",
       "icon": "vsc:extensions"
     },
     "openvsx": {
-      "url": "https://open-vsx.org/extension/darthminos/cliff-toml",
+      "url": "https://open-vsx.org/extension/darthminos/cliff-toml-language",
       "icon": "bi:solid-extension"
     }
   },

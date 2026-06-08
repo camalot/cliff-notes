@@ -1,8 +1,8 @@
 {
-  "name": "cliff-toml",
+  "name": "cliff-toml-language",
   "displayName": "Cliff.toml Language",
   "description": "Syntax highlighting, snippets, completions, hover, and signature help for git-cliff cliff.toml configuration.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "darthminos",
   "author": {
     "name": "darthminos",
@@ -20,7 +20,7 @@
   },
   "bugs": {
     "url": "https://github.com/camalot/cliff-notes/issues",
-    "new": "https://github.com/camalot/cliff-notess/issues/new/choose"
+    "new": "https://github.com/camalot/cliff-notes/issues/new/choose"
   },
   "sponsor": {
     "url": "https://github.com/sponsors/camalot",
@@ -28,8 +28,8 @@
     "buymeacoffee": "https://www.buymeacoffee.com/darthminos"
   },
   "urls": {
-    "vscmarketplace": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml",
-    "openvsx": "https://open-vsx.org/extension/darthminos/cliff-toml",
+    "vscmarketplace": "https://marketplace.visualstudio.com/items?itemName=darthminos.cliff-toml-language",
+    "openvsx": "https://open-vsx.org/extension/darthminos/cliff-toml-language",
     "changelog": "https://github.com/camalot/cliff-notes/blob/main/CHANGELOG.md"
   },
   "categories": [
