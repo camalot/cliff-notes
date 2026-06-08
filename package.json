@@ -1,6 +1,6 @@
 {
   "name": "cliff-notes",
-  "version": "0.1.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Interactive playground for git-cliff configurations.",
   "packageManager": "pnpm@11.5.2",
@@ -11,7 +11,7 @@
     "postinstall": "pnpm --filter @cliff-notes/shared run build",
     "build:shared": "pnpm --filter @cliff-notes/shared run build",
     "build": "pnpm -r run build",
-    "dev": "pnpm build:shared && pnpm -r --parallel --filter=!@cliff-notes/e2e --filter=!cliff-toml run dev",
+    "dev": "pnpm build:shared && pnpm -r --parallel --filter=!@cliff-notes/e2e --filter=!cliff-toml-language run dev",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm build:shared && pnpm -r run typecheck",
     "test": "pnpm build:shared && pnpm -r --filter=!@cliff-notes/e2e run test",

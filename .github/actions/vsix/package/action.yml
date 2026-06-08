@@ -85,15 +85,15 @@ runs:
       shell: bash
       run: |
         echo "::group::Build"
-        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml run clean
-        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml run build
+        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml-language run clean
+        pnpm --filter @cliff-notes/tera-lang --filter cliff-toml-language run build
         echo "::endgroup::"
 
     - name: VSIX Information
       shell: bash
       run: |
         echo "::group::VSIX Information"
-        pnpm --filter cliff-toml exec -- vsce ls --no-dependencies
+        pnpm --filter cliff-toml-language exec -- vsce ls --no-dependencies
         echo "::endgroup::"
 
     - name: Package VSIX
@@ -102,7 +102,7 @@ runs:
         echo "::group::Packaging VSIX"
         mkdir -p "${GITHUB_WORKSPACE}/dist"
         echo "Packaging VSIX to dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
-        pnpm --filter cliff-toml exec vsce package --no-dependencies --out "${GITHUB_WORKSPACE}/dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
+        pnpm --filter cliff-toml-language exec vsce package --no-dependencies --out "${GITHUB_WORKSPACE}/dist/${PACKAGE_OWNER}-${PACKAGE_NAME}-${VERSION}.vsix"
         echo "::endgroup::"
       env:
         VERSION: ${{ inputs.version }}

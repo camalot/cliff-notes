@@ -18,7 +18,7 @@ on: # yamllint disable-line rule:truthy
 permissions: {}
 env:
   PACKAGE_OWNER: 'darthminos'
-  PACKAGE_NAME: 'cliff-toml'
+  PACKAGE_NAME: 'cliff-toml-language'
   ACT: ""
   NODE_VERSION: '25'
   VS_MARKETPLACE_TOKEN: ""
@@ -157,10 +157,10 @@ jobs:
             echo "✅ **PACKAGE_OWNER** Passes Check" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # release should only proceed if PACKAGE_NAME is cliff-toml
-          if [ "$PACKAGE_NAME" != "cliff-toml" ]; then
+          # release should only proceed if PACKAGE_NAME is cliff-toml-language
+          if [ "$PACKAGE_NAME" != "cliff-toml-language" ]; then
             {
-              echo "❌ **PACKAGE_NAME** is not cliff-toml"
+              echo "❌ **PACKAGE_NAME** is not cliff-toml-language"
               echo "❌ Release Will **NOT** Proceed"
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1

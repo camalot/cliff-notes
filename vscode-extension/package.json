@@ -1,8 +1,8 @@
 {
   "name": "cliff-toml-language",
-  "displayName": "Cliff.toml Language",
+  "displayName": "Cliff.toml File Language Support",
   "description": "Syntax highlighting, snippets, completions, hover, and signature help for git-cliff cliff.toml configuration.",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "publisher": "darthminos",
   "author": {
     "name": "darthminos",
@@ -84,7 +84,8 @@
     "dev": "webpack --mode development --watch",
     "compile": "tsc -p tsconfig.json --noEmit",
     "clean": "rimraf dist coverage",
-    "package": "vsce package --no-dependencies --out dist/cliff-toml.vsix"
+    "mkdist": "mkdir -p dist ../dist",
+    "package": "pnpm run mkdist && vsce package --no-dependencies --out ../dist/cliff-toml-language.vsix"
   },
   "dependencies": {
     "@cliff-notes/tera-lang": "workspace:*"

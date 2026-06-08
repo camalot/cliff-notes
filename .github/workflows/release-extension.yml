@@ -21,7 +21,7 @@ env:
   ACT: ""
   NODE_VERSION: '25'
   PACKAGE_OWNER: 'darthminos'
-  PACKAGE_NAME: 'cliff-toml'
+  PACKAGE_NAME: 'cliff-toml-language'
   GIT_USER_NAME: 'github-actions[bot]'
   GIT_USER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
   GH_TOKEN: ${{ github.token }}
@@ -118,9 +118,9 @@ jobs:
             && pass "**PACKAGE_OWNER** Passes Check" \
             || fail "**PACKAGE_OWNER** is not darthminos"
 
-          [ "$PACKAGE_NAME" = "cliff-toml" ] \
+          [ "$PACKAGE_NAME" = "cliff-toml-language" ] \
             && pass "**PACKAGE_NAME** Passes Check" \
-            || fail "**PACKAGE_NAME** is not cliff-toml"
+            || fail "**PACKAGE_NAME** is not cliff-toml-language"
 
           # verify against the extension package.json
           PACKAGE_NAME_JSON=$(jq -r '.name' vscode-extension/package.json)
