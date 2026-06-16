@@ -175,7 +175,7 @@
     "@mdit/plugin-alert": "^0.23.2",
     "@mdit/plugin-emoji": "^0.2.2",
     "@mdit/plugin-katex": "^0.25.2",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
