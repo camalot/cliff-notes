@@ -1,6 +1,12 @@
-FROM mcr.microsoft.com/devcontainers/python:3
+# Use Ruby 3.3 base image from the official VS Code devcontainer library
+# which includes a non-root "vscode" user and some common tools.
+FROM mcr.microsoft.com/devcontainers/ruby:3
 
 ARG USERNAME=vscode
+# Allow overriding the version of pnpm to install globally (e.g. `@11.10.0` or `@latest` or `''`).
+# This is here because of a bug in PNPM 11.12.0 https://github.com/pnpm/action-setup/issues/276
+ARG PNPM_VERSION=@latest
+ENV PNPM_VERSION=${PNPM_VERSION}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -15,17 +21,22 @@ RUN if id -u "${USERNAME}" >/dev/null 2>&1; then \
   else \
     useradd -m -s /bin/zsh "${USERNAME}"; \
   fi \
-  && mkdir -p /home/${USERNAME}/bin/ /home/${USERNAME}/.zsh/ /home/${USERNAME}/.zsh_history/ /home/${USERNAME}/.ssh \
+  && mkdir -p /home/${USERNAME}/bin/ /home/${USERNAME}/.zsh/ /home/${USERNAME}/.zsh-history/ /home/${USERNAME}/.ssh \
   && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}
 
+
+# Remove the stale Yarn apt repo that ships in the base image (its GPG key is
+# expired/missing and causes `apt update` to fail).
+RUN rm -f /etc/apt/sources.list.d/yarn.list \
+    /usr/share/keyrings/yarnkey.gpg \
+    /etc/apt/keyrings/yarn*.gpg 2>/dev/null || true
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends apt-utils xauth apt-transport-https 2>&1 \
   && apt-get install -y --no-install-recommends git iproute2 procps lsb-release sudo gnupg 2>&1 \
-  && apt-get install -y --no-install-recommends curl wget zip unzip dnsutils jq bat fzf zoxide direnv 2>&1 \
-  && apt-get install -y --no-install-recommends nano vim zsh ripgrep eza imagemagick 2>&1 \
-  && apt-get install -y --no-install-recommends python3-full python3-pip python3-venv golang-go python3-virtualenv 2>&1 \
-  && pip3 install --no-cache-dir Pygments 2>&1 \
+  && apt-get install -y --no-install-recommends curl wget zip unzip dnsutils jq bat fzf zoxide 2>&1 \
+  && apt-get install -y --no-install-recommends nano vim zsh ripgrep cmake imagemagick direnv 2>&1 \
+  && apt-get install -y --no-install-recommends python3-full python3-pip python3-venv python3-virtualenv 2>&1 \
   && apt-get install -y --no-install-recommends \
     xvfb libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
     libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
@@ -42,12 +53,50 @@ RUN apt-get update \
   && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
   && chmod 0440 /etc/sudoers.d/${USERNAME}
 
-# install task (https://taskfile.dev/), a modern alternative to Make written in Go
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | /bin/bash - \
+RUN curl -fsSL "https://deb.nodesource.com/setup_25.x" | bash - \
+  && apt-get install -y nodejs \
+  && apt-get remove -y yarn \
+  && node -v \
+  && npm install -g npm pnpm${PNPM_VERSION} yarn git-cliff @anthropic-ai/claude-code \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* \
+  && export NVM_DIR="/home/${USERNAME}/.nvm" \
+  && for i in 1 2 3 4 5; do \
+    git clone --depth 1 --branch v0.40.4 https://github.com/nvm-sh/nvm.git "${NVM_DIR}" && break || \
+    { rm -rf "${NVM_DIR}"; sleep $((i * 2)); }; \
+  done \
+  && test -f "${NVM_DIR}/nvm.sh" \
+  && chown -R ${USERNAME}:${USERNAME} "${NVM_DIR}"
+
+RUN curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin \
+  && curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
+
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+  && out=$(mktemp) && curl -fsSL -o $out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+  && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+  && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+  && mkdir -p -m 755 /etc/apt/sources.list.d \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
   && apt-get update \
-  && apt-get install -y --no-install-recommends task \
+  && apt-get install -y --no-install-recommends gh \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
+
+# Make sure bundler is available globally (should be by default, but safe to
+# reinstall/update).
+RUN gem install bundler
+
+# The UI/integration test framework (`vscode-extension-tester`) requires a Java
+# runtime. Install Temurin 17 (Eclipse Adoptium) since openjdk-17-jdk is not
+# available in the base image's repos.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends apt-transport-https gnupg && \
+    curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public \
+        | gpg --dearmor | tee /etc/apt/trusted.gpg.d/adoptium.gpg > /dev/null && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release) main" \
+        | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -y temurin-17-jdk && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PowerShell
 RUN PWSH_TAG=$(curl -s "https://api.github.com/repos/PowerShell/PowerShell/releases/latest" | jq -r ".tag_name") \
@@ -59,47 +108,76 @@ RUN PWSH_TAG=$(curl -s "https://api.github.com/repos/PowerShell/PowerShell/relea
   && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh \
   && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/powershell \
   && rm /tmp/powershell.tar.gz \
-  && curl -fsSL https://gh.io/copilot-install | bash
+  && curl -fsSL https://gh.io/copilot-install | bash \
+  && curl -fsSL https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
+  # && curl -fsSL https://claude.ai/install.sh | bash
 
-
-RUN curl -fsSL "https://deb.nodesource.com/setup_25.x" | bash - \
-  && apt-get install -y nodejs \
-  && node -v \
-  && npm install -g npm \
-  && apt-get clean \
+# Install dotnet - used for supporting Cake build scripts
+RUN curl -fsSL https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -o /tmp/packages-microsoft-prod.deb \
+  && dpkg -i /tmp/packages-microsoft-prod.deb \
+  && rm /tmp/packages-microsoft-prod.deb \
+  && apt-get update \
+  && apt-get install -y dotnet-sdk-10.0 \
+  && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /home/${USERNAME}/.nvm \
-  && export NVM_DIR="/home/${USERNAME}/.nvm" \
-  && for i in 1 2 3 4 5; do \
-    git clone --depth 1 --branch v0.40.4 https://github.com/nvm-sh/nvm.git "${NVM_DIR}" && break || \
-    { rm -rf "${NVM_DIR}"; sleep $((i * 2)); }; \
-  done \
-  && test -f "${NVM_DIR}/nvm.sh" \
-  && chown -R ${USERNAME}:${USERNAME} "${NVM_DIR}" \
-  && npm install -g pnpm git-cliff @anthropic-ai/claude-code \
-  && npm cache clean --force
+  && dotnet tool install Cake.Tool --version 6.1.0
+
+# install task (https://taskfile.dev/), a modern alternative to Make written in Go
+# install gitlab-ci-local (https://gitlab-ci-local.dev/), a tool to run GitLab CI pipelines locally
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | bash - && \
+  curl -fsSL "https://gitlab-ci-local-ppa.firecow.dk/gitlab-ci-local.sources" -o "/etc/apt/sources.list.d/gitlab-ci-local.sources" \
+  && apt-get update \
+  && apt-get install -y gitlab-ci-local task \
+  && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | bash
 
 WORKDIR /workspace
+
+# Add venv to PATH for all users
+ENV PATH="/opt/venv/bin:$PATH"
+RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/bin/ \
+  && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.zsh/ \
+  && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.zsh-history/ \
+  && find /home/${USERNAME}/bin -maxdepth 1 -type f -exec chmod +x {} +
+
+# if /usr/bin/python does not exist as a file or symlink, create a symlink to python3 (some tools expect `python` to exist)
+RUN if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3 /usr/bin/python; fi \
+  && if [ ! -e /usr/bin/pip ]; then ln -s /usr/bin/pip3 /usr/bin/pip; fi
+
 USER ${USERNAME}
 
-COPY --chown=${USERNAME}:${USERNAME} files/home/vscode/ /home/${USERNAME}/
+# install user tools
+# hadolint ignore=DL3013
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+  && curl -fsSL "https://uploader.codecov.io/latest/linux/codecov" -o "/home/${USERNAME}/bin/codecov" \
+  && chmod +x "/home/${USERNAME}/bin/codecov" \
+  && pip install --no-cache-dir --user pipx --break-system-packages \
+  && /home/${USERNAME}/.local/bin/pipx ensurepath \
+  && /home/${USERNAME}/.local/bin/pipx install bitbucket-pipeline-runner rust-just \
+  && TYPOS_VERSION=$(curl -s "https://api.github.com/repos/crate-ci/typos/releases/latest" | jq -r ".tag_name") \
+  && curl -fsSL "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "/home/${USERNAME}/bin"
 
 RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases" "/home/${USERNAME}/.devcontainer" "/home/${USERNAME}/bin" "/home/${USERNAME}/.act" \
-  && curl -fsSL https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh > "/home/${USERNAME}/.antigen.zsh" \
+  && curl -L git.io/antigen > "/home/${USERNAME}/.antigen.zsh" \
+  && rm -rf "/home/${USERNAME}/.oh-my-zsh" \
+  && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
   && ZSH_CUSTOM="/home/${USERNAME}/.oh-my-zsh/custom" \
-  && mkdir -p "$ZSH_CUSTOM/themes" "/home/${USERNAME}/.antigen/bundles/romkatv" \
-  && git clone --depth=1 'https://github.com/romkatv/powerlevel10k.git' "/home/${USERNAME}/.antigen/bundles/romkatv/powerlevel10k" \
-  && ln -s "/home/${USERNAME}/.antigen/bundles/romkatv/powerlevel10k" "$ZSH_CUSTOM/themes/powerlevel10k" \
-  && chown -R ${USERNAME}:${USERNAME} "/home/${USERNAME}/.oh-my-zsh" \
+  && git clone --depth 1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k" \
   && ACT_VERSION=$(curl -s "https://api.github.com/repos/nektos/act/releases/latest" | jq -r ".tag_name") \
   && curl -fsSL "https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz" | tar -xz -C "/home/${USERNAME}/bin" \
   && chmod +x "/home/${USERNAME}/bin/act" \
   && ln -s "/home/${USERNAME}/bin/act" "/home/${USERNAME}/.act/act" \
-  && curl -sSL https://install.python-poetry.org | python3 - \
-  && curl -s https://ohmyposh.dev/install.sh | bash -s -- -d /home/${USERNAME}/bin \
-  && TYPOS_VERSION=$(curl -s "https://api.github.com/repos/crate-ci/typos/releases/latest" | jq -r ".tag_name") \
-  && curl -fsSL "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "/home/${USERNAME}/bin"
+  && for i in 1 2 3; do curl -sSL https://install.python-poetry.org | python3 - && break || { sleep $((i * 5)); }; done
 
+RUN HADOLINT_VERSION=$(curl -s "https://api.github.com/repos/hadolint/hadolint/releases/latest" | jq -r ".tag_name") \
+  && curl -fsSL "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64" -o "/home/${USERNAME}/bin/hadolint" \
+  && chmod +x "/home/${USERNAME}/bin/hadolint"
+
+
+COPY files/home/vscode/ /home/${USERNAME}/
+# Pre-warm the antigen bundle cache so p10k loads on the first terminal open instead of requiring a second `source ~/.zshrc`.
+RUN TERM=xterm-256color ZSH_DISABLE_COMPFIX=true zsh -i -c 'exit' 2>/dev/null || true
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.
 RUN export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH"
 

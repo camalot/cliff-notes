@@ -1,6 +1,6 @@
 {
   "name": "@cliff-notes/e2e",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "rimraf": "^6.1.3",
     "typescript": "^6.0.3"
   }

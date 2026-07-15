@@ -161,9 +161,7 @@ fi
 export PATH=$HOME/.local/bin:$HOME/bin:$PATH
 
 # shellcheck disable=SC1091
-if [ -f "$HOME/.cargo/env" ]; then
-  source "$HOME/.cargo/env"
-fi
+source "$HOME/.cargo/env"
 
 eval "$(oh-my-posh init bash --config ~/.config/powershell/darthminos.omp.json)"
 
