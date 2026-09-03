@@ -96,7 +96,7 @@
   },
   "dependencies": {
     "@cliff-notes/shared": "workspace:*",
-    "@faker-js/faker": "^10.4.0",
+    "@faker-js/faker": "^10.5.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/rate-limit": "^10.3.0",
