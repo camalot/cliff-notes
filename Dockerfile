@@ -5,8 +5,8 @@
 # Stage 3 (runtime): node + git + git-cliff, serving the SPA from the API
 ###############################################################################
 
-ARG NODE_VERSION=25
-ARG GIT_CLIFF_VERSION=2.13.1
+ARG NODE_VERSION=26
+ARG GIT_CLIFF_VERSION=2.14.2
 
 FROM node:${NODE_VERSION}-trixie-slim AS deps
 WORKDIR /app

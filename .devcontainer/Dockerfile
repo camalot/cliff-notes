@@ -91,13 +91,12 @@ RUN mkdir -p "/home/${USERNAME}/.antigen" "/home/${USERNAME}/.zsh/custom/aliases
   && git clone --depth=1 'https://github.com/romkatv/powerlevel10k.git' "/home/${USERNAME}/.antigen/bundles/romkatv/powerlevel10k" \
   && ln -s "/home/${USERNAME}/.antigen/bundles/romkatv/powerlevel10k" "$ZSH_CUSTOM/themes/powerlevel10k" \
   && chown -R ${USERNAME}:${USERNAME} "/home/${USERNAME}/.oh-my-zsh" \
-  && ACT_VERSION=$(curl -s "https://api.github.com/repos/nektos/act/releases/latest" | jq -r ".tag_name") \
-  && curl -fsSL "https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz" | tar -xz -C "/home/${USERNAME}/bin" \
+  && curl -fsSL "https://github.com/nektos/act/releases/latest/download/act_Linux_x86_64.tar.gz" | tar -xz -C "/home/${USERNAME}/bin" \
   && chmod +x "/home/${USERNAME}/bin/act" \
   && ln -s "/home/${USERNAME}/bin/act" "/home/${USERNAME}/.act/act" \
   && curl -sSL https://install.python-poetry.org | python3 - \
   && curl -s https://ohmyposh.dev/install.sh | bash -s -- -d /home/${USERNAME}/bin \
-  && TYPOS_VERSION=$(curl -s "https://api.github.com/repos/crate-ci/typos/releases/latest" | jq -r ".tag_name") \
+  && TYPOS_VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/crate-ci/typos/releases/latest" | sed 's#.*/##') \
   && curl -fsSL "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "/home/${USERNAME}/bin"
 
 # make sure that pnpm is available in the PATH for the vscode user and that the pnpm is up to date.

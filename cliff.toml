@@ -137,7 +137,7 @@ s
   {%- if version -%}
     {{ version | trim_start_matches(pat="v") }}
   {%- else -%}
-    {{ HEADER_UNRELEASED | upper }}
+    {{ unreleased | upper }}
   {%- endif -%}
 {%- endmacro -%}
 
@@ -208,7 +208,7 @@ s
     ## v{{ c_version }}
   {%- endif %} \
 
-  - {{ timestamp | date(format="%Y-%m-%d") }}
+  {%- if timestamp %}{% raw %} - {% endraw %}{{- timestamp | date(format="%Y-%m-%d") }}{% endif %}
 {#- VERSION HEADER END -#}
 
 {#- LOOP GROUPS -#}

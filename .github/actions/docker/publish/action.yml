@@ -41,16 +41,27 @@ inputs:
       The version of the image being built.
     required: false
     default: ''
+  attest:
+    description: >
+      Whether to generate a build provenance attestation for the pushed image and push it to the registry.
+      Requires `id-token: write`, `attestations: write`, `artifact-metadata: write`, and `packages: write` permissions.
+    required: false
+    default: 'true'
+  attest-registry:
+    description: >
+      The registry the attestation is pushed to. Must be one of the registries the image is pushed to.
+    required: false
+    default: 'ghcr.io'
 outputs:
   image-id:
     description: The ID of the built Docker image.
-    value: ''
+    value: ${{ steps.output_metadata.outputs.image-id }}
   digest:
     description: The digest of the built Docker image.
-    value: ''
+    value: ${{ steps.output_metadata.outputs.digest }}
   metadata:
     description: The metadata of the built Docker image.
-    value: ''
+    value: ${{ steps.output_metadata.outputs.metadata }}
 runs:
   using: "composite"
   steps:
@@ -62,7 +73,7 @@ runs:
 
         {
           echo "IMAGE_ORG=${IMAGE_ORG,,}"
-          echo "IMAGE_REPO=${IMAGE_REPO,,}"
+          echo "IMAGE_NAME=${IMAGE_NAME,,}"
         } >> "$GITHUB_ENV"
 
         # loop over environment variables that match: BUILD_ARGS_* and store in output variable for use in later steps
@@ -85,8 +96,8 @@ runs:
 
         echo "::endgroup::"
       env:
-        IMAGE_ORG: ${{ github.repository }}
-        IMAGE_REPO: ${{ github.event.repository.name }}
+        IMAGE_ORG: ${{ github.repository_owner }}
+        IMAGE_NAME: ${{ github.event.repository.name }}
 
     - name: Collect Registries
       id: collect-registries
@@ -185,7 +196,7 @@ runs:
 
     - name: Build and Push Docker Image
       if: ${{ inputs.publish == 'true' }}
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v7
       id: docker-build-push
       with:
         context: ${{ env.CONTEXT }}
@@ -194,10 +205,21 @@ runs:
         build-args: ${{ steps.prepare.outputs.build-args }}
         labels: ${{ steps.prepare.outputs.labels }}
         push: ${{ env.PUBLISH }}
+        provenance: mode=max
+        sbom: true
       env:
         PUBLISH: ${{ inputs.publish == 'true' }}
         DOCKERFILE: ${{ inputs.dockerfile }}
         CONTEXT: ${{ inputs.context }}
+
+    - name: Attest Build Provenance
+      if: ${{ inputs.publish == 'true' && inputs.attest == 'true' }}
+      uses: actions/attest-build-provenance@v4
+      with:
+        subject-name: ${{ inputs.attest-registry }}/${{ steps.docker-env-prepare.outputs.registry_path }}
+        subject-digest: ${{ steps.docker-build-push.outputs.digest }}
+        push-to-registry: true
+        github-token: ${{ inputs.github-token }}
 
     - name: Docker Logout
       if: ${{ always() && inputs.publish == 'true' }}

@@ -177,7 +177,10 @@ done
   echo "BUILD_DATE=${BUILD_DATEZ}"
 } >> "$GITHUB_ENV"
 
-echo "pr_comment_marker=${PR_COMMENT_MARKER}" >> "$GITHUB_OUTPUT"
+{
+  echo "pr_comment_marker=${PR_COMMENT_MARKER}"
+  echo "registry_path=${REGISTRY_PATH}"
+} >> "$GITHUB_OUTPUT"
 
 # Generate PR comment markdown — repository:tag table
 {
