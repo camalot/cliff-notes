@@ -256,3 +256,4 @@
 {"id":"1794979943366501","taskName":"build","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1794979943366,"status":"Success","definitionPath":"/workspace/package.json","endTime":1794979998745,"exitCode":0,"duration":55379}
 {"id":"1794980013438213","taskName":"test","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1794980013438,"status":"Failed","definitionPath":"/workspace/package.json","endTime":1794980124969,"exitCode":1,"duration":111531}
 {"id":"1794980226715082","taskName":"test","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1794980226715,"status":"Failed","definitionPath":"/workspace/package.json","endTime":1794980304140,"exitCode":1,"duration":77425}
+{"id":"1794980349295802","taskName":"test","taskSource":"pnpm","scope":"2","definitionType":"pnpm","startTime":1794980349295,"status":"Success","definitionPath":"/workspace/package.json","endTime":1794980457074,"exitCode":0,"duration":107779}
