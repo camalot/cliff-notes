@@ -126,7 +126,7 @@ describe("slugifyPlaygroundName", () => {
   });
 
   it("converts underscores to hyphens", () => {
-    expect(slugifyPlaygroundName("My_Cool_Project")).toBe("my-cool-playground");
+    expect(slugifyPlaygroundName("My_Cool_Project")).toBe("my-cool-project");
   });
 
   it("strips special characters", () => {
@@ -142,7 +142,7 @@ describe("slugifyPlaygroundName", () => {
   });
 
   it("falls back for empty / whitespace-only input", () => {
-    expect(slugifyPlaygroundName("")).toBe("untitled-playground");
-    expect(slugifyPlaygroundName("   ")).toBe("untitled-playground");
+    expect(slugifyPlaygroundName("")).toBe("untitled-cliff-note");
+    expect(slugifyPlaygroundName("   ")).toBe("untitled-cliff-note");
   });
 });

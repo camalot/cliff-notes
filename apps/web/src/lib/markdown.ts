@@ -1,12 +1,12 @@
-import MarkdownIt from "markdown-it";
+import MarkdownIt, { type MarkdownIt as MarkdownItInstance } from "markdown-it";
 import { alert } from "@mdit/plugin-alert";
 import { fullEmoji } from "@mdit/plugin-emoji";
 import { katex } from "@mdit/plugin-katex";
 import { sanitizeHtml } from "./sanitize";
 
-let md: MarkdownIt | null = null;
+let md: MarkdownItInstance | null = null;
 
-function getMarkdownInstance(): MarkdownIt {
+function getMarkdownInstance(): MarkdownItInstance {
   if (!md) {
     md = new MarkdownIt({
       html: true,
