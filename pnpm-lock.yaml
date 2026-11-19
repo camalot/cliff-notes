@@ -299,7 +299,7 @@ importers:
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@testing-library/user-event':
         specifier: ^14.6.2
-        version: 14.6.12(@testing-library/dom@10.4.2)
+        version: 14.6.9(@testing-library/dom@10.4.2)
       '@types/markdown-it':
         specifier: ^14.2.0
         version: 14.2.0
@@ -411,8 +411,8 @@ importers:
         version: link:../packages/cliff-tera-lang
     devDependencies:
       '@types/node':
-        specifier: ^25
-        version: 25.9.9
+        specifier: ^26
+        version: 26.6.6
       '@types/vscode':
         specifier: ^1.105.1
         version: 1.146.0
@@ -1135,8 +1135,8 @@ packages:
       '@types/react-dom':
         optional: true
 
-  '@testing-library/user-event@14.6.12':
-    resolution: {integrity: sha512-8yQV8v+eToBhsUO4oYrZY7fzhpTEMZx4IDx0/iuER/x0Xuy0NdqQOhsaaUNlvXE03N7vQ+4RCXUieKC0NJty9w==}
+  '@testing-library/user-event@14.6.9':
+    resolution: {integrity: sha512-/8boTjZHNXFi8JGUI2Ev05cq0Szh0OX35Bamkq6CK1ne+l1Xm8BKE3+nGgsnFgaYk0MX67Vh59cZDsNz5lJJEg==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
@@ -1213,6 +1213,7 @@ packages:
   '@typespec/ts-http-runtime@0.3.10':
     resolution: {integrity: sha512-vddvvtZ7sejSlCv+OIkn2ztjB1O31Fc2JsxI/YK725r3elXXlF/J3o3lbXJFRhoeWRWK1tjdZ+GTi6Fdtrp+EA==}
     engines: {node: '>=22.0.0'}
+    deprecated: A newer version 0.3.11 has been published.
 
   '@vitejs/plugin-react@6.3.0':
     resolution: {integrity: sha512-H9E955aVvD2F4zNHCw4eIZbIfF6xKldlh7MNu+hSU7xwQzh65lI/N+CJWqmfhi0PEjDXIt/H7T7J/4wU63KJiw==}
@@ -3871,7 +3872,7 @@ snapshots:
       '@types/react': 19.3.0
       '@types/react-dom': 19.3.0(@types/react@19.3.0)
 
-  '@testing-library/user-event@14.6.12(@testing-library/dom@10.4.2)':
+  '@testing-library/user-event@14.6.9(@testing-library/dom@10.4.2)':
     dependencies:
       '@testing-library/dom': 10.4.2
 
