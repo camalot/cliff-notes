@@ -91,7 +91,7 @@
     "@cliff-notes/tera-lang": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25",
+    "@types/node": "^26",
     "@types/vscode": "^1.105.1",
     "ts-loader": "^9.6.0",
     "typescript": "^6.0.3",
