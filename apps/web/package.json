@@ -193,7 +193,7 @@
     "postcss": "^8.5.33",
     "rimraf": "^6.1.4",
     "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
